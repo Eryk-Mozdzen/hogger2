@@ -22,6 +22,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include <math.h>
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -58,6 +60,46 @@ static void MX_UART4_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM5_Init(void);
 /* USER CODE BEGIN PFP */
+
+#define PI 3.14159265359f
+
+typedef struct {
+	uint32_t motor;
+	uint32_t x;
+	uint32_t y;
+} control_t;
+
+void control_set(const control_t *left, const control_t *right) {
+	__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, left->x);
+	__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, left->y);
+	__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_4, left->motor);
+
+	__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, right->x);
+	__HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_2, right->y);
+	__HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_3, right->motor);
+}
+
+void control_init() {
+	HAL_TIM_Base_Start(&htim1);
+	HAL_TIM_Base_Start(&htim5);
+
+	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);	// L servo X
+	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);	// L servo Y
+	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);	// R servo X
+	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);	// L motor
+	HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_2);	// R servo Y
+	HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_3);	// R motor
+
+	const control_t control = {
+		.x = 1500,
+		.y = 1500,
+		.motor = 1000,
+	};
+
+	control_set(&control, &control);
+
+	HAL_Delay(5000);
+}
 
 /* USER CODE END PFP */
 
@@ -105,9 +147,33 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
+  control_init();
+
+  uint32_t last_blink = 0;
+  uint32_t last_control = 0;
+
   while(1) {
-	  HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-	  HAL_Delay(500);
+	  const uint32_t time = HAL_GetTick();
+
+	  if((time - last_blink)>=500) {
+		  last_blink = time;
+		  HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+	  }
+
+	  if((time - last_control)>=20) {
+		  last_control = time;
+
+		  const float x = 2*PI*0.001f*time;
+
+		  const control_t control = {
+				  .x = 1500 + 50*sinf(x + PI),
+				  .y = 1500 + 50*sinf(x + 3*PI/2),
+				  .motor = 1100 + 100*sinf(x + PI/2),
+		  };
+
+		  control_set(&control, &control);
+	  }
 
     /* USER CODE END WHILE */
 
