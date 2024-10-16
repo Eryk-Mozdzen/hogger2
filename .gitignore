@@ -3,3 +3,6 @@
 firmware/Debug
 firmware/Release
 firmware/.settings
+
+build
+.vscode

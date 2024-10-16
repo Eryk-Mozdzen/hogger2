@@ -23,6 +23,12 @@
 /* USER CODE BEGIN Includes */
 
 #include <math.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+
+#include "protocol.h"
 
 /* USER CODE END Includes */
 
@@ -47,6 +53,10 @@ TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim5;
 
 UART_HandleTypeDef huart4;
+DMA_HandleTypeDef handle_GPDMA1_Channel1;
+DMA_NodeTypeDef Node_GPDMA1_Channel0;
+DMA_QListTypeDef List_GPDMA1_Channel0;
+DMA_HandleTypeDef handle_GPDMA1_Channel0;
 
 /* USER CODE BEGIN PV */
 
@@ -55,26 +65,29 @@ UART_HandleTypeDef huart4;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_GPDMA1_Init(void);
 static void MX_ICACHE_Init(void);
 static void MX_UART4_Init(void);
-static void MX_TIM1_Init(void);
 static void MX_TIM5_Init(void);
+static void MX_TIM1_Init(void);
 /* USER CODE BEGIN PFP */
 
 #define PI 3.14159265359f
 
 typedef struct {
-	uint32_t motor;
 	uint32_t x;
 	uint32_t y;
+	uint32_t motor;
 } control_t;
 
+static protocol_t protocol = PROTOCOL_INIT;
+
 void control_set(const control_t *left, const control_t *right) {
-	__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, left->x);
+	__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, left->x);
 	__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, left->y);
 	__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_4, left->motor);
 
-	__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, right->x);
+	__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 3000 - right->x);
 	__HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_2, right->y);
 	__HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_3, right->motor);
 }
@@ -83,12 +96,12 @@ void control_init() {
 	HAL_TIM_Base_Start(&htim1);
 	HAL_TIM_Base_Start(&htim5);
 
-	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);	// L servo X
-	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);	// L servo Y
-	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);	// R servo X
-	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);	// L motor
-	HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_2);	// R servo Y
-	HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_3);	// R motor
+	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
+	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
+	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
+	HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_2);
+	HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_3);
 
 	const control_t control = {
 		.x = 1500,
@@ -99,6 +112,45 @@ void control_init() {
 	control_set(&control, &control);
 
 	HAL_Delay(5000);
+}
+
+static void logger(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+
+	char buffer[256];
+    const uint16_t len = vsprintf(buffer, format, args);
+
+    protocol_enqueue(&protocol, 0x01, buffer, len);
+}
+
+static void comm_transmit(void *user, const void *data, const uint32_t size) {
+    (void)user;
+    HAL_UART_Transmit_DMA(&huart4, data, size);
+}
+
+static void comm_receive(void *user, const uint8_t id, const uint32_t time, const void *payload, const uint32_t size) {
+    (void)user;
+    (void)time;
+
+	if(size==(2*sizeof(control_t))) {
+		const control_t *left = &((control_t *)payload)[0];
+		const control_t *right = &((control_t *)payload)[1];
+
+		logger("LX %4d   LY %d   LM %d   RX %d   RY %d   RM %d", left->x, left->y, left->motor, right->x, right->y, right->motor);
+
+		control_set(left, right);
+	}
+}
+
+static void comm_error(void *user, const protocol_error_t error) {
+    (void)user;
+    (void)error;
+}
+
+static uint32_t comm_time(void *user) {
+	(void)user;
+	return HAL_GetTick();
 }
 
 /* USER CODE END PFP */
@@ -137,10 +189,11 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_GPDMA1_Init();
   MX_ICACHE_Init();
   MX_UART4_Init();
-  MX_TIM1_Init();
   MX_TIM5_Init();
+  MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -150,29 +203,39 @@ int main(void)
 
   control_init();
 
+	uint8_t buffer_tx[10*1024];
+	uint8_t buffer_rx[10*1024];
+	uint8_t buffer_decode[10*1024];
+
+	protocol.callback_tx = comm_transmit;
+	protocol.callback_rx = comm_receive;
+	protocol.callback_err = comm_error;
+	protocol.callback_time = comm_time;
+	protocol.fifo_tx.buffer = buffer_tx;
+	protocol.fifo_tx.size = sizeof(buffer_tx);
+	protocol.fifo_rx.buffer = buffer_rx;
+	protocol.fifo_rx.size = sizeof(buffer_rx);
+	protocol.decoded = buffer_decode;
+	protocol.max = sizeof(buffer_decode);
+
+	HAL_UART_Receive_DMA(&huart4, protocol.fifo_rx.buffer, protocol.fifo_rx.size);
+
   uint32_t last_blink = 0;
-  uint32_t last_control = 0;
+  uint32_t last_protocol = 0;
 
   while(1) {
 	  const uint32_t time = HAL_GetTick();
 
+	  if((time - last_protocol)>=1) {
+		  last_protocol = time;
+		  protocol.fifo_rx.write = protocol.fifo_rx.size - __HAL_DMA_GET_COUNTER(huart4.hdmarx);
+		  protocol.available = (HAL_DMA_GetState(huart4.hdmatx)==HAL_DMA_STATE_READY);
+		  protocol_process(&protocol);
+	  }
+
 	  if((time - last_blink)>=500) {
 		  last_blink = time;
 		  HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-	  }
-
-	  if((time - last_control)>=20) {
-		  last_control = time;
-
-		  const float x = 2*PI*0.001f*time;
-
-		  const control_t control = {
-				  .x = 1500 + 50*sinf(x + PI),
-				  .y = 1500 + 50*sinf(x + 3*PI/2),
-				  .motor = 1100 + 100*sinf(x + PI/2),
-		  };
-
-		  control_set(&control, &control);
 	  }
 
     /* USER CODE END WHILE */
@@ -232,6 +295,36 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief GPDMA1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_GPDMA1_Init(void)
+{
+
+  /* USER CODE BEGIN GPDMA1_Init 0 */
+
+  /* USER CODE END GPDMA1_Init 0 */
+
+  /* Peripheral clock enable */
+  __HAL_RCC_GPDMA1_CLK_ENABLE();
+
+  /* GPDMA1 interrupt Init */
+    HAL_NVIC_SetPriority(GPDMA1_Channel0_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(GPDMA1_Channel0_IRQn);
+    HAL_NVIC_SetPriority(GPDMA1_Channel1_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(GPDMA1_Channel1_IRQn);
+
+  /* USER CODE BEGIN GPDMA1_Init 1 */
+
+  /* USER CODE END GPDMA1_Init 1 */
+  /* USER CODE BEGIN GPDMA1_Init 2 */
+
+  /* USER CODE END GPDMA1_Init 2 */
+
 }
 
 /**
