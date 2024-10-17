@@ -86,12 +86,12 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         QTimer *timer = new QTimer();
 
         connect(timer, &QTimer::timeout, [this]() {
-            const double v = gamepad.get(Gamepad::Analog::LY);
-            const double w = 10*gamepad.get(Gamepad::Analog::LX);
+            const double v = -1.*gamepad.get(Gamepad::Analog::LY);
+            const double w = -5.*gamepad.get(Gamepad::Analog::LX);
 
             constexpr double L = 0.13;  // m
             constexpr double R = 0.05;  // m
-            constexpr double W = 100;  // rad/s
+            constexpr double W = 100;   // rad/s
 
             const double v1 = v - L*w;
             const double v2 = v + L*w;
@@ -103,11 +103,11 @@ Window::Window(QWidget *parent) : QWidget(parent) {
 
             pwm[0] = sliders[0]->value() + lerp(+a1, -M_PI, M_PI, 1000, 2000);
             pwm[1] = sliders[1]->value() + 1500;
-            pwm[2] = gamepad.get(Gamepad::Button::A) ? 1100 : 1000;
+            pwm[2] = gamepad.get(Gamepad::Button::A) ? 1200 : 1000;
 
             pwm[3] = sliders[2]->value() + lerp(-a2, -M_PI, M_PI, 1000, 2000);
             pwm[4] = sliders[3]->value() + 1500;
-            pwm[5] = gamepad.get(Gamepad::Button::A) ? 1100 : 1000;
+            pwm[5] = gamepad.get(Gamepad::Button::A) ? 1200 : 1000;
 
             transmit(0x02, QByteArray(reinterpret_cast<char *>(&pwm), sizeof(pwm)));
         });

@@ -81,6 +81,7 @@ typedef struct {
 } control_t;
 
 static protocol_t protocol = PROTOCOL_INIT;
+static uint32_t last_message = 0;
 
 void control_set(const control_t *left, const control_t *right) {
 	__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, left->x);
@@ -141,6 +142,8 @@ static void comm_receive(void *user, const uint8_t id, const uint32_t time, cons
 
 		control_set(left, right);
 	}
+
+	last_message = HAL_GetTick();
 }
 
 static void comm_error(void *user, const protocol_error_t error) {
@@ -222,6 +225,7 @@ int main(void)
 
   uint32_t last_blink = 0;
   uint32_t last_protocol = 0;
+  uint32_t last_check = 0;
 
   while(1) {
 	  const uint32_t time = HAL_GetTick();
@@ -236,6 +240,20 @@ int main(void)
 	  if((time - last_blink)>=500) {
 		  last_blink = time;
 		  HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+	  }
+
+	  if((time - last_message)>=1000 && (time - last_check)>=1000) {
+		  last_check = time;
+
+		  HAL_UART_Receive_DMA(&huart4, protocol.fifo_rx.buffer, protocol.fifo_rx.size);
+
+			const control_t control = {
+				.x = 1500,
+				.y = 1500,
+				.motor = 1000,
+			};
+
+			control_set(&control, &control);
 	  }
 
     /* USER CODE END WHILE */
