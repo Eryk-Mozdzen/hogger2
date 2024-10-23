@@ -91,9 +91,9 @@ feedback = [
     (eta4, eta_sol[eta4]),
     (eta5, eta_sol[eta5]),
 
-    (xd, sp.cos(2*sp.pi*t*0.1)),
-    (yd, sp.sin(2*sp.pi*t*0.1)),
-    (thetad, sp.pi/2 + 2*sp.pi*t*0.1),
+    (xd, sp.cos(2*sp.pi*0.1*t)),
+    (yd, sp.sin(2*sp.pi*0.1*t)),
+    (thetad, sp.pi/2 + 2*sp.pi*0.1*t),
     (psi1d, 1000),
     (psi2d, 1000),
 ]
@@ -107,17 +107,17 @@ parameters = [
 fnumeric = sp.lambdify([x, y, theta, phi1, theta1, psi1, phi2, theta2, psi2, t], sp.simplify(f.subs(feedback).subs(parameters)))
 
 import scipy
-import numpy
+import numpy as np
 
 def dynamics(t, q):
     x, y, theta, phi1, theta1, psi1, phi2, theta2, psi2 = q
     dxdt = fnumeric(x, y, theta, phi1, theta1, psi1, phi2, theta2, psi2, t)
-    return numpy.array(dxdt).flatten()
+    return np.array(dxdt).flatten()
 
 solution = scipy.integrate.solve_ivp(
     fun=dynamics,
-    t_span=(0, 30),
-    y0=[0, 0, numpy.pi/2, 0, 0, 100, 0, 0, 100],
+    t_span=(0, 10),
+    y0=[0, 0, np.pi/2, 0, 0, 0, 0, 0, 0],
     method='RK45',
     rtol=1e-6,
     atol=1e-9,
@@ -126,10 +126,24 @@ solution = scipy.integrate.solve_ivp(
 
 import matplotlib.pyplot as plt
 
-plt.plot(solution.y[0], solution.y[1])
+plt.plot(solution.y[0], solution.y[1], color='red')
 plt.title('Hogger^2 trajectory tracking')
 plt.xlabel('x [m]')
 plt.xlabel('y [m]')
 plt.grid()
+
+time = np.linspace(solution.t[0], solution.t[-1], 25)
+indices = [np.abs(solution.t - t).argmin() for t in time]
+for i in indices:
+    plt.arrow(
+        solution.y[0][i],
+        solution.y[1][i],
+        0.25*np.cos(solution.y[2][i]),
+        0.25*np.sin(solution.y[2][i]),
+        head_width=0.02,
+        head_length=0.05,
+        fc='black',
+        ec='black',
+    )
 
 plt.show()
