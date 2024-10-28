@@ -6,3 +6,8 @@ firmware/.settings
 
 build
 .vscode
+
+*.lck
+*.kicad_prl
+*-backups
+*.bak

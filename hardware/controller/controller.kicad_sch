@@ -1,0 +1,95 @@
+(kicad_sch
+	(version 20231120)
+	(generator "eeschema")
+	(generator_version "8.0")
+	(uuid "b81e4285-7ba7-4843-ab37-49bb8c6c135f")
+	(paper "A4")
+	(title_block
+		(title "Hogger2 Controller")
+		(date "2024-10-28")
+		(rev "V1.0")
+		(comment 4 "by Eryk Możdżeń")
+	)
+	(lib_symbols)
+	(sheet
+		(at 62.23 50.8)
+		(size 38.1 59.69)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "54c19fa3-aa0d-4e7d-a7c9-c109aa98901f")
+		(property "Sheetname" "power"
+			(at 62.23 50.0884 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "power.kicad_sch"
+			(at 62.23 111.0746 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "controller"
+				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f"
+					(page "3")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 109.22 50.8)
+		(size 38.1 59.69)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "e4f7bb70-a8bb-48a9-92b7-fd3dfb9899ca")
+		(property "Sheetname" "microcontroller"
+			(at 109.22 50.0884 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "microcontroller.kicad_sch"
+			(at 109.22 111.0746 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "controller"
+				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f"
+					(page "2")
+				)
+			)
+		)
+	)
+	(sheet_instances
+		(path "/"
+			(page "1")
+		)
+	)
+)

@@ -1,0 +1,14 @@
+(kicad_sch
+	(version 20231120)
+	(generator "eeschema")
+	(generator_version "8.0")
+	(uuid "1cd8a80c-a6b1-4e5b-86e3-76a0eb721e87")
+	(paper "A4")
+	(title_block
+		(title "Hogger2 Controller")
+		(date "2024-10-28")
+		(rev "V1.0")
+		(comment 4 "by Eryk Możdżeń")
+	)
+	(lib_symbols)
+)
