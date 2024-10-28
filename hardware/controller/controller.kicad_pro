@@ -396,6 +396,10 @@
     [
       "54c19fa3-aa0d-4e7d-a7c9-c109aa98901f",
       "power"
+    ],
+    [
+      "9b959a7f-7785-4fbc-97ae-e71bdac42a24",
+      "sensors"
     ]
   ],
   "text_variables": {}
