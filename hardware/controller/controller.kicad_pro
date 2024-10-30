@@ -400,6 +400,10 @@
     [
       "9b959a7f-7785-4fbc-97ae-e71bdac42a24",
       "sensors"
+    ],
+    [
+      "feaf6928-ad3c-4e11-a352-91e828a4db90",
+      "motor1"
     ]
   ],
   "text_variables": {}

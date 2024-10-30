@@ -760,6 +760,44 @@
 			)
 		)
 	)
+	(sheet
+		(at 195.58 50.8)
+		(size 38.1 59.69)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "feaf6928-ad3c-4e11-a352-91e828a4db90")
+		(property "Sheetname" "motor1"
+			(at 195.58 50.0884 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "motor1.kicad_sch"
+			(at 195.58 111.0746 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "controller"
+				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f"
+					(page "6")
+				)
+			)
+		)
+	)
 	(sheet_instances
 		(path "/"
 			(page "1")

@@ -11,3 +11,5 @@ build
 *.kicad_prl
 *-backups
 *.bak
+*auto_saved_files*
+fp-info-cache
