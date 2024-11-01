@@ -647,6 +647,44 @@
 		)
 	)
 	(sheet
+		(at 195.58 50.8)
+		(size 37.465 26.035)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "271b47c6-c6c6-4fa8-a848-2271fd9bebf4")
+		(property "Sheetname" "hog1"
+			(at 195.58 50.0884 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "hog1.kicad_sch"
+			(at 195.58 77.4196 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "controller"
+				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f"
+					(page "7")
+				)
+			)
+		)
+	)
+	(sheet
 		(at 63.5 50.8)
 		(size 38.1 59.69)
 		(fields_autoplaced yes)
@@ -680,44 +718,6 @@
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f"
 					(page "3")
-				)
-			)
-		)
-	)
-	(sheet
-		(at 195.58 81.915)
-		(size 38.1 28.575)
-		(fields_autoplaced yes)
-		(stroke
-			(width 0.1524)
-			(type solid)
-		)
-		(fill
-			(color 0 0 0 0.0000)
-		)
-		(uuid "685d1afb-f88e-445e-b0ba-3fc4bd9ac6c4")
-		(property "Sheetname" "motor2"
-			(at 195.58 81.2034 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left bottom)
-			)
-		)
-		(property "Sheetfile" "motor2.kicad_sch"
-			(at 195.58 111.0746 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-			)
-		)
-		(instances
-			(project "controller"
-				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f"
-					(page "6")
 				)
 			)
 		)
@@ -799,8 +799,8 @@
 		)
 	)
 	(sheet
-		(at 195.58 50.8)
-		(size 38.1 26.035)
+		(at 195.58 84.455)
+		(size 37.465 26.035)
 		(fields_autoplaced yes)
 		(stroke
 			(width 0.1524)
@@ -809,9 +809,9 @@
 		(fill
 			(color 0 0 0 0.0000)
 		)
-		(uuid "feaf6928-ad3c-4e11-a352-91e828a4db90")
-		(property "Sheetname" "motor1"
-			(at 195.58 50.0884 0)
+		(uuid "e70dc713-c3b8-49b5-85a5-9763f650e50f")
+		(property "Sheetname" "hog2"
+			(at 195.58 83.7434 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -819,8 +819,8 @@
 				(justify left bottom)
 			)
 		)
-		(property "Sheetfile" "motor1.kicad_sch"
-			(at 195.58 77.4196 0)
+		(property "Sheetfile" "hog2.kicad_sch"
+			(at 195.58 111.0746 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -831,7 +831,7 @@
 		(instances
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f"
-					(page "6")
+					(page "7")
 				)
 			)
 		)

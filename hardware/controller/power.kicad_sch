@@ -286,6 +286,164 @@
 				)
 			)
 		)
+		(symbol "Device:C_Polarized"
+			(pin_numbers hide)
+			(pin_names
+				(offset 0.254)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "C"
+				(at 0.635 2.54 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Value" "C_Polarized"
+				(at 0.635 -2.54 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Footprint" ""
+				(at 0.9652 -3.81 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" "~"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Description" "Polarized capacitor"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_keywords" "cap capacitor"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_fp_filters" "CP_*"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(symbol "C_Polarized_0_1"
+				(rectangle
+					(start -2.286 0.508)
+					(end 2.286 1.016)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -1.778 2.286) (xy -0.762 2.286)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -1.27 2.794) (xy -1.27 1.778)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start 2.286 -0.508)
+					(end -2.286 -1.016)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+			)
+			(symbol "C_Polarized_1_1"
+				(pin passive line
+					(at 0 3.81 270)
+					(length 2.794)
+					(name "~"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 0 -3.81 90)
+					(length 2.794)
+					(name "~"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+		)
 		(symbol "Device:D_Schottky"
 			(pin_numbers hide)
 			(pin_names
@@ -757,290 +915,6 @@
 				)
 			)
 		)
-		(symbol "Device:Q_PMOS_GDS"
-			(pin_names
-				(offset 0) hide)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(property "Reference" "Q"
-				(at 5.08 1.27 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify left)
-				)
-			)
-			(property "Value" "Q_PMOS_GDS"
-				(at 5.08 -1.27 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify left)
-				)
-			)
-			(property "Footprint" ""
-				(at 5.08 2.54 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Datasheet" "~"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Description" "P-MOSFET transistor, gate/drain/source"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "ki_keywords" "transistor PMOS P-MOS P-MOSFET"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(symbol "Q_PMOS_GDS_0_1"
-				(polyline
-					(pts
-						(xy 0.254 0) (xy -2.54 0)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0.254 1.905) (xy 0.254 -1.905)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0.762 -1.27) (xy 0.762 -2.286)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0.762 0.508) (xy 0.762 -0.508)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0.762 2.286) (xy 0.762 1.27)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 2.54 2.54) (xy 2.54 1.778)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 2.54 -2.54) (xy 2.54 0) (xy 0.762 0)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0.762 1.778) (xy 3.302 1.778) (xy 3.302 -1.778) (xy 0.762 -1.778)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 2.286 0) (xy 1.27 0.381) (xy 1.27 -0.381) (xy 2.286 0)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type outline)
-					)
-				)
-				(polyline
-					(pts
-						(xy 2.794 -0.508) (xy 2.921 -0.381) (xy 3.683 -0.381) (xy 3.81 -0.254)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 3.302 -0.381) (xy 2.921 0.254) (xy 3.683 0.254) (xy 3.302 -0.381)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(circle
-					(center 1.651 0)
-					(radius 2.794)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(circle
-					(center 2.54 -1.778)
-					(radius 0.254)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type outline)
-					)
-				)
-				(circle
-					(center 2.54 1.778)
-					(radius 0.254)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type outline)
-					)
-				)
-			)
-			(symbol "Q_PMOS_GDS_1_1"
-				(pin input line
-					(at -5.08 0 0)
-					(length 2.54)
-					(name "G"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 2.54 5.08 270)
-					(length 2.54)
-					(name "D"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 2.54 -5.08 90)
-					(length 2.54)
-					(name "S"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "3"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-		)
 		(symbol "Device:R"
 			(pin_numbers hide)
 			(pin_names
@@ -1469,6 +1343,301 @@
 					(at 5.08 -2.54 180)
 					(length 2.54)
 					(name "C"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+		)
+		(symbol "Transistor_FET:SUD50P04-08"
+			(pin_names hide)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "Q"
+				(at 4.953 1.905 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Value" "SUD50P04-08"
+				(at 4.953 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Footprint" "Package_TO_SOT_SMD:TO-252-2"
+				(at 4.953 -1.905 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+						(italic yes)
+					)
+					(justify left)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" "https://www.vishay.com/docs/65594/sud50p04-08.pdf"
+				(at 5.08 -3.81 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+					(hide yes)
+				)
+			)
+			(property "Description" "-50A Id, -40V Vds, TrenchFET P-Channel Power MOSFET, 8.1mOhm Ron, 159nC Qg, -55 to 150 °C, TO-252-2"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_keywords" "TrenchFET P-Channel Power MOSFET"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_fp_filters" "TO?252*"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(symbol "SUD50P04-08_0_1"
+				(polyline
+					(pts
+						(xy 0.254 0) (xy -2.54 0)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0.254 1.905) (xy 0.254 -1.905)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0.762 -1.27) (xy 0.762 -2.286)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0.762 0.508) (xy 0.762 -0.508)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0.762 2.286) (xy 0.762 1.27)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 2.54 2.54) (xy 2.54 1.778)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 2.54 -2.54) (xy 2.54 0) (xy 0.762 0)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0.762 1.778) (xy 3.302 1.778) (xy 3.302 -1.778) (xy 0.762 -1.778)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 2.286 0) (xy 1.27 0.381) (xy 1.27 -0.381) (xy 2.286 0)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(polyline
+					(pts
+						(xy 2.794 -0.508) (xy 2.921 -0.381) (xy 3.683 -0.381) (xy 3.81 -0.254)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 3.302 -0.381) (xy 2.921 0.254) (xy 3.683 0.254) (xy 3.302 -0.381)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(circle
+					(center 1.651 0)
+					(radius 2.794)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(circle
+					(center 2.54 -1.778)
+					(radius 0.254)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(circle
+					(center 2.54 1.778)
+					(radius 0.254)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+			)
+			(symbol "SUD50P04-08_1_1"
+				(pin input line
+					(at -5.08 0 0)
+					(length 2.54)
+					(name "G"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 2.54 5.08 270)
+					(length 2.54)
+					(name "D"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 2.54 -5.08 90)
+					(length 2.54)
+					(name "S"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -2240,6 +2409,12 @@
 		(uuid "be17bf13-8619-4f92-8c8b-e388586d8d5e")
 	)
 	(junction
+		(at 72.39 46.99)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "d1d1c1af-99a8-4370-ac37-8b66ddf3919d")
+	)
+	(junction
 		(at 182.88 113.03)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -2400,6 +2575,16 @@
 			(type default)
 		)
 		(uuid "2d7b1f98-ae50-42e3-ae2b-85cb3939a8d0")
+	)
+	(wire
+		(pts
+			(xy 72.39 46.99) (xy 72.39 48.26)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2f795b38-87b7-48b2-a852-11c0a2dac34f")
 	)
 	(wire
 		(pts
@@ -2963,20 +3148,9 @@
 		)
 		(uuid "884bc768-67fd-4b67-803a-a4ce8c7196f3")
 	)
-	(text "potrzebna większa przetwornica?\nta ma 3.5A/40V"
+	(text "Vds = 40V\nVgs = 20V\nId = 50A"
 		(exclude_from_sim no)
-		(at 51.308 100.584 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "8beb47eb-c494-4c22-ace0-a5ac71740fe8")
-	)
-	(text "potrzebny większy MOSFET?\nten ma 31A/55V"
-		(exclude_from_sim no)
-		(at 52.324 34.798 0)
+		(at 58.166 35.306 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -2984,17 +3158,6 @@
 			(justify left)
 		)
 		(uuid "92f09dd0-88a6-43ee-8fcf-4ffe8c6557ba")
-	)
-	(text "czy serwa będą działać lepiej na wyższym napięciu? 6V lub 7V"
-		(exclude_from_sim no)
-		(at 51.054 104.902 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "ae819ce8-2ecf-4833-99b5-6586f815f99a")
 	)
 	(text "power input"
 		(exclude_from_sim no)
@@ -3185,7 +3348,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "0821ef88-ecf2-480f-8e1f-a061d25a0eba")
-		(property "Reference" "C27"
+		(property "Reference" "C28"
 			(at 40.64 143.5099 0)
 			(effects
 				(font
@@ -3239,7 +3402,7 @@
 		(instances
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/54c19fa3-aa0d-4e7d-a7c9-c109aa98901f"
-					(reference "C27")
+					(reference "C28")
 					(unit 1)
 				)
 			)
@@ -3321,7 +3484,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "1184977c-294e-4d73-bcd4-3b2798ee8219")
-		(property "Reference" "R15"
+		(property "Reference" "R14"
 			(at 27.94 143.5099 0)
 			(effects
 				(font
@@ -3375,79 +3538,7 @@
 		(instances
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/54c19fa3-aa0d-4e7d-a7c9-c109aa98901f"
-					(reference "R15")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:Q_PMOS_GDS")
-		(at 62.23 49.53 270)
-		(mirror x)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "12a42454-7cf5-4990-bc32-75270576b37f")
-		(property "Reference" "Q1"
-			(at 62.23 40.64 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "IRFR5305"
-			(at 62.23 43.18 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 64.77 44.45 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 62.23 49.53 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "P-MOSFET transistor, gate/drain/source"
-			(at 62.23 49.53 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "cd190a5d-8518-4ad6-910b-c2fcd397b153")
-		)
-		(pin "3"
-			(uuid "2151f51c-754b-4796-abb3-9d5d54ba33f3")
-		)
-		(pin "2"
-			(uuid "80f2104a-cfdc-4a60-ba6f-938c51f99eef")
-		)
-		(instances
-			(project "controller"
-				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/54c19fa3-aa0d-4e7d-a7c9-c109aa98901f"
-					(reference "Q1")
+					(reference "R14")
 					(unit 1)
 				)
 			)
@@ -3735,7 +3826,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "31a89827-54df-43a3-ba95-4b65d83b491b")
-		(property "Reference" "R14"
+		(property "Reference" "R13"
 			(at 119.38 134.6199 0)
 			(effects
 				(font
@@ -3789,7 +3880,7 @@
 		(instances
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/54c19fa3-aa0d-4e7d-a7c9-c109aa98901f"
-					(reference "R14")
+					(reference "R13")
 					(unit 1)
 				)
 			)
@@ -3805,7 +3896,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "4e41a76f-e016-427b-90d9-c10186c08e99")
-		(property "Reference" "C24"
+		(property "Reference" "C25"
 			(at 34.29 121.9199 0)
 			(effects
 				(font
@@ -3859,7 +3950,7 @@
 		(instances
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/54c19fa3-aa0d-4e7d-a7c9-c109aa98901f"
-					(reference "C24")
+					(reference "C25")
 					(unit 1)
 				)
 			)
@@ -3875,7 +3966,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "511db049-7972-4573-ae45-68013c21238c")
-		(property "Reference" "#PWR048"
+		(property "Reference" "#PWR047"
 			(at 72.39 49.53 0)
 			(effects
 				(font
@@ -3925,7 +4016,76 @@
 		(instances
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/54c19fa3-aa0d-4e7d-a7c9-c109aa98901f"
-					(reference "#PWR048")
+					(reference "#PWR047")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:C_Polarized")
+		(at 72.39 52.07 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "5e6c74d5-228c-4ae2-9251-21a440efec68")
+		(property "Reference" "C19"
+			(at 76.2 49.9109 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "68u/50V"
+			(at 76.2 52.4509 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 73.3552 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 72.39 52.07 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Polarized capacitor"
+			(at 72.39 52.07 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "3c084f21-c03e-4f5e-809b-5354182902d6")
+		)
+		(pin "2"
+			(uuid "47db81fe-c5e6-458c-8ced-772d5e147655")
+		)
+		(instances
+			(project "controller"
+				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/54c19fa3-aa0d-4e7d-a7c9-c109aa98901f"
+					(reference "C19")
 					(unit 1)
 				)
 			)
@@ -3941,7 +4101,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "5f02a72a-c8f1-4a3d-af44-c68bc44f8238")
-		(property "Reference" "C25"
+		(property "Reference" "C26"
 			(at 90.17 126.9999 0)
 			(effects
 				(font
@@ -3995,7 +4155,73 @@
 		(instances
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/54c19fa3-aa0d-4e7d-a7c9-c109aa98901f"
-					(reference "C25")
+					(reference "C26")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 72.39 55.88 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "62bdef04-77bb-468a-99b4-92536d8bc521")
+		(property "Reference" "#PWR049"
+			(at 72.39 62.23 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 72.39 60.96 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 72.39 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 72.39 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 72.39 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "5a28b35a-39f4-4d81-8370-1b5377bfd119")
+		)
+		(instances
+			(project "controller"
+				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/54c19fa3-aa0d-4e7d-a7c9-c109aa98901f"
+					(reference "#PWR049")
 					(unit 1)
 				)
 			)
@@ -4011,7 +4237,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "67158c4f-730e-4a01-8cc9-e28177c4122a")
-		(property "Reference" "R13"
+		(property "Reference" "R12"
 			(at 64.77 60.9599 0)
 			(effects
 				(font
@@ -4065,7 +4291,7 @@
 		(instances
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/54c19fa3-aa0d-4e7d-a7c9-c109aa98901f"
-					(reference "R13")
+					(reference "R12")
 					(unit 1)
 				)
 			)
@@ -4081,7 +4307,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "6b279568-0a24-4fff-95c9-080516733115")
-		(property "Reference" "C23"
+		(property "Reference" "C24"
 			(at 199.39 116.8399 0)
 			(effects
 				(font
@@ -4135,7 +4361,7 @@
 		(instances
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/54c19fa3-aa0d-4e7d-a7c9-c109aa98901f"
-					(reference "C23")
+					(reference "C24")
 					(unit 1)
 				)
 			)
@@ -4151,7 +4377,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "72e3b585-8455-42b4-a002-e75b5abb00d5")
-		(property "Reference" "C20"
+		(property "Reference" "C21"
 			(at 143.51 116.8399 0)
 			(effects
 				(font
@@ -4205,7 +4431,7 @@
 		(instances
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/54c19fa3-aa0d-4e7d-a7c9-c109aa98901f"
-					(reference "C20")
+					(reference "C21")
 					(unit 1)
 				)
 			)
@@ -4221,7 +4447,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "82d44c7b-c7f4-47fa-b947-7dfd059ac070")
-		(property "Reference" "C22"
+		(property "Reference" "C23"
 			(at 186.69 116.8399 0)
 			(effects
 				(font
@@ -4275,7 +4501,7 @@
 		(instances
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/54c19fa3-aa0d-4e7d-a7c9-c109aa98901f"
-					(reference "C22")
+					(reference "C23")
 					(unit 1)
 				)
 			)
@@ -4342,6 +4568,81 @@
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/54c19fa3-aa0d-4e7d-a7c9-c109aa98901f"
 					(reference "#PWR063")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Transistor_FET:SUD50P04-08")
+		(at 62.23 49.53 270)
+		(mirror x)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "97d36d55-37ed-468d-99dd-dd6503a339a2")
+		(property "Reference" "Q1"
+			(at 62.23 40.64 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "SUD50P04-08"
+			(at 62.23 43.18 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Package_TO_SOT_SMD:TO-252-2"
+			(at 60.325 44.577 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+					(italic yes)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "https://www.vishay.com/docs/65594/sud50p04-08.pdf"
+			(at 58.42 44.45 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Description" "-50A Id, -40V Vds, TrenchFET P-Channel Power MOSFET, 8.1mOhm Ron, 159nC Qg, -55 to 150 °C, TO-252-2"
+			(at 62.23 49.53 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "9bedd439-ca44-49a5-bfe8-166f2804892c")
+		)
+		(pin "2"
+			(uuid "9e4619d8-b3f2-4291-9a26-6faf395a63e7")
+		)
+		(pin "3"
+			(uuid "1c50f55e-f40e-4329-8f7e-2b4857b0efcc")
+		)
+		(instances
+			(project ""
+				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/54c19fa3-aa0d-4e7d-a7c9-c109aa98901f"
+					(reference "Q1")
 					(unit 1)
 				)
 			)
@@ -4424,7 +4725,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "a30ac7f9-2d1a-401e-978b-f62856f7b590")
-		(property "Reference" "D6"
+		(property "Reference" "D5"
 			(at 175.5775 138.43 0)
 			(effects
 				(font
@@ -4476,7 +4777,7 @@
 		(instances
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/54c19fa3-aa0d-4e7d-a7c9-c109aa98901f"
-					(reference "D6")
+					(reference "D5")
 					(unit 1)
 				)
 			)
@@ -4895,7 +5196,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "e3544d95-7e2e-4057-98d1-165a704a38ab")
-		(property "Reference" "#PWR049"
+		(property "Reference" "#PWR048"
 			(at 41.91 58.42 0)
 			(effects
 				(font
@@ -4945,7 +5246,7 @@
 		(instances
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/54c19fa3-aa0d-4e7d-a7c9-c109aa98901f"
-					(reference "#PWR049")
+					(reference "#PWR048")
 					(unit 1)
 				)
 			)
@@ -4961,7 +5262,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "e386e207-eb7c-47bb-b607-8163b3e7cadc")
-		(property "Reference" "R12"
+		(property "Reference" "R11"
 			(at 53.34 50.7999 0)
 			(effects
 				(font
@@ -5015,7 +5316,7 @@
 		(instances
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/54c19fa3-aa0d-4e7d-a7c9-c109aa98901f"
-					(reference "R12")
+					(reference "R11")
 					(unit 1)
 				)
 			)
@@ -5031,7 +5332,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "e435fc19-0a6f-46e0-bedd-a530117697ab")
-		(property "Reference" "C21"
+		(property "Reference" "C22"
 			(at 156.21 116.8399 0)
 			(effects
 				(font
@@ -5085,7 +5386,7 @@
 		(instances
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/54c19fa3-aa0d-4e7d-a7c9-c109aa98901f"
-					(reference "C21")
+					(reference "C22")
 					(unit 1)
 				)
 			)
@@ -5166,7 +5467,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "eb1b3cab-6fd2-401b-93ec-9cd39c5d3aff")
-		(property "Reference" "R16"
+		(property "Reference" "R15"
 			(at 119.38 144.7799 0)
 			(effects
 				(font
@@ -5220,7 +5521,7 @@
 		(instances
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/54c19fa3-aa0d-4e7d-a7c9-c109aa98901f"
-					(reference "R16")
+					(reference "R15")
 					(unit 1)
 				)
 			)
@@ -5236,7 +5537,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "eb980317-8607-444f-92ec-d1e9debcc3a0")
-		(property "Reference" "R17"
+		(property "Reference" "R16"
 			(at 166.37 139.7 90)
 			(effects
 				(font
@@ -5288,7 +5589,7 @@
 		(instances
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/54c19fa3-aa0d-4e7d-a7c9-c109aa98901f"
-					(reference "R17")
+					(reference "R16")
 					(unit 1)
 				)
 			)
@@ -5304,7 +5605,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "ed1d4b75-f767-4b53-bca4-8ccfccf02544")
-		(property "Reference" "C19"
+		(property "Reference" "C20"
 			(at 71.12 110.49 90)
 			(effects
 				(font
@@ -5356,7 +5657,7 @@
 		(instances
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/54c19fa3-aa0d-4e7d-a7c9-c109aa98901f"
-					(reference "C19")
+					(reference "C20")
 					(unit 1)
 				)
 			)
@@ -5702,7 +6003,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "fe767bc0-9638-4e6a-89a2-ebf87bb98710")
-		(property "Reference" "D5"
+		(property "Reference" "D4"
 			(at 73.66 126.6824 90)
 			(effects
 				(font
@@ -5756,7 +6057,7 @@
 		(instances
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/54c19fa3-aa0d-4e7d-a7c9-c109aa98901f"
-					(reference "D5")
+					(reference "D4")
 					(unit 1)
 				)
 			)
@@ -5772,7 +6073,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "ffdf6437-cde7-4058-9fa0-4b4820354589")
-		(property "Reference" "C26"
+		(property "Reference" "C27"
 			(at 106.68 126.9999 0)
 			(effects
 				(font
@@ -5826,7 +6127,7 @@
 		(instances
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/54c19fa3-aa0d-4e7d-a7c9-c109aa98901f"
-					(reference "C26")
+					(reference "C27")
 					(unit 1)
 				)
 			)

@@ -402,12 +402,12 @@
       "sensors"
     ],
     [
-      "feaf6928-ad3c-4e11-a352-91e828a4db90",
-      "motor1"
+      "271b47c6-c6c6-4fa8-a848-2271fd9bebf4",
+      "hog1"
     ],
     [
-      "685d1afb-f88e-445e-b0ba-3fc4bd9ac6c4",
-      "motor2"
+      "e70dc713-c3b8-49b5-85a5-9763f650e50f",
+      "hog2"
     ]
   ],
   "text_variables": {}

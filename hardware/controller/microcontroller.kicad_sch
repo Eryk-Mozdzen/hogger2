@@ -7542,7 +7542,7 @@
 			)
 		)
 	)
-	(global_label "M1_PWM_VH"
+	(global_label "MOTOR1_PWM_VH"
 		(shape input)
 		(at 109.22 78.74 0)
 		(fields_autoplaced yes)
@@ -7554,7 +7554,7 @@
 		)
 		(uuid "1ff2d8d8-0a72-49e0-8767-9e48b25df7e0")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 123.3932 78.74 0)
+			(at 128.2918 78.74 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7564,7 +7564,7 @@
 			)
 		)
 	)
-	(global_label "M2_BEMF_U"
+	(global_label "MOTOR2_BEMF_U"
 		(shape input)
 		(at 109.22 66.04 0)
 		(fields_autoplaced yes)
@@ -7576,7 +7576,7 @@
 		)
 		(uuid "2118ca66-d12e-4300-9f61-973255fd1e19")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 123.0908 66.04 0)
+			(at 127.9894 66.04 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7586,7 +7586,7 @@
 			)
 		)
 	)
-	(global_label "M1_PWM_VL"
+	(global_label "MOTOR1_PWM_VL"
 		(shape input)
 		(at 109.22 132.08 0)
 		(fields_autoplaced yes)
@@ -7598,7 +7598,7 @@
 		)
 		(uuid "22a33b01-11ff-4514-a948-2abd836a748b")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 123.0908 132.08 0)
+			(at 127.9894 132.08 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7652,7 +7652,7 @@
 			)
 		)
 	)
-	(global_label "M1_BEMF_W"
+	(global_label "MOTOR1_BEMF_W"
 		(shape input)
 		(at 109.22 127 0)
 		(fields_autoplaced yes)
@@ -7664,7 +7664,7 @@
 		)
 		(uuid "4198a05e-dd53-44c8-aeaa-f02b144e6cbf")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 123.2117 127 0)
+			(at 128.1103 127 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7674,7 +7674,7 @@
 			)
 		)
 	)
-	(global_label "M2_PWM_UH"
+	(global_label "MOTOR2_PWM_UH"
 		(shape input)
 		(at 71.12 91.44 180)
 		(fields_autoplaced yes)
@@ -7686,7 +7686,7 @@
 		)
 		(uuid "566a8044-b81d-43fe-9554-fabfeaa06c88")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 56.7049 91.44 0)
+			(at 51.8063 91.44 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7696,7 +7696,7 @@
 			)
 		)
 	)
-	(global_label "M2_PWM_WH"
+	(global_label "MOTOR2_PWM_WH"
 		(shape input)
 		(at 71.12 96.52 180)
 		(fields_autoplaced yes)
@@ -7708,7 +7708,7 @@
 		)
 		(uuid "58e7a6c2-6413-4238-bc97-155f27217bf5")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 56.584 96.52 0)
+			(at 51.6854 96.52 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7718,7 +7718,7 @@
 			)
 		)
 	)
-	(global_label "M2_PWM_VH"
+	(global_label "MOTOR2_PWM_VH"
 		(shape input)
 		(at 71.12 93.98 180)
 		(fields_autoplaced yes)
@@ -7730,7 +7730,7 @@
 		)
 		(uuid "5c89ddbc-ea76-4ce6-8d25-7626500ecac2")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 56.9468 93.98 0)
+			(at 52.0482 93.98 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7806,7 +7806,7 @@
 			)
 		)
 	)
-	(global_label "M1_PWM_WL"
+	(global_label "MOTOR1_PWM_WL"
 		(shape input)
 		(at 109.22 134.62 0)
 		(fields_autoplaced yes)
@@ -7818,7 +7818,7 @@
 		)
 		(uuid "9e056362-1549-4a40-9ffd-2e4b34052045")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 123.4536 134.62 0)
+			(at 128.3522 134.62 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7828,7 +7828,7 @@
 			)
 		)
 	)
-	(global_label "M2_PWM_WL"
+	(global_label "MOTOR2_PWM_WL"
 		(shape input)
 		(at 109.22 101.6 0)
 		(fields_autoplaced yes)
@@ -7840,7 +7840,7 @@
 		)
 		(uuid "a3dceb62-ef42-429e-a1df-a5b2c9d58b2c")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 123.4536 101.6 0)
+			(at 128.3522 101.6 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7850,7 +7850,7 @@
 			)
 		)
 	)
-	(global_label "M2_PWM_UL"
+	(global_label "MOTOR2_PWM_UL"
 		(shape input)
 		(at 109.22 73.66 0)
 		(fields_autoplaced yes)
@@ -7862,7 +7862,7 @@
 		)
 		(uuid "abd37886-4b94-4679-a6ad-ef6f7fc56aff")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 123.3327 73.66 0)
+			(at 128.2313 73.66 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7872,7 +7872,7 @@
 			)
 		)
 	)
-	(global_label "M1_PWM_WH"
+	(global_label "MOTOR1_PWM_WH"
 		(shape input)
 		(at 109.22 81.28 0)
 		(fields_autoplaced yes)
@@ -7884,7 +7884,7 @@
 		)
 		(uuid "af9c5bd9-48fa-46e0-bae6-aecd71641f9f")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 123.756 81.28 0)
+			(at 128.6546 81.28 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7894,7 +7894,7 @@
 			)
 		)
 	)
-	(global_label "SERVO_X2"
+	(global_label "SERVO2_PWM_X"
 		(shape input)
 		(at 109.22 60.96 0)
 		(fields_autoplaced yes)
@@ -7906,7 +7906,7 @@
 		)
 		(uuid "bf09fe27-3c29-462e-9d73-2842dc0972f7")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 121.6394 60.96 0)
+			(at 126.7798 60.96 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7916,7 +7916,7 @@
 			)
 		)
 	)
-	(global_label "M2_BEMF_V"
+	(global_label "MOTOR2_BEMF_V"
 		(shape input)
 		(at 109.22 68.58 0)
 		(fields_autoplaced yes)
@@ -7928,7 +7928,7 @@
 		)
 		(uuid "bf3fe49f-22c3-40e9-a5db-8814934d5fef")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 122.8489 68.58 0)
+			(at 127.7475 68.58 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7938,7 +7938,7 @@
 			)
 		)
 	)
-	(global_label "M2_PWM_VL"
+	(global_label "MOTOR2_PWM_VL"
 		(shape input)
 		(at 109.22 99.06 0)
 		(fields_autoplaced yes)
@@ -7950,7 +7950,7 @@
 		)
 		(uuid "c31fce2b-933a-417a-9790-9c0a3a3959e7")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 123.0908 99.06 0)
+			(at 127.9894 99.06 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7960,7 +7960,7 @@
 			)
 		)
 	)
-	(global_label "M2_BEMF_W"
+	(global_label "MOTOR2_BEMF_W"
 		(shape input)
 		(at 109.22 71.12 0)
 		(fields_autoplaced yes)
@@ -7972,7 +7972,7 @@
 		)
 		(uuid "c38194fe-936a-40fe-9e21-72953b5062b0")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 123.2117 71.12 0)
+			(at 128.1103 71.12 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7982,7 +7982,7 @@
 			)
 		)
 	)
-	(global_label "M1_BEMF_V"
+	(global_label "MOTOR1_BEMF_V"
 		(shape input)
 		(at 71.12 78.74 180)
 		(fields_autoplaced yes)
@@ -7994,7 +7994,7 @@
 		)
 		(uuid "c986996a-7f7c-4697-a54a-ef7402c92895")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 57.4911 78.74 0)
+			(at 52.5925 78.74 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8004,7 +8004,7 @@
 			)
 		)
 	)
-	(global_label "SERVO_Y1"
+	(global_label "SERVO1_PWM_Y"
 		(shape input)
 		(at 109.22 58.42 0)
 		(fields_autoplaced yes)
@@ -8016,7 +8016,7 @@
 		)
 		(uuid "d3084bba-9122-423c-9bd5-5032240637d2")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 121.5185 58.42 0)
+			(at 126.6589 58.42 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8026,7 +8026,7 @@
 			)
 		)
 	)
-	(global_label "SERVO_X1"
+	(global_label "SERVO1_PWM_X"
 		(shape input)
 		(at 109.22 55.88 0)
 		(fields_autoplaced yes)
@@ -8038,7 +8038,7 @@
 		)
 		(uuid "d48f70c5-8126-45e9-8905-d6c90ad65f52")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 121.6394 55.88 0)
+			(at 126.7798 55.88 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8048,7 +8048,7 @@
 			)
 		)
 	)
-	(global_label "SERVO_Y2"
+	(global_label "SERVO2_PWM_Y"
 		(shape input)
 		(at 109.22 63.5 0)
 		(fields_autoplaced yes)
@@ -8060,7 +8060,7 @@
 		)
 		(uuid "edb036f4-1c53-4193-89cd-76eb7c1d27c7")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 121.5185 63.5 0)
+			(at 126.6589 63.5 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8070,7 +8070,7 @@
 			)
 		)
 	)
-	(global_label "M1_PWM_UH"
+	(global_label "MOTOR1_PWM_UH"
 		(shape input)
 		(at 109.22 76.2 0)
 		(fields_autoplaced yes)
@@ -8082,7 +8082,7 @@
 		)
 		(uuid "f096edab-4f38-4ca9-ab34-822960e9cb3a")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 123.6351 76.2 0)
+			(at 128.5337 76.2 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8092,7 +8092,7 @@
 			)
 		)
 	)
-	(global_label "M1_BEMF_U"
+	(global_label "MOTOR1_BEMF_U"
 		(shape input)
 		(at 71.12 76.2 180)
 		(fields_autoplaced yes)
@@ -8104,7 +8104,7 @@
 		)
 		(uuid "f49a1d71-ed41-4a00-ab86-616755cf90b3")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 57.2492 76.2 0)
+			(at 52.3506 76.2 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8114,7 +8114,7 @@
 			)
 		)
 	)
-	(global_label "M1_PWM_UL"
+	(global_label "MOTOR1_PWM_UL"
 		(shape input)
 		(at 109.22 129.54 0)
 		(fields_autoplaced yes)
@@ -8126,7 +8126,7 @@
 		)
 		(uuid "ff6686c1-2a68-4416-b2e4-85ea600ac1fe")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 123.3327 129.54 0)
+			(at 128.2313 129.54 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8212,7 +8212,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "07a09117-7e99-4bfb-b24a-7e224f41062c")
-		(property "Reference" "#PWR044"
+		(property "Reference" "#PWR043"
 			(at 124.46 184.15 0)
 			(effects
 				(font
@@ -8262,7 +8262,7 @@
 		(instances
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/e4f7bb70-a8bb-48a9-92b7-fd3dfb9899ca"
-					(reference "#PWR044")
+					(reference "#PWR043")
 					(unit 1)
 				)
 			)
@@ -8600,7 +8600,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "130930c8-298e-4e90-8962-c5860100bd29")
-		(property "Reference" "D3"
+		(property "Reference" "D2"
 			(at 128.27 174.3074 90)
 			(effects
 				(font
@@ -8654,7 +8654,7 @@
 		(instances
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/e4f7bb70-a8bb-48a9-92b7-fd3dfb9899ca"
-					(reference "D3")
+					(reference "D2")
 					(unit 1)
 				)
 			)
@@ -10116,7 +10116,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "4e3cfbec-276c-4914-a59d-d6ad7ac36297")
-		(property "Reference" "#PWR045"
+		(property "Reference" "#PWR044"
 			(at 137.16 184.15 0)
 			(effects
 				(font
@@ -10166,7 +10166,7 @@
 		(instances
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/e4f7bb70-a8bb-48a9-92b7-fd3dfb9899ca"
-					(reference "#PWR045")
+					(reference "#PWR044")
 					(unit 1)
 				)
 			)
@@ -10319,7 +10319,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "52144c97-bbcd-452b-a57b-10f1a622ac46")
-		(property "Reference" "#PWR047"
+		(property "Reference" "#PWR046"
 			(at 53.34 185.42 0)
 			(effects
 				(font
@@ -10369,7 +10369,7 @@
 		(instances
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/e4f7bb70-a8bb-48a9-92b7-fd3dfb9899ca"
-					(reference "#PWR047")
+					(reference "#PWR046")
 					(unit 1)
 				)
 			)
@@ -11140,7 +11140,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "6e8960fa-6f3b-4370-ae06-1772671379d6")
-		(property "Reference" "R11"
+		(property "Reference" "R10"
 			(at 139.7 165.0999 0)
 			(effects
 				(font
@@ -11194,7 +11194,7 @@
 		(instances
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/e4f7bb70-a8bb-48a9-92b7-fd3dfb9899ca"
-					(reference "R11")
+					(reference "R10")
 					(unit 1)
 				)
 			)
@@ -11210,7 +11210,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "6f18856a-ed04-4ea0-b4b1-bdd87db9b96e")
-		(property "Reference" "D4"
+		(property "Reference" "D3"
 			(at 140.97 174.3074 90)
 			(effects
 				(font
@@ -11264,7 +11264,7 @@
 		(instances
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/e4f7bb70-a8bb-48a9-92b7-fd3dfb9899ca"
-					(reference "D4")
+					(reference "D3")
 					(unit 1)
 				)
 			)
@@ -11938,7 +11938,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "8b4d3242-81a4-4c32-8984-7b1138241c59")
-		(property "Reference" "R10"
+		(property "Reference" "R9"
 			(at 127 165.0999 0)
 			(effects
 				(font
@@ -11992,7 +11992,7 @@
 		(instances
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/e4f7bb70-a8bb-48a9-92b7-fd3dfb9899ca"
-					(reference "R10")
+					(reference "R9")
 					(unit 1)
 				)
 			)
@@ -13426,7 +13426,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "d9291974-d97e-4c58-8cb3-53b9ab308dce")
-		(property "Reference" "#PWR046"
+		(property "Reference" "#PWR045"
 			(at 33.02 185.42 0)
 			(effects
 				(font
@@ -13476,7 +13476,7 @@
 		(instances
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/e4f7bb70-a8bb-48a9-92b7-fd3dfb9899ca"
-					(reference "#PWR046")
+					(reference "#PWR045")
 					(unit 1)
 				)
 			)
