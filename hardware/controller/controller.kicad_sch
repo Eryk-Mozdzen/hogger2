@@ -6,7 +6,7 @@
 	(paper "A4")
 	(title_block
 		(title "Hogger2 Controller")
-		(date "2024-10-28")
+		(date "2024-11-01")
 		(rev "V1.0")
 		(comment 4 "Author: Eryk Możdżeń")
 	)
@@ -685,6 +685,44 @@
 		)
 	)
 	(sheet
+		(at 195.58 81.915)
+		(size 38.1 28.575)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "685d1afb-f88e-445e-b0ba-3fc4bd9ac6c4")
+		(property "Sheetname" "motor2"
+			(at 195.58 81.2034 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "motor2.kicad_sch"
+			(at 195.58 111.0746 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "controller"
+				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f"
+					(page "6")
+				)
+			)
+		)
+	)
+	(sheet
 		(at 151.13 50.8)
 		(size 38.1 59.69)
 		(fields_autoplaced yes)
@@ -762,7 +800,7 @@
 	)
 	(sheet
 		(at 195.58 50.8)
-		(size 38.1 59.69)
+		(size 38.1 26.035)
 		(fields_autoplaced yes)
 		(stroke
 			(width 0.1524)
@@ -782,7 +820,7 @@
 			)
 		)
 		(property "Sheetfile" "motor1.kicad_sch"
-			(at 195.58 111.0746 0)
+			(at 195.58 77.4196 0)
 			(effects
 				(font
 					(size 1.27 1.27)

@@ -1,8 +1,8 @@
 
 .metadata
-firmware/Debug
-firmware/Release
-firmware/.settings
+Debug
+Release
+.settings
 
 build
 .vscode

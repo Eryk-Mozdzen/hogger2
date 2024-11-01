@@ -404,6 +404,10 @@
     [
       "feaf6928-ad3c-4e11-a352-91e828a4db90",
       "motor1"
+    ],
+    [
+      "685d1afb-f88e-445e-b0ba-3fc4bd9ac6c4",
+      "motor2"
     ]
   ],
   "text_variables": {}
