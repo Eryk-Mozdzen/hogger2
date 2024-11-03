@@ -6,7 +6,7 @@
 	(paper "A4")
 	(title_block
 		(title "Hogger2 Controller")
-		(date "2024-11-01")
+		(date "2024-11-03")
 		(rev "V1.0")
 		(comment 4 "Author: Eryk Możdżeń")
 	)
@@ -9094,7 +9094,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Connector_IDC:IDC-Header_2x05_P2.54mm_Horizontal"
 			(at 41.91 171.45 0)
 			(effects
 				(font
@@ -10820,7 +10820,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
 			(at 233.68 77.978 90)
 			(effects
 				(font
@@ -11886,7 +11886,7 @@
 				(hide yes)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Button_Switch_THT:SW_Tactile_SPST_Angled_PTS645Vx58-2LFS"
 			(at 27.94 35.56 0)
 			(effects
 				(font
@@ -12226,7 +12226,7 @@
 				(hide yes)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Button_Switch_THT:SW_Tactile_SPST_Angled_PTS645Vx58-2LFS"
 			(at 168.91 95.25 0)
 			(effects
 				(font
@@ -12726,7 +12726,7 @@
 				(hide yes)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Connector_USB:USB_C_Receptacle_GCT_USB4085"
 			(at 260.35 86.36 0)
 			(effects
 				(font
@@ -12832,7 +12832,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
 			(at 233.68 76.962 90)
 			(effects
 				(font
@@ -13168,7 +13168,7 @@
 				(hide yes)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Button_Switch_THT:SW_Tactile_SPST_Angled_PTS645Vx58-2LFS"
 			(at 168.91 34.29 0)
 			(effects
 				(font
@@ -13845,7 +13845,7 @@
 				)
 			)
 		)
-		(property "Footprint" "goose:oscillator_5032_2"
+		(property "Footprint" "Crystal:Crystal_SMD_5032-2Pin_5.0x3.2mm"
 			(at 33.02 71.12 0)
 			(effects
 				(font

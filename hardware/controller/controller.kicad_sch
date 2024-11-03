@@ -6,7 +6,7 @@
 	(paper "A4")
 	(title_block
 		(title "Hogger2 Controller")
-		(date "2024-11-01")
+		(date "2024-11-03")
 		(rev "V1.0")
 		(comment 4 "Author: Eryk Możdżeń")
 	)
@@ -337,7 +337,7 @@
 				(hide yes)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "MountingHole:MountingHole_3.2mm_M3_Pad_Via"
 			(at 151.13 163.83 0)
 			(effects
 				(font
@@ -405,7 +405,7 @@
 				(hide yes)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "MountingHole:MountingHole_3.2mm_M3_Pad_Via"
 			(at 151.13 179.07 0)
 			(effects
 				(font
@@ -473,7 +473,7 @@
 				(hide yes)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "MountingHole:MountingHole_3.2mm_M3_Pad_Via"
 			(at 151.13 168.91 0)
 			(effects
 				(font
@@ -541,7 +541,7 @@
 				(hide yes)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "MountingHole:MountingHole_3.2mm_M3_Pad_Via"
 			(at 151.13 173.99 0)
 			(effects
 				(font
