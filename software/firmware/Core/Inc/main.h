@@ -87,6 +87,8 @@ void Error_Handler(void);
 #define M2_BEMF_V_GPIO_Port GPIOA
 #define M2_BMEF_W_Pin GPIO_PIN_6
 #define M2_BMEF_W_GPIO_Port GPIOA
+#define VBUS_SENSE_Pin GPIO_PIN_4
+#define VBUS_SENSE_GPIO_Port GPIOC
 #define FLOW_CS_Pin GPIO_PIN_2
 #define FLOW_CS_GPIO_Port GPIOB
 #define FLOW_SCK_Pin GPIO_PIN_10

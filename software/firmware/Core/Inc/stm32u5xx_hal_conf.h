@@ -33,7 +33,7 @@ extern "C" {
   */
 #define HAL_MODULE_ENABLED
 
-/*#define HAL_ADC_MODULE_ENABLED */
+#define HAL_ADC_MODULE_ENABLED
 /*#define HAL_COMP_MODULE_ENABLED */
 /*#define HAL_CORDIC_MODULE_ENABLED */
 /*#define HAL_CRC_MODULE_ENABLED */
@@ -65,7 +65,7 @@ extern "C" {
 /*#define HAL_OPAMP_MODULE_ENABLED */
 /*#define HAL_OSPI_MODULE_ENABLED */
 /*#define HAL_OTFDEC_MODULE_ENABLED */
-/*#define HAL_PCD_MODULE_ENABLED */
+#define HAL_PCD_MODULE_ENABLED
 /*#define HAL_PKA_MODULE_ENABLED */
 /*#define HAL_PSSI_MODULE_ENABLED */
 /*#define HAL_RAMCFG_MODULE_ENABLED */
