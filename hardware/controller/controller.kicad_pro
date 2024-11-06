@@ -427,7 +427,9 @@
     }
   },
   "libraries": {
-    "pinned_footprint_libs": [],
+    "pinned_footprint_libs": [
+      "hogger2"
+    ],
     "pinned_symbol_libs": [
       "hogger2"
     ]

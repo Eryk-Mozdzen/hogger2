@@ -4982,7 +4982,7 @@
 	)
 	(wire
 		(pts
-			(xy 171.45 46.99) (xy 182.88 46.99)
+			(xy 171.45 46.99) (xy 180.34 46.99)
 		)
 		(stroke
 			(width 0)
@@ -5712,7 +5712,7 @@
 	)
 	(wire
 		(pts
-			(xy 170.18 80.01) (xy 170.18 78.74)
+			(xy 171.45 80.01) (xy 171.45 78.74)
 		)
 		(stroke
 			(width 0)
@@ -5952,7 +5952,7 @@
 	)
 	(wire
 		(pts
-			(xy 182.88 46.99) (xy 182.88 69.85)
+			(xy 180.34 46.99) (xy 180.34 69.85)
 		)
 		(stroke
 			(width 0)
@@ -6312,7 +6312,7 @@
 	)
 	(wire
 		(pts
-			(xy 170.18 80.01) (xy 194.31 80.01)
+			(xy 171.45 80.01) (xy 194.31 80.01)
 		)
 		(stroke
 			(width 0)
@@ -6422,7 +6422,7 @@
 	)
 	(wire
 		(pts
-			(xy 182.88 69.85) (xy 194.31 69.85)
+			(xy 180.34 69.85) (xy 194.31 69.85)
 		)
 		(stroke
 			(width 0)
@@ -9512,7 +9512,7 @@
 	)
 	(symbol
 		(lib_id "power:+3.3V")
-		(at 170.18 71.12 0)
+		(at 171.45 71.12 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -9521,7 +9521,7 @@
 		(fields_autoplaced yes)
 		(uuid "1fc11dd5-ad74-4807-a76e-3037dfbb5702")
 		(property "Reference" "#PWR026"
-			(at 170.18 74.93 0)
+			(at 171.45 74.93 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9530,7 +9530,7 @@
 			)
 		)
 		(property "Value" "+3.3V"
-			(at 170.18 66.04 0)
+			(at 171.45 66.04 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9538,7 +9538,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 170.18 71.12 0)
+			(at 171.45 71.12 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9547,7 +9547,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 170.18 71.12 0)
+			(at 171.45 71.12 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9556,7 +9556,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"+3.3V\""
-			(at 170.18 71.12 0)
+			(at 171.45 71.12 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10682,7 +10682,7 @@
 	)
 	(symbol
 		(lib_id "Device:R")
-		(at 170.18 74.93 0)
+		(at 171.45 74.93 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -10690,7 +10690,7 @@
 		(dnp no)
 		(uuid "4cbc8a60-8fec-4668-ab5a-c300c79840b4")
 		(property "Reference" "R6"
-			(at 172.72 73.6599 0)
+			(at 173.99 73.6599 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10699,7 +10699,7 @@
 			)
 		)
 		(property "Value" "10k"
-			(at 172.72 76.1999 0)
+			(at 173.99 76.1999 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10708,7 +10708,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
-			(at 168.402 74.93 90)
+			(at 169.672 74.93 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10717,7 +10717,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 170.18 74.93 0)
+			(at 171.45 74.93 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10726,7 +10726,7 @@
 			)
 		)
 		(property "Description" "Resistor"
-			(at 170.18 74.93 0)
+			(at 171.45 74.93 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12587,7 +12587,7 @@
 				(hide yes)
 			)
 		)
-		(property "Footprint" "Button_Switch_SMD:SW_SPST_CK_RS282G05A3"
+		(property "Footprint" "hogger2:spst_6x3mm"
 			(at 30.48 34.29 0)
 			(effects
 				(font
@@ -13145,7 +13145,7 @@
 				(hide yes)
 			)
 		)
-		(property "Footprint" "Button_Switch_SMD:SW_SPST_CK_RS282G05A3"
+		(property "Footprint" "hogger2:spst_6x3mm"
 			(at 165.1 96.52 0)
 			(effects
 				(font
@@ -13487,7 +13487,7 @@
 				(hide yes)
 			)
 		)
-		(property "Footprint" "Button_Switch_SMD:SW_SPST_CK_RS282G05A3"
+		(property "Footprint" "hogger2:spst_6x3mm"
 			(at 27.94 90.17 0)
 			(effects
 				(font
@@ -13688,7 +13688,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "hogger2:nRF24L01p_Mini_SMD"
 			(at 214.63 140.97 0)
 			(effects
 				(font
@@ -14223,7 +14223,7 @@
 				(hide yes)
 			)
 		)
-		(property "Footprint" "Button_Switch_SMD:SW_SPST_CK_RS282G05A3"
+		(property "Footprint" "hogger2:spst_6x3mm"
 			(at 165.1 41.91 0)
 			(effects
 				(font
