@@ -13,3 +13,7 @@ build
 *.bak
 *auto_saved_files*
 fp-info-cache
+
+controller.csv
+gerbers
+gerbers.zip
