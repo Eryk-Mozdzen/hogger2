@@ -22,6 +22,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include <stdbool.h>
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -60,8 +62,9 @@ static void MX_TIM3_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-static uint32_t step = 0;
-static uint32_t pulse = 2000;
+static volatile bool running = false;
+static volatile uint32_t step = 0;
+static volatile uint32_t pulse = 2000;
 
 void config_pwm(const uint32_t channel) {
 	const TIM_OC_InitTypeDef config = {
@@ -138,7 +141,9 @@ void perform_step() {
 
 void HAL_TIMEx_CommutCallback(TIM_HandleTypeDef *htim) {
 	if(htim==&htim1) {
-		perform_step();
+		if(running) {
+			perform_step();
+		}
 	}
 }
 
@@ -185,18 +190,9 @@ int main(void)
   HAL_TIM_Base_Start(&htim3);
   HAL_TIMEx_ConfigCommutEvent_IT(&htim1, TIM_TS_ITR2, TIM_COMMUTATION_TRGI);
 
-  /*HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
-  HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);
-  HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_2);
-  HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_3);
-
-  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 4000);
-  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 4000);
-  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 4000);*/
-
   uint32_t last_blink = 0;
+  uint32_t last_inc = 0;
+  uint32_t arr = 10000;
 
   while(1) {
 	  const uint32_t time = HAL_GetTick();
@@ -204,6 +200,17 @@ int main(void)
 	  if((time - last_blink)>=500) {
 		  last_blink = time;
 		  HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+	  }
+
+	  if(!HAL_GPIO_ReadPin(BUTTON_GPIO_Port, BUTTON_Pin)) {
+		  running = true;
+		  last_inc = time;
+	  }
+
+	  if((time - last_inc)>=1 && running && arr>1000) {
+		  last_inc = time;
+		  arr -=2;
+		  __HAL_TIM_SET_AUTORELOAD(&htim3, arr);
 	  }
 
     /* USER CODE END WHILE */
@@ -406,11 +413,18 @@ static void MX_GPIO_Init(void)
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOH_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : BUTTON_Pin */
+  GPIO_InitStruct.Pin = BUTTON_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(BUTTON_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : LED_Pin */
   GPIO_InitStruct.Pin = LED_Pin;
