@@ -24,6 +24,8 @@
 
 #include <stdbool.h>
 
+#include "motor.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -62,89 +64,13 @@ static void MX_TIM3_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-static volatile bool running = false;
-static volatile uint32_t step = 0;
-static volatile uint32_t pulse = 2000;
-
-void config_pwm(const uint32_t channel) {
-	const TIM_OC_InitTypeDef config = {
-		.OCMode = TIM_OCMODE_PWM1,
-		.Pulse = pulse,
-		.OCPolarity = TIM_OCPOLARITY_HIGH,
-		.OCNPolarity = TIM_OCNPOLARITY_HIGH,
-		.OCFastMode = TIM_OCFAST_DISABLE,
-		.OCIdleState = TIM_OCIDLESTATE_RESET,
-		.OCNIdleState = TIM_OCNIDLESTATE_RESET,
-	};
-	HAL_TIM_PWM_ConfigChannel(&htim1, &config, channel);
-
-	HAL_TIM_OC_Stop(&htim1, channel);
-	HAL_TIMEx_OCN_Stop(&htim1, channel);
-	HAL_TIM_PWM_Start(&htim1, channel);
-	HAL_TIMEx_PWMN_Start(&htim1, channel);
-}
-
-void config_oc(const uint32_t channel, const uint32_t mode) {
-	const TIM_OC_InitTypeDef config = {
-		.OCMode = mode,
-		.Pulse = pulse,
-		.OCPolarity = TIM_OCPOLARITY_HIGH,
-		.OCNPolarity = TIM_OCNPOLARITY_HIGH,
-		.OCFastMode = TIM_OCFAST_DISABLE,
-		.OCIdleState = TIM_OCIDLESTATE_RESET,
-		.OCNIdleState = TIM_OCNIDLESTATE_RESET,
-	};
-	HAL_TIM_OC_ConfigChannel(&htim1, &config, channel);
-
-	HAL_TIM_OC_Stop(&htim1, channel);
-	HAL_TIMEx_PWMN_Stop(&htim1, channel);
-	HAL_TIMEx_OCN_Start(&htim1, channel);
-}
-
-void perform_step() {
-	switch(step) {
-		case 0: {
-			config_pwm(TIM_CHANNEL_1);
-			config_oc(TIM_CHANNEL_2, TIM_OCMODE_FORCED_ACTIVE);
-			config_oc(TIM_CHANNEL_3, TIM_OCMODE_FORCED_INACTIVE);
-		} break;
-		case 1: {
-			config_pwm(TIM_CHANNEL_1);
-			config_oc(TIM_CHANNEL_2, TIM_OCMODE_FORCED_INACTIVE);
-			config_oc(TIM_CHANNEL_3, TIM_OCMODE_FORCED_ACTIVE);
-		} break;
-		case 2: {
-			config_oc(TIM_CHANNEL_1, TIM_OCMODE_FORCED_INACTIVE);
-			config_pwm(TIM_CHANNEL_2);
-			config_oc(TIM_CHANNEL_3, TIM_OCMODE_FORCED_ACTIVE);
-		} break;
-		case 3: {
-			config_oc(TIM_CHANNEL_1, TIM_OCMODE_FORCED_ACTIVE);
-			config_pwm(TIM_CHANNEL_2);
-			config_oc(TIM_CHANNEL_3, TIM_OCMODE_FORCED_INACTIVE);
-		} break;
-		case 4: {
-			config_oc(TIM_CHANNEL_1, TIM_OCMODE_FORCED_ACTIVE);
-			config_oc(TIM_CHANNEL_2, TIM_OCMODE_FORCED_INACTIVE);
-			config_pwm(TIM_CHANNEL_3);
-		} break;
-		case 5: {
-			config_oc(TIM_CHANNEL_1, TIM_OCMODE_FORCED_INACTIVE);
-			config_oc(TIM_CHANNEL_2, TIM_OCMODE_FORCED_ACTIVE);
-			config_pwm(TIM_CHANNEL_3);
-		} break;
-	}
-
-	step++;
-	step %=6;
-}
+static motor_t motor = {
+	.control_timer = &htim1,
+	.startup_timer = &htim3,
+};
 
 void HAL_TIMEx_CommutCallback(TIM_HandleTypeDef *htim) {
-	if(htim==&htim1) {
-		if(running) {
-			perform_step();
-		}
-	}
+	motor_commut_callback(&motor, htim);
 }
 
 /* USER CODE END 0 */
@@ -187,12 +113,9 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-  HAL_TIM_Base_Start(&htim3);
-  HAL_TIMEx_ConfigCommutEvent_IT(&htim1, TIM_TS_ITR2, TIM_COMMUTATION_TRGI);
+  motor_init(&motor);
 
   uint32_t last_blink = 0;
-  uint32_t last_inc = 0;
-  uint32_t arr = 10000;
 
   while(1) {
 	  const uint32_t time = HAL_GetTick();
@@ -203,15 +126,10 @@ int main(void)
 	  }
 
 	  if(!HAL_GPIO_ReadPin(BUTTON_GPIO_Port, BUTTON_Pin)) {
-		  running = true;
-		  last_inc = time;
+		  motor_set_vel(&motor, 1000);
 	  }
 
-	  if((time - last_inc)>=1 && running && arr>1000) {
-		  last_inc = time;
-		  arr -=2;
-		  __HAL_TIM_SET_AUTORELOAD(&htim3, arr);
-	  }
+	  motor_tick(&motor);
 
     /* USER CODE END WHILE */
 
