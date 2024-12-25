@@ -15,9 +15,22 @@ typedef enum {
     MOTOR_STATE_PANIC,
 } motor_state_t;
 
+typedef enum {
+    MOTOR_PHASE_U,
+    MOTOR_PHASE_V,
+    MOTOR_PHASE_W,
+} motor_phase_t;
+
+typedef struct {
+    uint16_t pin;
+    GPIO_TypeDef *port;
+    IRQn_Type irq;
+} motor_bemf_t;
+
 typedef struct {
     TIM_HandleTypeDef *control_timer;
-    TIM_HandleTypeDef *startup_timer;
+    TIM_HandleTypeDef *timebase_timer;
+    motor_bemf_t bemf[3];
     motor_state_t state;
     uint32_t state_start_time;
     uint32_t tick_last_time;
@@ -32,6 +45,7 @@ void motor_init(motor_t *motor);
 void motor_tick(motor_t *motor);
 void motor_set_vel(motor_t *motor, const float vel);
 
-void motor_commut_callback(motor_t *motor, TIM_HandleTypeDef *htim);
+void motor_commutation_callback(motor_t *motor, const TIM_HandleTypeDef *htim);
+void motor_interrupt_callback(motor_t *motor, const uint16_t pin);
 
 #endif

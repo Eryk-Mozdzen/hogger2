@@ -59,8 +59,29 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define MOTOR1_BEMF_U_Pin GPIO_PIN_0
+#define MOTOR1_BEMF_U_GPIO_Port GPIOC
+#define MOTOR1_BEMF_U_EXTI_IRQn EXTI0_IRQn
+#define MOTOR1_BEMF_V_Pin GPIO_PIN_1
+#define MOTOR1_BEMF_V_GPIO_Port GPIOC
+#define MOTOR1_BEMF_V_EXTI_IRQn EXTI1_IRQn
 #define BUTTON_Pin GPIO_PIN_2
 #define BUTTON_GPIO_Port GPIOC
+#define MOTOR1_BEMF_W_Pin GPIO_PIN_2
+#define MOTOR1_BEMF_W_GPIO_Port GPIOB
+#define MOTOR1_BEMF_W_EXTI_IRQn EXTI2_IRQn
+#define MOTOR1_PWM_UL_Pin GPIO_PIN_13
+#define MOTOR1_PWM_UL_GPIO_Port GPIOB
+#define MOTOR1_PWM_VL_Pin GPIO_PIN_14
+#define MOTOR1_PWM_VL_GPIO_Port GPIOB
+#define MOTOR1_PWM_WL_Pin GPIO_PIN_15
+#define MOTOR1_PWM_WL_GPIO_Port GPIOB
+#define MOTOR1_PWM_UH_Pin GPIO_PIN_8
+#define MOTOR1_PWM_UH_GPIO_Port GPIOA
+#define MOTOR1_PWM_VH_Pin GPIO_PIN_9
+#define MOTOR1_PWM_VH_GPIO_Port GPIOA
+#define MOTOR1_PWM_WH_Pin GPIO_PIN_10
+#define MOTOR1_PWM_WH_GPIO_Port GPIOA
 #define LED_Pin GPIO_PIN_5
 #define LED_GPIO_Port GPIOB
 
