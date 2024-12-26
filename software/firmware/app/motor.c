@@ -7,19 +7,20 @@
 #define MOTOR_POLE_PAIRS		7
 #define PI						3.141592653589f
 
-#define IDLE_THRESHOLD			200.f	// [rad/s]
+#define IDLE_THRESHOLD			100.f	// [rad/s]
 
 #define ALIGN_TIME              100     // [ms]
 #define ALIGN_PULSE             0.3f    // []
 
 #define OPEN_LOOP_PULSE         0.2f    // []
-#define OPEN_LOOP_VEL_THRESHOLD 300.f   // [rad/s]
+#define OPEN_LOOP_VEL_THRESHOLD 60.f    // [rad/s]
 #define OPEN_LOOP_TIME          1000    // [ms]
-#define OPEN_LOOP_COMMUT_PERIOD 4		// [ms]
+#define OPEN_LOOP_COMMUT_PERIOD 2		// [ms]
 #define OPEN_LOOP_ZC_PERIOD		100	    // [ms]
 
-#define CLOSED_LOOP_VEL_MIN     200.f   // [rad/s]
-#define CLOSED_LOOP_KP          1.f
+#define CLOSED_LOOP_PULSE       0.2f    // []
+#define CLOSED_LOOP_VEL_MIN     40.f    // [rad/s]
+#define CLOSED_LOOP_KP          0.1f
 #define CLOSED_LOOP_KI          0.f
 #define CLOSED_LOOP_KD          0.f
 
@@ -70,6 +71,9 @@ static void config_oc(const motor_t *motor, const uint32_t channel, const uint32
 }
 
 static void shutdown(const motor_t *motor) {
+	HAL_TIM_Base_Stop(motor->timebase_timer);
+	HAL_TIM_Base_Stop_IT(motor->timebase_timer);
+
 	HAL_NVIC_DisableIRQ(motor->bemf[MOTOR_PHASE_U].irq);
 	HAL_NVIC_DisableIRQ(motor->bemf[MOTOR_PHASE_V].irq);
 	HAL_NVIC_DisableIRQ(motor->bemf[MOTOR_PHASE_W].irq);
@@ -96,8 +100,6 @@ static void state_change(motor_t *motor, const motor_state_t new) {
 
 	motor->state = new;
 	motor->state_start_time = time;
-	motor->tick_last_time = 0;
-	motor->zc_last_time = 0;
 }
 
 static bool software_timer(uint32_t *prev, const uint32_t time, const uint32_t period) {
@@ -110,7 +112,7 @@ static bool software_timer(uint32_t *prev, const uint32_t time, const uint32_t p
 }
 
 static float pid_calculate(motor_pid_t *pid, const float setpoint, const float process) {
-	const float error = process - setpoint;
+	const float error = setpoint - process;
 
 	return CLOSED_LOOP_KP*error;// + CLOSED_LOOP_KI*pid->error_integral + CLOSED_LOOP_KD*error_derivative;
 }
@@ -126,7 +128,6 @@ void motor_init(motor_t *motor) {
 	shutdown(motor);
 
 	HAL_TIMEx_ConfigCommutEvent_IT(motor->control_timer, TIM_TS_NONE, TIM_COMMUTATION_SOFTWARE);
-	HAL_TIM_Base_Start_IT(motor->timebase_timer);
 }
 
 void motor_tick(motor_t *motor) {
@@ -156,36 +157,46 @@ void motor_tick(motor_t *motor) {
 				state_change(motor, MOTOR_STATE_STARTUP_OPEN_LOOP);
 
 				motor->zc_count = 0;
+				motor->zc_last_time = 0;
+				motor->tick_last_time = 0;
 			}
         } break;
         case MOTOR_STATE_STARTUP_OPEN_LOOP: {
+			if(software_timer(&motor->zc_last_time, time, OPEN_LOOP_ZC_PERIOD)) {
+				const float vel = 2.f*PI*motor->zc_count/(6*MOTOR_POLE_PAIRS*OPEN_LOOP_ZC_PERIOD*0.001f);
+				motor->vel = 0.75f*motor->vel + 0.25f*vel;
+				motor->zc_count = 0;
+			}
+
 			if(software_timer(&motor->tick_last_time, time, OPEN_LOOP_COMMUT_PERIOD)) {
+				if(motor->vel>=OPEN_LOOP_VEL_THRESHOLD) {
+					state_change(motor, MOTOR_STATE_RUNNING);
+				}
+
 				motor->step++;
 				motor->step %=6;
 				motor->pulse = OPEN_LOOP_PULSE;
 				HAL_TIM_GenerateEvent(motor->control_timer, TIM_EVENTSOURCE_COM);
 			}
 
-			if(software_timer(&motor->zc_last_time, time, OPEN_LOOP_ZC_PERIOD)) {
-				motor->vel = 2.f*PI*motor->zc_count/(6*MOTOR_POLE_PAIRS*OPEN_LOOP_ZC_PERIOD*0.001f);
-				motor->zc_count = 0;
-			}
-
 			if(time>=OPEN_LOOP_TIME) {
 				state_change(motor, MOTOR_STATE_PANIC);
 			}
-
-			if(motor->vel>=OPEN_LOOP_VEL_THRESHOLD) {
-				state_change(motor, MOTOR_STATE_RUNNING);
-			}
         } break;
         case MOTOR_STATE_RUNNING: {
+			if(software_timer(&motor->zc_last_time, time, OPEN_LOOP_ZC_PERIOD)) {
+				const float vel = 2.f*PI*motor->zc_count/(6*MOTOR_POLE_PAIRS*OPEN_LOOP_ZC_PERIOD*0.001f);
+				motor->vel = 0.75f*motor->vel + 0.25f*vel;
+				motor->zc_count = 0;
+			}
+
 			if(motor->vel<CLOSED_LOOP_VEL_MIN) {
 				state_change(motor, MOTOR_STATE_PANIC);
 			}
         } break;
 		case MOTOR_STATE_PANIC: {
 			motor->pulse = 0;
+			motor->vel = 0;
 			motor->vel_setpoint = 0;
 			shutdown(motor);
 
@@ -272,8 +283,11 @@ void motor_commutation_callback(motor_t *motor, const TIM_HandleTypeDef *htim) {
 		} break;
 	}
 
+	HAL_TIM_Base_Stop(motor->timebase_timer);
+	HAL_TIM_Base_Stop_IT(motor->timebase_timer);
 	__HAL_TIM_SET_COUNTER(motor->timebase_timer, 0);
 	__HAL_TIM_SET_AUTORELOAD(motor->timebase_timer, 65535);
+	HAL_TIM_Base_Start(motor->timebase_timer);
 }
 
 void motor_autoreload_callback(motor_t *motor, const TIM_HandleTypeDef *htim) {
@@ -284,26 +298,35 @@ void motor_autoreload_callback(motor_t *motor, const TIM_HandleTypeDef *htim) {
 	if(motor->state==MOTOR_STATE_RUNNING) {
 		motor->step++;
 		motor->step %=6;
-		motor->pulse = OPEN_LOOP_PULSE;
+		motor->pulse = CLOSED_LOOP_PULSE;
 		HAL_TIM_GenerateEvent(motor->control_timer, TIM_EVENTSOURCE_COM);
 	}
 }
 
 void motor_interrupt_callback(motor_t *motor, const uint16_t pin) {
-	if((pin!=motor->bemf[MOTOR_PHASE_U].pin) && (pin!=motor->bemf[MOTOR_PHASE_V].pin) && (pin!=motor->bemf[MOTOR_PHASE_W].pin)) {
+	if(!((pin==motor->bemf[MOTOR_PHASE_W].pin) && (motor->step==0 || motor->step==3))
+		&& !((pin==motor->bemf[MOTOR_PHASE_V].pin) && (motor->step==1 || motor->step==4))
+		&& !((pin==motor->bemf[MOTOR_PHASE_U].pin) && (motor->step==2 || motor->step==5))) {
 		return;
 	}
 
-	motor->zc_count++;
+	//if(__HAL_TIM_GET_COUNTER(motor->timebase_timer) < 1) {
+	//	return;
+	//}
 
 	if(motor->state==MOTOR_STATE_RUNNING) {
 		const uint32_t counter = __HAL_TIM_GET_COUNTER(motor->timebase_timer);
 
-		const float process = counter*0.0001f;
-		const float setpoint = PI/(motor->vel_setpoint*6*MOTOR_POLE_PAIRS);
+		const float process = counter;
+		const float setpoint = 100000*PI/(motor->vel_setpoint*6*MOTOR_POLE_PAIRS);
 		const float value = pid_calculate(&motor->pid, setpoint, process);
 
+		HAL_TIM_Base_Stop(motor->timebase_timer);
+		HAL_TIM_Base_Stop_IT(motor->timebase_timer);
 		__HAL_TIM_SET_COUNTER(motor->timebase_timer, 0);
-		__HAL_TIM_SET_AUTORELOAD(motor->timebase_timer, counter + value*10000);
+		__HAL_TIM_SET_AUTORELOAD(motor->timebase_timer, (uint32_t)(counter + value));
+		HAL_TIM_Base_Start_IT(motor->timebase_timer);
 	}
+
+	motor->zc_count++;
 }

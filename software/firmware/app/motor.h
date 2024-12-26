@@ -22,7 +22,6 @@ typedef enum {
 
 typedef struct {
     uint16_t pin;
-    GPIO_TypeDef *port;
     IRQn_Type irq;
 } motor_bemf_t;
 
@@ -41,9 +40,9 @@ typedef struct {
     uint32_t state_start_time;
     uint32_t tick_last_time;
     uint32_t zc_last_time;
-    uint32_t zc_count;
-    uint8_t step;
-    float pulse;
+    volatile uint32_t zc_count;
+    volatile uint8_t step;
+    volatile float pulse;
     float vel;
     float vel_setpoint;
 } motor_t;

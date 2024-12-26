@@ -68,13 +68,10 @@ static motor_t motor = {
 	.control_timer = &htim1,
 	.timebase_timer = &htim6,
 	.bemf[MOTOR_PHASE_U].pin = MOTOR1_BEMF_U_Pin,
-	.bemf[MOTOR_PHASE_U].port = MOTOR1_BEMF_U_GPIO_Port,
 	.bemf[MOTOR_PHASE_U].irq = MOTOR1_BEMF_U_EXTI_IRQn,
 	.bemf[MOTOR_PHASE_V].pin = MOTOR1_BEMF_V_Pin,
-	.bemf[MOTOR_PHASE_V].port = MOTOR1_BEMF_V_GPIO_Port,
 	.bemf[MOTOR_PHASE_V].irq = MOTOR1_BEMF_V_EXTI_IRQn,
 	.bemf[MOTOR_PHASE_W].pin = MOTOR1_BEMF_W_Pin,
-	.bemf[MOTOR_PHASE_W].port = MOTOR1_BEMF_W_GPIO_Port,
 	.bemf[MOTOR_PHASE_W].irq = MOTOR1_BEMF_W_EXTI_IRQn,
 };
 
@@ -147,7 +144,7 @@ int main(void)
 	  }
 
 	  if(!HAL_GPIO_ReadPin(BUTTON_GPIO_Port, BUTTON_Pin)) {
-		  motor_set_vel(&motor, 1000);
+		  motor_set_vel(&motor, 200);
 	  }
 
 	  motor_tick(&motor);
@@ -309,7 +306,7 @@ static void MX_TIM6_Init(void)
 
   /* USER CODE END TIM6_Init 1 */
   htim6.Instance = TIM6;
-  htim6.Init.Prescaler = 16000-1;
+  htim6.Init.Prescaler = 1600-1;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim6.Init.Period = 65535;
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
