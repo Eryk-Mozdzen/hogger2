@@ -2,7 +2,6 @@
 #define MOTOR_H
 
 #include <stdint.h>
-#include <stdbool.h>
 
 #include "stm32u5xx_hal.h"
 
@@ -28,15 +27,23 @@ typedef struct {
 } motor_bemf_t;
 
 typedef struct {
+    float error_integral;
+    float error_prev;
+    uint32_t time_prev;
+} motor_pid_t;
+
+typedef struct {
     TIM_HandleTypeDef *control_timer;
     TIM_HandleTypeDef *timebase_timer;
     motor_bemf_t bemf[3];
+    motor_pid_t pid;
     motor_state_t state;
     uint32_t state_start_time;
     uint32_t tick_last_time;
+    uint32_t zc_last_time;
+    uint32_t zc_count;
     uint8_t step;
     float pulse;
-
     float vel;
     float vel_setpoint;
 } motor_t;
@@ -46,6 +53,7 @@ void motor_tick(motor_t *motor);
 void motor_set_vel(motor_t *motor, const float vel);
 
 void motor_commutation_callback(motor_t *motor, const TIM_HandleTypeDef *htim);
+void motor_autoreload_callback(motor_t *motor, const TIM_HandleTypeDef *htim);
 void motor_interrupt_callback(motor_t *motor, const uint16_t pin);
 
 #endif

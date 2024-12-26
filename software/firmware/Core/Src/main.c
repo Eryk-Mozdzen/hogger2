@@ -82,6 +82,10 @@ void HAL_TIMEx_CommutCallback(TIM_HandleTypeDef *htim) {
 	motor_commutation_callback(&motor, htim);
 }
 
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+	motor_autoreload_callback(&motor, htim);
+}
+
 void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin) {
 	motor_interrupt_callback(&motor, GPIO_Pin);
 }
