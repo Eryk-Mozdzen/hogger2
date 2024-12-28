@@ -10,7 +10,7 @@
 #define IDLE_THRESHOLD			100.f	// [rad/s]
 
 #define ALIGN_TIME              100     // [ms]
-#define ALIGN_PULSE             0.3f    // []
+#define ALIGN_PULSE             0.2f    // []
 
 #define OPEN_LOOP_PULSE         0.2f    // []
 #define OPEN_LOOP_VEL_THRESHOLD 60.f    // [rad/s]
@@ -20,7 +20,7 @@
 
 #define CLOSED_LOOP_PULSE       0.2f    // []
 #define CLOSED_LOOP_VEL_MIN     40.f    // [rad/s]
-#define CLOSED_LOOP_KP          0.1f
+#define CLOSED_LOOP_KP          0.75f
 #define CLOSED_LOOP_KI          0.f
 #define CLOSED_LOOP_KD          0.f
 
@@ -73,10 +73,6 @@ static void config_oc(const motor_t *motor, const uint32_t channel, const uint32
 static void shutdown(const motor_t *motor) {
 	HAL_TIM_Base_Stop(motor->timebase_timer);
 	HAL_TIM_Base_Stop_IT(motor->timebase_timer);
-
-	HAL_NVIC_DisableIRQ(motor->bemf[MOTOR_PHASE_U].irq);
-	HAL_NVIC_DisableIRQ(motor->bemf[MOTOR_PHASE_V].irq);
-	HAL_NVIC_DisableIRQ(motor->bemf[MOTOR_PHASE_W].irq);
 
 	HAL_TIM_OC_Stop(motor->control_timer, TIM_CHANNEL_1);
 	HAL_TIM_OC_Stop(motor->control_timer, TIM_CHANNEL_2);
@@ -216,70 +212,34 @@ void motor_commutation_callback(motor_t *motor, const TIM_HandleTypeDef *htim) {
 
 	switch(motor->step) {
 		case 0: {
-			HAL_NVIC_DisableIRQ(motor->bemf[MOTOR_PHASE_U].irq);
-			HAL_NVIC_DisableIRQ(motor->bemf[MOTOR_PHASE_V].irq);
-			HAL_NVIC_DisableIRQ(motor->bemf[MOTOR_PHASE_W].irq);
-
 			config_pwm(motor, TIM_CHANNEL_1);
 			config_oc(motor, TIM_CHANNEL_2, TIM_OCMODE_FORCED_ACTIVE);
 			config_oc(motor, TIM_CHANNEL_3, TIM_OCMODE_FORCED_INACTIVE);
-
-			HAL_NVIC_EnableIRQ(motor->bemf[MOTOR_PHASE_W].irq);
 		} break;
 		case 1: {
-			HAL_NVIC_DisableIRQ(motor->bemf[MOTOR_PHASE_U].irq);
-			HAL_NVIC_DisableIRQ(motor->bemf[MOTOR_PHASE_V].irq);
-			HAL_NVIC_DisableIRQ(motor->bemf[MOTOR_PHASE_W].irq);
-
 			config_pwm(motor, TIM_CHANNEL_1);
 			config_oc(motor, TIM_CHANNEL_2, TIM_OCMODE_FORCED_INACTIVE);
 			config_oc(motor, TIM_CHANNEL_3, TIM_OCMODE_FORCED_ACTIVE);
-
-			HAL_NVIC_EnableIRQ(motor->bemf[MOTOR_PHASE_V].irq);
 		} break;
 		case 2: {
-			HAL_NVIC_DisableIRQ(motor->bemf[MOTOR_PHASE_U].irq);
-			HAL_NVIC_DisableIRQ(motor->bemf[MOTOR_PHASE_V].irq);
-			HAL_NVIC_DisableIRQ(motor->bemf[MOTOR_PHASE_W].irq);
-
 			config_oc(motor, TIM_CHANNEL_1, TIM_OCMODE_FORCED_INACTIVE);
 			config_pwm(motor, TIM_CHANNEL_2);
 			config_oc(motor, TIM_CHANNEL_3, TIM_OCMODE_FORCED_ACTIVE);
-
-			HAL_NVIC_EnableIRQ(motor->bemf[MOTOR_PHASE_U].irq);
 		} break;
 		case 3: {
-			HAL_NVIC_DisableIRQ(motor->bemf[MOTOR_PHASE_U].irq);
-			HAL_NVIC_DisableIRQ(motor->bemf[MOTOR_PHASE_V].irq);
-			HAL_NVIC_DisableIRQ(motor->bemf[MOTOR_PHASE_W].irq);
-
 			config_oc(motor, TIM_CHANNEL_1, TIM_OCMODE_FORCED_ACTIVE);
 			config_pwm(motor, TIM_CHANNEL_2);
 			config_oc(motor, TIM_CHANNEL_3, TIM_OCMODE_FORCED_INACTIVE);
-
-			HAL_NVIC_EnableIRQ(motor->bemf[MOTOR_PHASE_W].irq);
 		} break;
 		case 4: {
-			HAL_NVIC_DisableIRQ(motor->bemf[MOTOR_PHASE_U].irq);
-			HAL_NVIC_DisableIRQ(motor->bemf[MOTOR_PHASE_V].irq);
-			HAL_NVIC_DisableIRQ(motor->bemf[MOTOR_PHASE_W].irq);
-
 			config_oc(motor, TIM_CHANNEL_1, TIM_OCMODE_FORCED_ACTIVE);
 			config_oc(motor, TIM_CHANNEL_2, TIM_OCMODE_FORCED_INACTIVE);
 			config_pwm(motor, TIM_CHANNEL_3);
-
-			HAL_NVIC_EnableIRQ(motor->bemf[MOTOR_PHASE_V].irq);
 		} break;
 		case 5: {
-			HAL_NVIC_DisableIRQ(motor->bemf[MOTOR_PHASE_U].irq);
-			HAL_NVIC_DisableIRQ(motor->bemf[MOTOR_PHASE_V].irq);
-			HAL_NVIC_DisableIRQ(motor->bemf[MOTOR_PHASE_W].irq);
-
 			config_oc(motor, TIM_CHANNEL_1, TIM_OCMODE_FORCED_INACTIVE);
 			config_oc(motor, TIM_CHANNEL_2, TIM_OCMODE_FORCED_ACTIVE);
 			config_pwm(motor, TIM_CHANNEL_3);
-
-			HAL_NVIC_EnableIRQ(motor->bemf[MOTOR_PHASE_U].irq);
 		} break;
 	}
 
@@ -288,6 +248,9 @@ void motor_commutation_callback(motor_t *motor, const TIM_HandleTypeDef *htim) {
 	__HAL_TIM_SET_COUNTER(motor->timebase_timer, 0);
 	__HAL_TIM_SET_AUTORELOAD(motor->timebase_timer, 65535);
 	HAL_TIM_Base_Start(motor->timebase_timer);
+
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, 1);
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, 0);
 }
 
 void motor_autoreload_callback(motor_t *motor, const TIM_HandleTypeDef *htim) {
@@ -304,21 +267,14 @@ void motor_autoreload_callback(motor_t *motor, const TIM_HandleTypeDef *htim) {
 }
 
 void motor_interrupt_callback(motor_t *motor, const uint16_t pin) {
-	if(!((pin==motor->bemf[MOTOR_PHASE_W].pin) && (motor->step==0 || motor->step==3))
-		&& !((pin==motor->bemf[MOTOR_PHASE_V].pin) && (motor->step==1 || motor->step==4))
-		&& !((pin==motor->bemf[MOTOR_PHASE_U].pin) && (motor->step==2 || motor->step==5))) {
-		return;
-	}
-
-	//if(__HAL_TIM_GET_COUNTER(motor->timebase_timer) < 1) {
-	//	return;
-	//}
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, 1);
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, 0);
 
 	if(motor->state==MOTOR_STATE_RUNNING) {
 		const uint32_t counter = __HAL_TIM_GET_COUNTER(motor->timebase_timer);
 
 		const float process = counter;
-		const float setpoint = 100000*PI/(motor->vel_setpoint*6*MOTOR_POLE_PAIRS);
+		const float setpoint = 1000000*PI/(motor->vel_setpoint*6*MOTOR_POLE_PAIRS);
 		const float value = pid_calculate(&motor->pid, setpoint, process);
 
 		HAL_TIM_Base_Stop(motor->timebase_timer);

@@ -65,8 +65,6 @@ void Error_Handler(void);
 #define MOTOR1_BEMF_V_Pin GPIO_PIN_1
 #define MOTOR1_BEMF_V_GPIO_Port GPIOC
 #define MOTOR1_BEMF_V_EXTI_IRQn EXTI1_IRQn
-#define BUTTON_Pin GPIO_PIN_2
-#define BUTTON_GPIO_Port GPIOC
 #define MOTOR1_BEMF_W_Pin GPIO_PIN_2
 #define MOTOR1_BEMF_W_GPIO_Port GPIOB
 #define MOTOR1_BEMF_W_EXTI_IRQn EXTI2_IRQn
