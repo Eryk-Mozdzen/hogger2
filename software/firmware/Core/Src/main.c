@@ -67,12 +67,6 @@ static void MX_TIM6_Init(void);
 static motor_t motor = {
 	.control_timer = &htim1,
 	.timebase_timer = &htim6,
-	.bemf[MOTOR_PHASE_U].pin = MOTOR1_BEMF_U_Pin,
-	.bemf[MOTOR_PHASE_U].irq = MOTOR1_BEMF_U_EXTI_IRQn,
-	.bemf[MOTOR_PHASE_V].pin = MOTOR1_BEMF_V_Pin,
-	.bemf[MOTOR_PHASE_V].irq = MOTOR1_BEMF_V_EXTI_IRQn,
-	.bemf[MOTOR_PHASE_W].pin = MOTOR1_BEMF_W_Pin,
-	.bemf[MOTOR_PHASE_W].irq = MOTOR1_BEMF_W_EXTI_IRQn,
 };
 
 void HAL_TIMEx_CommutCallback(TIM_HandleTypeDef *htim) {
@@ -144,7 +138,7 @@ int main(void)
 	  }
 
 	  if(!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_2)) {
-		  motor_set_vel(&motor, 300);
+		  motor_set_vel(&motor, 200);
 	  }
 
 	  motor_tick(&motor);
@@ -338,23 +332,13 @@ static void MX_GPIO_Init(void)
 /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14|GPIO_PIN_3, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pins : PC14 PC3 */
-  GPIO_InitStruct.Pin = GPIO_PIN_14|GPIO_PIN_3;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : MOTOR1_BEMF_U_Pin MOTOR1_BEMF_V_Pin */
   GPIO_InitStruct.Pin = MOTOR1_BEMF_U_Pin|MOTOR1_BEMF_V_Pin;

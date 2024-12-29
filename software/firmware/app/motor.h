@@ -21,25 +21,24 @@ typedef enum {
 } motor_phase_t;
 
 typedef struct {
-    uint16_t pin;
-    IRQn_Type irq;
-} motor_bemf_t;
-
-typedef struct {
-    float error_integral;
-    float error_prev;
-    uint32_t time_prev;
+    float kp;
+    float ki;
+    volatile float process;
+    volatile float setpoint;
+    volatile float value;
+    volatile float error_integral;
+    volatile float error_prev;
 } motor_pid_t;
 
 typedef struct {
     TIM_HandleTypeDef *control_timer;
     TIM_HandleTypeDef *timebase_timer;
-    motor_bemf_t bemf[3];
-    motor_pid_t pid;
+    motor_pid_t pid_pulse;
+    motor_pid_t pid_commut;
     motor_state_t state;
     uint32_t state_start_time;
-    uint32_t tick_last_time;
-    uint32_t zc_last_time;
+    uint32_t commut_task;
+    uint32_t zc_task;
     volatile uint32_t zc_count;
     volatile uint8_t step;
     volatile float pulse;

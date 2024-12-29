@@ -9,20 +9,21 @@
 
 #define IDLE_THRESHOLD			100.f	// [rad/s]
 
-#define ALIGN_TIME              100     // [ms]
-#define ALIGN_PULSE             0.2f    // []
+#define ALIGN_TIME              200     // [ms]
+#define ALIGN_PULSE             0.3f    // []
 
 #define OPEN_LOOP_PULSE         0.2f    // []
 #define OPEN_LOOP_VEL_THRESHOLD 60.f    // [rad/s]
-#define OPEN_LOOP_TIME          1000    // [ms]
+#define OPEN_LOOP_TIME          2000    // [ms]
 #define OPEN_LOOP_COMMUT_PERIOD 2		// [ms]
 #define OPEN_LOOP_ZC_PERIOD		100	    // [ms]
 
-#define CLOSED_LOOP_PULSE       0.2f    // []
+#define CLOSED_LOOP_PULSE_MIN   0.1f    // []
+#define CLOSED_LOOP_PULSE_MAX   0.3f    // []
 #define CLOSED_LOOP_VEL_MIN     40.f    // [rad/s]
-#define CLOSED_LOOP_KP          0.75f
-#define CLOSED_LOOP_KI          0.f
-#define CLOSED_LOOP_KD          0.f
+#define CLOSED_LOOP_PULSE_KP    0.001f
+#define CLOSED_LOOP_PULSE_KI    0.000001f
+#define CLOSED_LOOP_COMMUT_KP   0.5f
 
 static void config_pwm(const motor_t *motor, const uint32_t channel) {
     const uint32_t pulse = motor->pulse*motor->control_timer->Instance->ARR;
@@ -107,10 +108,23 @@ static bool software_timer(uint32_t *prev, const uint32_t time, const uint32_t p
 	return false;
 }
 
-static float pid_calculate(motor_pid_t *pid, const float setpoint, const float process) {
-	const float error = setpoint - process;
+static void pid_init(motor_pid_t *pid) {
+	pid->process = 0;
+	pid->setpoint = 0;
+	pid->value = 0;
 
-	return CLOSED_LOOP_KP*error;// + CLOSED_LOOP_KI*pid->error_integral + CLOSED_LOOP_KD*error_derivative;
+	pid->error_integral = 0;
+	pid->error_prev = 0;
+}
+
+static void pid_calculate(motor_pid_t *pid) {
+	const float error = pid->setpoint - pid->process;
+
+	pid->error_integral +=0.5f*(pid->error_prev + error);
+
+	pid->value = pid->kp*error + pid->ki*pid->error_integral;
+
+	pid->error_prev = error;
 }
 
 void motor_init(motor_t *motor) {
@@ -120,6 +134,11 @@ void motor_init(motor_t *motor) {
 	motor->vel = 0;
 	motor->vel_setpoint = 0;
 	motor->zc_count = 0;
+
+	motor->pid_pulse.kp = CLOSED_LOOP_PULSE_KP;
+	motor->pid_pulse.ki = CLOSED_LOOP_PULSE_KI;
+	motor->pid_commut.kp = CLOSED_LOOP_COMMUT_KP;
+	motor->pid_commut.ki = 0.f;
 
 	shutdown(motor);
 
@@ -133,6 +152,8 @@ void motor_tick(motor_t *motor) {
         case MOTOR_STATE_IDLE: {
 			if(motor->vel_setpoint>IDLE_THRESHOLD) {
 				state_change(motor, MOTOR_STATE_STARTUP_ALIGN1);
+				pid_init(&motor->pid_pulse);
+				pid_init(&motor->pid_commut);
 
 				motor->step = 0;
 				motor->pulse = ALIGN_PULSE;
@@ -153,18 +174,18 @@ void motor_tick(motor_t *motor) {
 				state_change(motor, MOTOR_STATE_STARTUP_OPEN_LOOP);
 
 				motor->zc_count = 0;
-				motor->zc_last_time = 0;
-				motor->tick_last_time = 0;
+				motor->zc_task = 0;
+				motor->commut_task = 0;
 			}
         } break;
         case MOTOR_STATE_STARTUP_OPEN_LOOP: {
-			if(software_timer(&motor->zc_last_time, time, OPEN_LOOP_ZC_PERIOD)) {
+			if(software_timer(&motor->zc_task, time, OPEN_LOOP_ZC_PERIOD)) {
 				const float vel = 2.f*PI*motor->zc_count/(6*MOTOR_POLE_PAIRS*OPEN_LOOP_ZC_PERIOD*0.001f);
 				motor->vel = 0.75f*motor->vel + 0.25f*vel;
 				motor->zc_count = 0;
 			}
 
-			if(software_timer(&motor->tick_last_time, time, OPEN_LOOP_COMMUT_PERIOD)) {
+			if(software_timer(&motor->commut_task, time, OPEN_LOOP_COMMUT_PERIOD)) {
 				if(motor->vel>=OPEN_LOOP_VEL_THRESHOLD) {
 					state_change(motor, MOTOR_STATE_RUNNING);
 				}
@@ -180,7 +201,7 @@ void motor_tick(motor_t *motor) {
 			}
         } break;
         case MOTOR_STATE_RUNNING: {
-			if(software_timer(&motor->zc_last_time, time, OPEN_LOOP_ZC_PERIOD)) {
+			if(software_timer(&motor->zc_task, time, OPEN_LOOP_ZC_PERIOD)) {
 				const float vel = 2.f*PI*motor->zc_count/(6*MOTOR_POLE_PAIRS*OPEN_LOOP_ZC_PERIOD*0.001f);
 				motor->vel = 0.75f*motor->vel + 0.25f*vel;
 				motor->zc_count = 0;
@@ -248,9 +269,6 @@ void motor_commutation_callback(motor_t *motor, const TIM_HandleTypeDef *htim) {
 	__HAL_TIM_SET_COUNTER(motor->timebase_timer, 0);
 	__HAL_TIM_SET_AUTORELOAD(motor->timebase_timer, 65535);
 	HAL_TIM_Base_Start(motor->timebase_timer);
-
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, 1);
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, 0);
 }
 
 void motor_autoreload_callback(motor_t *motor, const TIM_HandleTypeDef *htim) {
@@ -259,28 +277,37 @@ void motor_autoreload_callback(motor_t *motor, const TIM_HandleTypeDef *htim) {
 	}
 
 	if(motor->state==MOTOR_STATE_RUNNING) {
+		motor->pid_pulse.process = motor->vel;
+		motor->pid_pulse.setpoint = motor->vel_setpoint;
+		pid_calculate(&motor->pid_pulse);
+		motor->pulse = CLOSED_LOOP_PULSE_MIN + motor->pid_pulse.value;
+
+		if(motor->pulse>CLOSED_LOOP_PULSE_MAX) {
+			motor->pulse = CLOSED_LOOP_PULSE_MAX;
+		}
+
+		if(motor->pulse<CLOSED_LOOP_PULSE_MIN) {
+			motor->pulse = CLOSED_LOOP_PULSE_MIN;
+		}
+
 		motor->step++;
 		motor->step %=6;
-		motor->pulse = CLOSED_LOOP_PULSE;
 		HAL_TIM_GenerateEvent(motor->control_timer, TIM_EVENTSOURCE_COM);
 	}
 }
 
 void motor_interrupt_callback(motor_t *motor, const uint16_t pin) {
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, 1);
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, 0);
-
 	if(motor->state==MOTOR_STATE_RUNNING) {
 		const uint32_t counter = __HAL_TIM_GET_COUNTER(motor->timebase_timer);
 
-		const float process = counter;
-		const float setpoint = 1000000*PI/(motor->vel_setpoint*6*MOTOR_POLE_PAIRS);
-		const float value = pid_calculate(&motor->pid, setpoint, process);
+		motor->pid_commut.process = counter;
+		motor->pid_commut.setpoint = 1000000*PI/(motor->vel_setpoint*6*MOTOR_POLE_PAIRS);
+		pid_calculate(&motor->pid_commut);
 
 		HAL_TIM_Base_Stop(motor->timebase_timer);
 		HAL_TIM_Base_Stop_IT(motor->timebase_timer);
 		__HAL_TIM_SET_COUNTER(motor->timebase_timer, 0);
-		__HAL_TIM_SET_AUTORELOAD(motor->timebase_timer, (uint32_t)(counter + value));
+		__HAL_TIM_SET_AUTORELOAD(motor->timebase_timer, (uint32_t)(counter + motor->pid_commut.value));
 		HAL_TIM_Base_Start_IT(motor->timebase_timer);
 	}
 
