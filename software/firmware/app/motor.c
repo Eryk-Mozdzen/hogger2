@@ -7,20 +7,21 @@
 #define MOTOR_POLE_PAIRS		7
 #define PI						3.141592653589f
 
-#define IDLE_THRESHOLD			100.f	// [rad/s]
+#define IDLE_THRESHOLD			100.f
 
-#define ALIGN_TIME              200     // [ms]
-#define ALIGN_PULSE             0.3f    // []
+#define ALIGN_TIME              200
+#define ALIGN_PULSE             0.3f
 
-#define OPEN_LOOP_PULSE         0.2f    // []
-#define OPEN_LOOP_VEL_THRESHOLD 60.f    // [rad/s]
-#define OPEN_LOOP_TIME          2000    // [ms]
-#define OPEN_LOOP_COMMUT_PERIOD 2		// [ms]
-#define OPEN_LOOP_ZC_PERIOD		100	    // [ms]
+#define OPEN_LOOP_PULSE         		0.2f
+#define OPEN_LOOP_VEL_THRESHOLD 		60.f
+#define OPEN_LOOP_TIME          		2000
+#define OPEN_LOOP_COMMUT_PERIOD_BEGIN	200
+#define OPEN_LOOP_COMMUT_PERIOD_END		2
+#define OPEN_LOOP_ZC_PERIOD				50
 
-#define CLOSED_LOOP_PULSE_MIN   0.1f    // []
-#define CLOSED_LOOP_PULSE_MAX   0.3f    // []
-#define CLOSED_LOOP_VEL_MIN     40.f    // [rad/s]
+#define CLOSED_LOOP_PULSE_MIN   0.1f
+#define CLOSED_LOOP_PULSE_MAX   0.3f
+#define CLOSED_LOOP_VEL_MIN     40.f
 #define CLOSED_LOOP_PULSE_KP    0.001f
 #define CLOSED_LOOP_PULSE_KI    0.000001f
 #define CLOSED_LOOP_COMMUT_KP   0.5f
@@ -185,7 +186,9 @@ void motor_tick(motor_t *motor) {
 				motor->zc_count = 0;
 			}
 
-			if(software_timer(&motor->commut_task, time, OPEN_LOOP_COMMUT_PERIOD)) {
+			const uint32_t period = OPEN_LOOP_COMMUT_PERIOD_BEGIN + (((float)(OPEN_LOOP_COMMUT_PERIOD_END - OPEN_LOOP_COMMUT_PERIOD_BEGIN))/((float)(OPEN_LOOP_TIME - 0)))*time;
+
+			if(software_timer(&motor->commut_task, time, period)) {
 				if(motor->vel>=OPEN_LOOP_VEL_THRESHOLD) {
 					state_change(motor, MOTOR_STATE_RUNNING);
 				}
@@ -297,9 +300,13 @@ void motor_autoreload_callback(motor_t *motor, const TIM_HandleTypeDef *htim) {
 }
 
 void motor_interrupt_callback(motor_t *motor, const uint16_t pin) {
-	if(motor->state==MOTOR_STATE_RUNNING) {
-		const uint32_t counter = __HAL_TIM_GET_COUNTER(motor->timebase_timer);
+	const uint32_t counter = __HAL_TIM_GET_COUNTER(motor->timebase_timer);
 
+	if(counter<50) {
+		return;
+	}
+
+	if(motor->state==MOTOR_STATE_RUNNING) {
 		motor->pid_commut.process = counter;
 		motor->pid_commut.setpoint = 1000000*PI/(motor->vel_setpoint*6*MOTOR_POLE_PAIRS);
 		pid_calculate(&motor->pid_commut);
