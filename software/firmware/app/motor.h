@@ -32,13 +32,13 @@ typedef struct {
 
 typedef struct {
     TIM_HandleTypeDef *control_timer;
-    TIM_HandleTypeDef *timebase_timer;
-    motor_pid_t pid_pulse;
-    motor_pid_t pid_commut;
+    TIM_HandleTypeDef *commut_timer;
+    uint32_t control_timer_itr;
+    motor_pid_t pid;
     motor_state_t state;
     uint32_t state_start_time;
-    uint32_t commut_task;
-    uint32_t zc_task;
+    uint32_t ramp_task;
+    uint32_t vel_task;
     volatile uint32_t zc_count;
     volatile uint8_t step;
     volatile float pulse;
@@ -51,7 +51,6 @@ void motor_tick(motor_t *motor);
 void motor_set_vel(motor_t *motor, const float vel);
 
 void motor_commutation_callback(motor_t *motor, const TIM_HandleTypeDef *htim);
-void motor_autoreload_callback(motor_t *motor, const TIM_HandleTypeDef *htim);
 void motor_interrupt_callback(motor_t *motor, const uint16_t pin);
 
 #endif
