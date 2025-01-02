@@ -17,3 +17,5 @@ fp-info-cache
 controller.csv
 gerbers
 gerbers.zip
+
+sdkconfig.old
