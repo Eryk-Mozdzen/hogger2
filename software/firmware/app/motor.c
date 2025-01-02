@@ -13,11 +13,11 @@
 #define ALIGN_TIME              200
 #define ALIGN_PULSE             0.3f
 
-#define OPEN_LOOP_PULSE        	0.2f
-#define OPEN_LOOP_RAMP_TIME 	2000
+#define OPEN_LOOP_PULSE			0.2f
+#define OPEN_LOOP_RAMP_TIME		2000
 #define OPEN_LOOP_RAMP_LAMBDA	3.f
-#define OPEN_LOOP_RAMP_MIN		0.002f
-#define OPEN_LOOP_RAMP_MAX		0.200f
+#define OPEN_LOOP_RAMP_MIN		2000
+#define OPEN_LOOP_RAMP_MAX		200000
 
 #define CLOSED_LOOP_PULSE_MIN   0.1f
 #define CLOSED_LOOP_PULSE_MAX   0.3f
@@ -177,7 +177,7 @@ void motor_tick(motor_t *motor) {
 
 			if(time>=ALIGN_TIME) {
 				motor->pulse = OPEN_LOOP_PULSE;
-				__HAL_TIM_SET_AUTORELOAD(motor->commut_timer, OPEN_LOOP_RAMP_MAX*1000000);
+				__HAL_TIM_SET_AUTORELOAD(motor->commut_timer, OPEN_LOOP_RAMP_MAX);
 
 				state_change(motor, MOTOR_STATE_STARTUP_OPEN_LOOP);
 
@@ -189,12 +189,12 @@ void motor_tick(motor_t *motor) {
         case MOTOR_STATE_STARTUP_OPEN_LOOP: {
 			if(software_timer(&motor->ramp_task, time, 1)) {
 				const float t = time*0.001f;
-				const float f = 2.f*(VEL_THRESHOLD/(2.f*PI))*(1.f - expf(-OPEN_LOOP_RAMP_LAMBDA*t));
-				const float T = CLAMP(1.f/(6.f*MOTOR_POLE_PAIRS*f), OPEN_LOOP_RAMP_MIN, OPEN_LOOP_RAMP_MAX);
+				const float f = 1.f - expf(-OPEN_LOOP_RAMP_LAMBDA*t);
+				const uint32_t T = CLAMP(OPEN_LOOP_RAMP_MIN/f, OPEN_LOOP_RAMP_MIN, OPEN_LOOP_RAMP_MAX);
 
-				__HAL_TIM_SET_AUTORELOAD(motor->commut_timer, T*1000000);
-				if(__HAL_TIM_GET_COUNTER(motor->commut_timer)>=(T*1000000)) {
-					__HAL_TIM_SET_COUNTER(motor->commut_timer, (T*1000000) - 1);
+				__HAL_TIM_SET_AUTORELOAD(motor->commut_timer, T);
+				if(__HAL_TIM_GET_COUNTER(motor->commut_timer)>=T) {
+					__HAL_TIM_SET_COUNTER(motor->commut_timer, T - 1);
 				}
 			}
 
