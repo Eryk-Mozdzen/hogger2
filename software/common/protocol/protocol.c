@@ -4,7 +4,6 @@
 
 #include "protocol.h"
 
-#define RX_LIMIT            32
 #define TX_SIZE_THRESHOLD   256
 #define TX_TIME_THRESHOLD   100
 
@@ -88,9 +87,7 @@ void protocol_enqueue(protocol_t *instance, const uint8_t id, const void *payloa
 void protocol_process(protocol_t *instance) {
     const uint32_t time = instance->callback_time(instance->user);
 
-    const uint32_t rx_pending = fifo_pending(&instance->fifo_rx);
-
-    for(uint32_t i=0; i<RX_LIMIT && i<rx_pending; i++) {
+    while(fifo_pending(&instance->fifo_rx)>0) {
         const uint8_t byte = fifo_read(&instance->fifo_rx);
 
         switch(instance->state) {
@@ -101,8 +98,6 @@ void protocol_process(protocol_t *instance) {
                 instance->counter = 0;
                 if(byte) {
                     instance->state = STATE_DATA;
-                } else {
-                    instance->callback_err(instance->user, PROTOCOL_ERROR_DOUBLE_ZERO);
                 }
             } break;
             case STATE_DATA: {
@@ -118,8 +113,6 @@ void protocol_process(protocol_t *instance) {
                         const uint32_t size = num - 9;
 
                         instance->callback_rx(instance->user, id, *time, payload, size);
-                    } else {
-                        instance->callback_err(instance->user, PROTOCOL_ERROR_CRC_MISMATCH);
                     }
 
                     instance->state = STATE_START;
@@ -129,7 +122,6 @@ void protocol_process(protocol_t *instance) {
                         crc32(&instance->crc, instance->cursor, 1);
                         instance->cursor++;
                         if(instance->cursor>=instance->decoded+instance->max) {
-                            instance->callback_err(instance->user, PROTOCOL_ERROR_DECODER_OVERFLOW);
                             instance->state = STATE_START;
                         }
                     }
@@ -140,7 +132,6 @@ void protocol_process(protocol_t *instance) {
                     crc32(&instance->crc, instance->cursor, 1);
                     instance->cursor++;
                     if(instance->cursor>=instance->decoded+instance->max) {
-                        instance->callback_err(instance->user, PROTOCOL_ERROR_DECODER_OVERFLOW);
                         instance->state = STATE_START;
                     }
                 }

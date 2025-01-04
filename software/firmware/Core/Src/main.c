@@ -75,7 +75,7 @@ static void MX_TIM2_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-#define BUFFER_SIZE		1024
+#define BUFFER_SIZE		(10*1024)
 
 static motor_t motor = {
 	.control_timer = &htim1,
@@ -107,15 +107,12 @@ static void protocol_cb_transmit(void *user, const void *data, const uint32_t si
 
 static void protocol_cb_receive(void *user, const uint8_t id, const uint32_t time, const void *payload, const uint32_t size) {
     (void)user;
-    (void)id;
     (void)time;
     (void)payload;
-    (void)size;
-}
 
-static void protocol_cb_error(void *user, const protocol_error_t error) {
-    (void)user;
-    (void)error;
+    if((id==1) && (size==1)) {
+    	HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, *(uint8_t *)payload);
+    }
 }
 
 static uint32_t protocol_cb_time(void *user) {
@@ -169,7 +166,6 @@ int main(void)
 
 	protocol.callback_tx = protocol_cb_transmit;
 	protocol.callback_rx = protocol_cb_receive;
-	protocol.callback_err = protocol_cb_error;
 	protocol.callback_time = protocol_cb_time;
 	protocol.fifo_rx.buffer = protocol_buffer_rx;
 	protocol.fifo_rx.size = sizeof(protocol_buffer_rx);
@@ -180,27 +176,21 @@ int main(void)
 
 	HAL_UART_Receive_DMA(&huart1, protocol.fifo_rx.buffer, protocol.fifo_rx.size);
 
-  uint32_t last_blink = 0;
-  uint32_t last_protocol = 0;
-  uint32_t last_state = 0;
+  uint32_t task_protocol = 0;
+  uint32_t task_state = 0;
 
   while(1) {
 	  const uint32_t time = HAL_GetTick();
 
-	  if((time - last_blink)>=500) {
-		  last_blink = time;
-		  HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-	  }
-
-	  if((time - last_protocol)>=1) {
-		  last_protocol = time;
+	  if((time - task_protocol)>=1) {
+		  task_protocol = time;
 		  protocol.fifo_rx.write = protocol.fifo_rx.size - __HAL_DMA_GET_COUNTER(huart1.hdmarx);
 		  protocol.available = (HAL_DMA_GetState(huart1.hdmatx)==HAL_DMA_STATE_READY);
 		  protocol_process(&protocol);
 	  }
 
-	  if((time - last_state)>=10) {
-		  last_state = time;
+	  if((time - task_state)>=10) {
+		  task_state = time;
 		  char json[1024];
 		  sprintf(json, "{\"STM timestamp\": %lu}", HAL_GetTick());
 

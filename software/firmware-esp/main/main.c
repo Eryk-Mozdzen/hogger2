@@ -9,11 +9,13 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "driver/uart.h"
+#include "driver/gpio.h"
 #include "common/protocol/protocol.h"
 
 #define WIFI_SSID       "Hogger^2"
 #define WIFI_PASSWORD   "12345678"
-#define BUFFER_SIZE     1024
+#define BUFFER_SIZE     (2*1024)
+#define GPIO_LED        10
 
 static httpd_handle_t server = NULL;
 static QueueHandle_t uart_queue;
@@ -60,11 +62,6 @@ static void protocol_cb_receive(void *user, const uint8_t id, const uint32_t tim
     xSemaphoreGive(state_lock);
 }
 
-static void protocol_cb_error(void *user, const protocol_error_t error) {
-    (void)user;
-    (void)error;
-}
-
 static uint32_t protocol_cb_time(void *user) {
 	(void)user;
 	return xTaskGetTickCount()*portTICK_PERIOD_MS;
@@ -75,7 +72,6 @@ static void protocol_init() {
 
     protocol.callback_tx = protocol_cb_transmit;
 	protocol.callback_rx = protocol_cb_receive;
-	protocol.callback_err = protocol_cb_error;
 	protocol.callback_time = protocol_cb_time;
     protocol.fifo_rx.buffer = protocol_buffer_rx;
     protocol.fifo_rx.size = sizeof(protocol_buffer_rx);
@@ -194,6 +190,29 @@ static void http_init() {
     ESP_LOGI("app", "http server started");
 }
 
+static void blink_task(void *params) {
+    (void)params;
+
+    gpio_reset_pin(GPIO_LED);
+    gpio_set_direction(GPIO_LED, GPIO_MODE_OUTPUT);
+    gpio_set_level(GPIO_LED, 0);
+
+    uint8_t led = false;
+
+    ESP_LOGI("app", "blink task started");
+
+    while(1) {
+        led = !led;
+
+        xSemaphoreTake(protocol_lock, portMAX_DELAY);
+        protocol_enqueue(&protocol, 1, &led, sizeof(led));
+        xSemaphoreGive(protocol_lock);
+
+        gpio_set_level(GPIO_LED, led);
+        vTaskDelay(pdMS_TO_TICKS(led ? 100 : 900));
+    }
+}
+
 void app_main() {
     const esp_err_t result = nvs_flash_init();
     if((result==ESP_ERR_NVS_NO_FREE_PAGES) || (result==ESP_ERR_NVS_NEW_VERSION_FOUND)) {
@@ -202,12 +221,13 @@ void app_main() {
     }
 
     uart_init();
+    protocol_init();
     wifi_init();
     http_init();
-    protocol_init();
 
     state_lock = xSemaphoreCreateBinary();
     xSemaphoreGive(state_lock);
 
     xTaskCreate(uart_task, "uart reader", 4096, NULL, 5, NULL);
+    xTaskCreate(blink_task, "blink", 4096, NULL, 5, NULL);
 }
