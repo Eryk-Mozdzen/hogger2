@@ -9,7 +9,7 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 
-#define PROTOCOL_INIT {NULL, NULL, NULL, NULL, {NULL, 0, 0, 0}, {NULL, 0, 0, 0}, true, 0, NULL, NULL, 0, 0, 0, 0, 0}
+#define PROTOCOL_INIT {NULL, NULL, NULL, NULL, {NULL, 0, 0, 0}, {NULL, 0, 0, 0}, true, 0, 0, NULL, NULL, 0, 0, 0, 0, 0}
 
 typedef void (*protocol_tx_cb_t)(void *, const void *, const uint32_t);
 typedef void (*protocol_rx_cb_t)(void *, const uint8_t, const uint32_t, const void *, const uint32_t);
@@ -31,7 +31,8 @@ typedef struct {
     protocol_fifo_t fifo_rx;
     bool available;
 
-    uint32_t time_last;
+    uint32_t time_last_tx;
+    uint32_t time_last_rx;
     uint8_t *decoded;
     uint8_t *cursor;
     uint32_t max;

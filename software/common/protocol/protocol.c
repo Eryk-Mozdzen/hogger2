@@ -108,11 +108,12 @@ void protocol_process(protocol_t *instance) {
 
                     if(!instance->crc && num>=9) {
                         const uint8_t id = instance->decoded[0];
-                        const uint32_t *time = (uint32_t *)&instance->decoded[1];
+                        const uint32_t *t = (uint32_t *)&instance->decoded[1];
                         const uint8_t *payload = &instance->decoded[5];
                         const uint32_t size = num - 9;
 
-                        instance->callback_rx(instance->user, id, *time, payload, size);
+                        instance->callback_rx(instance->user, id, *t, payload, size);
+                        instance->time_last_rx = time;
                     }
 
                     instance->state = STATE_START;
@@ -139,7 +140,7 @@ void protocol_process(protocol_t *instance) {
         }
     }
 
-    const uint32_t delta_time = time - instance->time_last;
+    const uint32_t delta_time = time - instance->time_last_tx;
     const uint32_t tx_pending = fifo_pending(&instance->fifo_tx);
 
     if(instance->available && tx_pending && (tx_pending>TX_SIZE_THRESHOLD || delta_time>TX_TIME_THRESHOLD)) {
@@ -149,6 +150,6 @@ void protocol_process(protocol_t *instance) {
         instance->fifo_tx.read +=len;
         instance->fifo_tx.read %=instance->fifo_tx.size;
 
-        instance->time_last = time;
+        instance->time_last_tx = time;
     }
 }
