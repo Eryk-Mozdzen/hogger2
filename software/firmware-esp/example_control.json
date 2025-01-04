@@ -1,0 +1,25 @@
+{
+    "command": "idle",
+    "reference_configuration": [
+        0.1,
+        0.2,
+        200.1,
+        0.1,
+        0.2,
+        200.1
+    ],
+    "reference_trajectory": [
+        0.1,
+        -0.2,
+        0.1
+    ],
+    "external_sensors": [
+        {
+            "name": "position",
+            "data": [
+                0,
+                0
+            ]
+        }
+    ]
+}

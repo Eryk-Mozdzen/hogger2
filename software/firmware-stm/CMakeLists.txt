@@ -112,6 +112,7 @@ target_include_directories(${TARGET} PRIVATE
     "cubemx/Drivers/CMSIS/Device/ST/STM32U5xx/Include"
     "cubemx/Drivers/STM32U5xx_HAL_Driver/Inc"
 
+    "."
 	"include"
     "../common"
 )

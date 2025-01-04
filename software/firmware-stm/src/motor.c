@@ -143,6 +143,14 @@ void motor_init(motor_t *motor) {
 void motor_tick(motor_t *motor) {
 	const uint32_t time = HAL_GetTick() - motor->state_start_time;
 
+	if(software_timer(&motor->vel_task, time, VEL_PERIOD)) {
+		const uint32_t zc_count = motor->zc_count;
+		motor->zc_count = 0;
+
+		const float velocity = (2.f*PI*zc_count)/(6*MOTOR_POLE_PAIRS*VEL_PERIOD*0.001f);
+		motor->vel = VEL_FILTER*motor->vel + (1.f - VEL_FILTER)*velocity;
+	}
+
     switch(motor->state) {
         case MOTOR_STATE_IDLE: {
 			if(motor->vel_setpoint>VEL_THRESHOLD) {
@@ -182,7 +190,6 @@ void motor_tick(motor_t *motor) {
 				state_change(motor, MOTOR_STATE_STARTUP_OPEN_LOOP);
 
 				motor->ramp_task = 0;
-				motor->vel_task = 0;
 				motor->zc_count = 0;
 			}
         } break;
@@ -198,14 +205,6 @@ void motor_tick(motor_t *motor) {
 				}
 			}
 
-			if(software_timer(&motor->vel_task, time, VEL_PERIOD)) {
-				const uint32_t zc_count = motor->zc_count;
-				motor->zc_count = 0;
-
-				const float velocity = (2.f*PI*zc_count)/(6*MOTOR_POLE_PAIRS*VEL_PERIOD*0.001f);
-				motor->vel = VEL_FILTER*motor->vel + (1.f - VEL_FILTER)*velocity;
-			}
-
 			if(motor->vel_setpoint<VEL_THRESHOLD) {
 				state_change(motor, MOTOR_STATE_PANIC);
 			}
@@ -219,14 +218,6 @@ void motor_tick(motor_t *motor) {
 			}
         } break;
         case MOTOR_STATE_RUNNING: {
-			if(software_timer(&motor->vel_task, time, VEL_PERIOD)) {
-				const uint32_t zc_count = motor->zc_count;
-				motor->zc_count = 0;
-
-				const float velocity = (2.f*PI*zc_count)/(6*MOTOR_POLE_PAIRS*VEL_PERIOD*0.001f);
-				motor->vel = VEL_FILTER*motor->vel + (1.f - VEL_FILTER)*velocity;
-			}
-
 			if(motor->vel_setpoint<VEL_THRESHOLD) {
 				state_change(motor, MOTOR_STATE_PANIC);
 			}

@@ -1,0 +1,3 @@
+[submodule "software/firmware-stm/jsmn"]
+	path = software/firmware-stm/jsmn
+	url = git@github.com:zserge/jsmn.git
