@@ -9,8 +9,8 @@ while True:
     print(response.text)
 
     data = {
-        'timestamp': int(time.time())
+        'PC timestamp': int(time.time())
     }
     requests.post(f'http://{IP}/post', json=data)
 
-    time.sleep(0.1)
+    time.sleep(0.01)

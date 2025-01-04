@@ -23,8 +23,11 @@
 /* USER CODE BEGIN Includes */
 
 #include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "motor.h"
+#include "protocol.h"
 
 /* USER CODE END Includes */
 
@@ -48,6 +51,12 @@
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
 
+UART_HandleTypeDef huart1;
+DMA_NodeTypeDef Node_GPDMA1_Channel1;
+DMA_QListTypeDef List_GPDMA1_Channel1;
+DMA_HandleTypeDef handle_GPDMA1_Channel1;
+DMA_HandleTypeDef handle_GPDMA1_Channel0;
+
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -55,7 +64,9 @@ TIM_HandleTypeDef htim2;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_GPDMA1_Init(void);
 static void MX_TIM1_Init(void);
+static void MX_USART1_UART_Init(void);
 static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
 
@@ -64,11 +75,18 @@ static void MX_TIM2_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+#define BUFFER_SIZE		1024
+
 static motor_t motor = {
 	.control_timer = &htim1,
 	.control_timer_itr = TIM_TS_ITR1,
 	.commut_timer = &htim2,
 };
+
+static protocol_t protocol = PROTOCOL_INIT;
+static uint8_t protocol_buffer_rx[BUFFER_SIZE];
+static uint8_t protocol_buffer_tx[BUFFER_SIZE];
+static uint8_t protocol_buffer_decode[BUFFER_SIZE];
 
 void HAL_TIMEx_CommutCallback(TIM_HandleTypeDef *htim) {
 	motor_commutation_callback(&motor, htim);
@@ -80,6 +98,29 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin) {
 
 void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin) {
 	motor_interrupt_callback(&motor, GPIO_Pin);
+}
+
+static void protocol_cb_transmit(void *user, const void *data, const uint32_t size) {
+    (void)user;
+    HAL_UART_Transmit_DMA(&huart1, data, size);
+}
+
+static void protocol_cb_receive(void *user, const uint8_t id, const uint32_t time, const void *payload, const uint32_t size) {
+    (void)user;
+    (void)id;
+    (void)time;
+    (void)payload;
+    (void)size;
+}
+
+static void protocol_cb_error(void *user, const protocol_error_t error) {
+    (void)user;
+    (void)error;
+}
+
+static uint32_t protocol_cb_time(void *user) {
+	(void)user;
+	return HAL_GetTick();
 }
 
 /* USER CODE END 0 */
@@ -113,7 +154,9 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_GPDMA1_Init();
   MX_TIM1_Init();
+  MX_USART1_UART_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
@@ -124,7 +167,22 @@ int main(void)
 
   motor_init(&motor);
 
+	protocol.callback_tx = protocol_cb_transmit;
+	protocol.callback_rx = protocol_cb_receive;
+	protocol.callback_err = protocol_cb_error;
+	protocol.callback_time = protocol_cb_time;
+	protocol.fifo_rx.buffer = protocol_buffer_rx;
+	protocol.fifo_rx.size = sizeof(protocol_buffer_rx);
+	protocol.fifo_tx.buffer = protocol_buffer_tx;
+	protocol.fifo_tx.size = sizeof(protocol_buffer_tx);
+	protocol.decoded = protocol_buffer_decode;
+	protocol.max = sizeof(protocol_buffer_decode);
+
+	HAL_UART_Receive_DMA(&huart1, protocol.fifo_rx.buffer, protocol.fifo_rx.size);
+
   uint32_t last_blink = 0;
+  uint32_t last_protocol = 0;
+  uint32_t last_state = 0;
 
   while(1) {
 	  const uint32_t time = HAL_GetTick();
@@ -132,6 +190,21 @@ int main(void)
 	  if((time - last_blink)>=500) {
 		  last_blink = time;
 		  HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+	  }
+
+	  if((time - last_protocol)>=1) {
+		  last_protocol = time;
+		  protocol.fifo_rx.write = protocol.fifo_rx.size - __HAL_DMA_GET_COUNTER(huart1.hdmarx);
+		  protocol.available = (HAL_DMA_GetState(huart1.hdmatx)==HAL_DMA_STATE_READY);
+		  protocol_process(&protocol);
+	  }
+
+	  if((time - last_state)>=10) {
+		  last_state = time;
+		  char json[1024];
+		  sprintf(json, "{\"STM timestamp\": %lu}", HAL_GetTick());
+
+		  protocol_enqueue(&protocol, 0, json, strlen(json)+1);
 	  }
 
 	  if(!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_2)) {
@@ -197,6 +270,36 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief GPDMA1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_GPDMA1_Init(void)
+{
+
+  /* USER CODE BEGIN GPDMA1_Init 0 */
+
+  /* USER CODE END GPDMA1_Init 0 */
+
+  /* Peripheral clock enable */
+  __HAL_RCC_GPDMA1_CLK_ENABLE();
+
+  /* GPDMA1 interrupt Init */
+    HAL_NVIC_SetPriority(GPDMA1_Channel0_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(GPDMA1_Channel0_IRQn);
+    HAL_NVIC_SetPriority(GPDMA1_Channel1_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(GPDMA1_Channel1_IRQn);
+
+  /* USER CODE BEGIN GPDMA1_Init 1 */
+
+  /* USER CODE END GPDMA1_Init 1 */
+  /* USER CODE BEGIN GPDMA1_Init 2 */
+
+  /* USER CODE END GPDMA1_Init 2 */
+
 }
 
 /**
@@ -321,6 +424,54 @@ static void MX_TIM2_Init(void)
   /* USER CODE BEGIN TIM2_Init 2 */
 
   /* USER CODE END TIM2_Init 2 */
+
+}
+
+/**
+  * @brief USART1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART1_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART1_Init 0 */
+
+  /* USER CODE END USART1_Init 0 */
+
+  /* USER CODE BEGIN USART1_Init 1 */
+
+  /* USER CODE END USART1_Init 1 */
+  huart1.Instance = USART1;
+  huart1.Init.BaudRate = 115200;
+  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.StopBits = UART_STOPBITS_1;
+  huart1.Init.Parity = UART_PARITY_NONE;
+  huart1.Init.Mode = UART_MODE_TX_RX;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart1.Init.ClockPrescaler = UART_PRESCALER_DIV1;
+  huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetTxFifoThreshold(&huart1, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetRxFifoThreshold(&huart1, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_DisableFifoMode(&huart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART1_Init 2 */
+
+  /* USER CODE END USART1_Init 2 */
 
 }
 

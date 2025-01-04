@@ -82,6 +82,10 @@ void Error_Handler(void);
 #define MOTOR1_PWM_WH_GPIO_Port GPIOA
 #define LED_Pin GPIO_PIN_5
 #define LED_GPIO_Port GPIOB
+#define ESP_RXD_Pin GPIO_PIN_6
+#define ESP_RXD_GPIO_Port GPIOB
+#define ESP_TXD_Pin GPIO_PIN_7
+#define ESP_TXD_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

@@ -37,5 +37,10 @@
 			<type>2</type>
 			<locationURI>$%7BPROJECT_LOC%7D/app</locationURI>
 		</link>
+		<link>
+			<name>protocol</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/software/common/protocol</locationURI>
+		</link>
 	</linkedResources>
 </projectDescription>
