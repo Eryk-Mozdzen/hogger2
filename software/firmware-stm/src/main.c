@@ -14,6 +14,7 @@
 extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim2;
 extern UART_HandleTypeDef huart1;
+extern ADC_HandleTypeDef hadc1;
 
 static motor_t motor = {
 	.control_timer = &htim1,
@@ -142,6 +143,11 @@ void app_main() {
         if((time - task_state)>=10) {
             task_state = time;
 
+            HAL_ADC_Start(&hadc1);
+            HAL_ADC_PollForConversion(&hadc1, 2);
+            const uint32_t vbus_raw = HAL_ADC_GetValue(&hadc1);
+            const float vbus_volt = (6.1f*3.3f*vbus_raw)/((float)(1<<14));
+
             sprintf(json,
                 "{\n"
                 "    \"timestamp\": %lu,\n"
@@ -162,7 +168,7 @@ void app_main() {
                 "}",
                 HAL_GetTick(),
                 robot_state[0],
-                11.1f,
+                vbus_volt,
                 0.f,
                 0.f,
                 motor.vel,
