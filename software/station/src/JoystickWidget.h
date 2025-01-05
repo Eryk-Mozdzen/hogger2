@@ -4,17 +4,15 @@
 #include <QGroupBox>
 #include <QComboBox>
 #include <QPushButton>
-#include <QLabel>
 #include <QSettings>
 
 #include "Joystick.h"
 
-class Gamepad : public QGroupBox {
+class JoystickWidget : public QGroupBox {
     Q_OBJECT
 
     QComboBox *addressComboBox;
     QSettings settings;
-	QLabel *uiLabels[4];
 
     utils::Joystick *joystick = nullptr;
 
@@ -48,8 +46,8 @@ public:
         RSB = 10,
     };
 
-    Gamepad(QWidget *parent = nullptr);
-    ~Gamepad();
+    JoystickWidget(QWidget *parent = nullptr);
+    ~JoystickWidget();
     double get(const Analog &analog) const;
     bool get(const Button &button) const;
 };

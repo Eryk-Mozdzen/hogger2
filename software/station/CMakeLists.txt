@@ -13,18 +13,14 @@ REQUIRED)
 pkg_check_modules(UDEV REQUIRED libudev)
 
 add_executable(${PROJECT_NAME}
-	"../common/protocol/protocol.c"
-	"../common/qt/Network.cpp"
-	"../common/qt/InterfaceWidget.cpp"
-
 	"src/main.cpp"
 	"src/Window.cpp"
-	"src/Gamepad.cpp"
+	"src/Network.cpp"
+	"src/JoystickWidget.cpp"
 	"src/Joystick.cpp"
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
-	".."
 	"src"
 )
 

@@ -1,14 +1,11 @@
-#include <iostream>
-#include <iomanip>
-
 #include <QGridLayout>
-#include <QThread>
 #include <QTimer>
 #include <QSlider>
 #include <QPushButton>
+#include <QJsonObject>
+#include <QJsonArray>
 
-#include "common/qt/Network.h"
-#include "common/qt/InterfaceWidget.h"
+#include "Network.h"
 #include "Window.h"
 
 double lerp(const double in, const double in_min, const double in_max, const double out_min, const double out_max) {
@@ -16,35 +13,55 @@ double lerp(const double in, const double in_min, const double in_max, const dou
 }
 
 Window::Window(QWidget *parent) : QWidget(parent) {
-    QGridLayout *layout = new QGridLayout(this);
+    QGridLayout *grid = new QGridLayout(this);
 
-    common::Network *network = new common::Network();
+    Network *network = new Network();
 
-    connect(network, &common::Network::receive, this, &Window::receive);
-    connect(this, &Window::transmit, network, &common::Network::transmit);
+    connect(network, &Network::receive, this, &Window::receive);
+    connect(this, &Window::transmit, network, &Network::transmit);
 
-    common::InterfaceWidget *networkInterface = new common::InterfaceWidget("Network interface", this);
+    network->deviceScan();
 
-    connect(network, &common::Network::stats, networkInterface, &common::InterfaceWidget::stats);
-    connect(network, &common::Network::status, networkInterface, &common::InterfaceWidget::status);
-    connect(network, &common::Network::scanFinished, networkInterface, &common::InterfaceWidget::scanFinished);
-    connect(networkInterface, &common::InterfaceWidget::scan, network, &common::Network::scanHosts);
-    connect(networkInterface, &common::InterfaceWidget::change, network, &common::Network::changeHost);
+    grid->addWidget(network, 0, 0);
+    grid->addWidget(&joystick, 1, 0);
 
-    QThread *networkThread = new QThread(this);
+    {
+        QGroupBox *group = new QGroupBox("State");
+        QVBoxLayout *layout  = new QVBoxLayout(group);
 
-    network->moveToThread(networkThread);
-    connect(networkThread, &QThread::started, network, &common::Network::start);
-    connect(networkThread, &QThread::finished, network, &common::Network::deleteLater);
-    connect(networkThread, &QThread::finished, networkThread, &QThread::deleteLater);
-    connect(this, &QObject::destroyed, networkThread, &QThread::quit);
+        group->setMinimumWidth(300);
+        group->setMinimumHeight(400);
 
-    networkThread->start();
+        QFont font("System", 10);
+        font.setStyleHint(QFont::TypeWriter);
 
-    networkInterface->forceScan();
+        text[0] = new QTextEdit(this);
+        text[0]->setReadOnly(true);
+        text[0]->setFont(font);
 
-    layout->addWidget(networkInterface, 0, 0);
-    layout->addWidget(&gamepad, 1, 0);
+        layout->addWidget(text[0]);
+
+        grid->addWidget(group, 0, 2, 5, 1);
+    }
+
+    {
+        QGroupBox *group = new QGroupBox("Controls");
+        QVBoxLayout *layout  = new QVBoxLayout(group);
+
+        group->setMinimumWidth(300);
+        group->setMinimumHeight(400);
+
+        QFont font("System", 10);
+        font.setStyleHint(QFont::TypeWriter);
+
+        text[1] = new QTextEdit(this);
+        text[1]->setReadOnly(true);
+        text[1]->setFont(font);
+
+        layout->addWidget(text[1]);
+
+        grid->addWidget(group, 0, 3, 5, 1);
+    }
 
     {
         sliders[0] = new QSlider(Qt::Orientation::Vertical);
@@ -79,20 +96,20 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         box->addWidget(sliders[3], 0, 3);
         box->addWidget(save, 1, 0, 1, 4);
 
-        layout->addWidget(group, 0, 1, 2, 1);
+        grid->addWidget(group, 0, 1, 5, 1);
     }
 
     {
         QTimer *timer = new QTimer();
 
         connect(timer, &QTimer::timeout, [this]() {
-            const double v = -1.*gamepad.get(Gamepad::Analog::LY);
-            const double w = -5.*gamepad.get(Gamepad::Analog::LX);
-            const double X = gamepad.get(Gamepad::Analog::RX);
+            const double v = -1.*joystick.get(JoystickWidget::Analog::LY);
+            const double w = -5.*joystick.get(JoystickWidget::Analog::LX);
+            const double X = joystick.get(JoystickWidget::Analog::RX);
 
             constexpr double L = 0.13;  // m
             constexpr double R = 0.05;  // m
-            constexpr double W = 100;   // rad/s
+            constexpr double W = 200;   // rad/s
 
             const double v1 = v - L*w;
             const double v2 = v + L*w;
@@ -100,35 +117,30 @@ Window::Window(QWidget *parent) : QWidget(parent) {
             const double a1 = std::asin(std::clamp(v1/(W*R), -1., 1.));
             const double a2 = std::asin(std::clamp(v2/(W*R), -1., 1.));
 
-            uint32_t pwm[6];
+            const QJsonArray referenceConfiguration = {
+                sliders[0]->value() + lerp(+a1, -M_PI, M_PI, 1000, 2000),
+                sliders[1]->value() + 1500 + X*100,
+                joystick.get(JoystickWidget::Button::A) ? 200 : 0,
+                sliders[2]->value() + lerp(-a2, -M_PI, M_PI, 1000, 2000),
+                sliders[3]->value() + 1500 - X*100,
+                joystick.get(JoystickWidget::Button::A) ? 200 : 0,
+            };
 
-            pwm[0] = sliders[0]->value() + lerp(+a1, -M_PI, M_PI, 1000, 2000);
-            pwm[1] = sliders[1]->value() + 1500 + X*100;
-            pwm[2] = gamepad.get(Gamepad::Button::A) ? 1200 : 1000;
+            QJsonObject json;
+            json["command"] = "manual";
+            json["reference_configuration"] = referenceConfiguration;
 
-            pwm[3] = sliders[2]->value() + lerp(-a2, -M_PI, M_PI, 1000, 2000);
-            pwm[4] = sliders[3]->value() + 1500 - X*100;
-            pwm[5] = gamepad.get(Gamepad::Button::A) ? 1200 : 1000;
+            const QJsonDocument document(json);
 
-            transmit(0x02, QByteArray(reinterpret_cast<char *>(&pwm), sizeof(pwm)));
+            text[1]->setText(document.toJson());
+
+            transmit(document);
         });
 
         timer->start(20);
     }
 }
 
-void Window::receive(const uint8_t id, const double time, const QByteArray &payload) {
-    if(id==0x01) {
-        const int minutes = static_cast<int>(time) / 60;
-        const double seconds = time - 60*minutes;
-
-        std::cout << "[ ";
-        std::cout << std::noshowpos << std::setfill('0') << std::setw(2) << minutes;
-        std::cout << ":";
-        std::cout << std::noshowpos << std::setfill('0') << std::setw(6) << std::setprecision(3) << std::fixed << seconds;
-        std::cout << " ] ";
-
-        std::cout << std::string(reinterpret_cast<const char *>(payload.data()), payload.size());
-        std::cout << std::endl;
-    }
+void Window::receive(const QJsonDocument &json) {
+    text[0]->setText(json.toJson());
 }

@@ -1,5 +1,5 @@
 {
-    "command": "idle",
+    "command": "manual",
     "reference_configuration": [
         0.1,
         0.2,

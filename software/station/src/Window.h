@@ -3,22 +3,25 @@
 #include <QWidget>
 #include <QSlider>
 #include <QSettings>
+#include <QTextEdit>
+#include <QJsonDocument>
 
-#include "Gamepad.h"
+#include "JoystickWidget.h"
 
 class Window : public QWidget {
     Q_OBJECT
 
     QSlider *sliders[4];
+    QTextEdit *text[2];
     QSettings settings;
 
-    Gamepad gamepad;
+    JoystickWidget joystick;
 
 signals:
-    void transmit(const uint8_t id, const QByteArray &payload);
+    void transmit(const QJsonDocument &json);
 
 private slots:
-    void receive(const uint8_t id, const double time, const QByteArray &payload);
+    void receive(const QJsonDocument &json);
 
 public:
     Window(QWidget *parent = nullptr);
