@@ -46,15 +46,8 @@ static void uart_init() {
     ESP_LOGI("app", "uart started");
 }
 
-static void protocol_cb_transmit(void *user, const void *data, const uint32_t size) {
-    (void)user;
-    uart_write_bytes(UART_NUM_0, data, size);
-}
-
-static void protocol_cb_receive(void *user, const uint8_t id, const uint32_t time, const void *payload, const uint32_t size) {
-    (void)user;
+static void protocol_cb_receive(const uint8_t id, const void *payload, const uint32_t size) {
     (void)id;
-    (void)time;
 
     xSemaphoreTake(state_lock, portMAX_DELAY);
     memcpy(state, payload, size);
@@ -62,17 +55,10 @@ static void protocol_cb_receive(void *user, const uint8_t id, const uint32_t tim
     xSemaphoreGive(state_lock);
 }
 
-static uint32_t protocol_cb_time(void *user) {
-	(void)user;
-	return xTaskGetTickCount()*portTICK_PERIOD_MS;
-}
-
 static void protocol_init() {
     protocol_lock = xSemaphoreCreateBinary();
 
-    protocol.callback_tx = protocol_cb_transmit;
 	protocol.callback_rx = protocol_cb_receive;
-	protocol.callback_time = protocol_cb_time;
     protocol.fifo_rx.buffer = protocol_buffer_rx;
     protocol.fifo_rx.size = sizeof(protocol_buffer_rx);
     protocol.fifo_tx.buffer = protocol_buffer_tx;
@@ -93,21 +79,21 @@ static void uart_task(void *params) {
     ESP_LOGI("app", "uart task started");
 
     while(1) {
-        const int bytes = uart_read_bytes(UART_NUM_0, data, sizeof(data), 1);
-
-        for(int i=0; i<bytes; i++) {
-            protocol.fifo_rx.buffer[protocol.fifo_rx.write] = data[i];
-            protocol.fifo_rx.write++;
-            protocol.fifo_rx.write %=protocol.fifo_rx.size;
+        const int rx = uart_read_bytes(UART_NUM_0, data, sizeof(data), 1);
+        for(int i=0; i<rx; i++) {
+            fifo_write(&protocol.fifo_rx, data[i]);
         }
-
-        size_t size;
-        uart_get_tx_buffer_free_size(UART_NUM_0, &size);
-        protocol.available = (size>(BUFFER_SIZE/2));
 
         xSemaphoreTake(protocol_lock, portMAX_DELAY);
         protocol_process(&protocol);
+
+        const int tx = fifo_pending(&protocol.fifo_tx);
+        for(int i=0; i<tx; i++) {
+            data[i] = fifo_read(&protocol.fifo_tx);
+        }
         xSemaphoreGive(protocol_lock);
+
+        uart_write_bytes(UART_NUM_0, data, tx);
 
         vTaskDelay(1);
     }

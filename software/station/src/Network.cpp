@@ -14,8 +14,8 @@
 
 #include "Network.h"
 
-Network::Network(QWidget *parent) : QWidget{parent}, started{false} {
-    QVBoxLayout *grid = new QVBoxLayout(this);
+Network::Network(QWidget *parent) : QGroupBox{"Network connection", parent}, started{false} {
+    QVBoxLayout *layout = new QVBoxLayout(this);
 
     listComboBox = new QComboBox();
     listComboBox->setMinimumWidth(200);
@@ -31,11 +31,11 @@ Network::Network(QWidget *parent) : QWidget{parent}, started{false} {
         settings.setValue("defaultInput", listComboBox->currentText());
     });
 
-    grid->addWidget(listComboBox);
-    grid->addWidget(scanButton);
-    grid->addWidget(saveButton);
+    layout->addWidget(listComboBox);
+    layout->addWidget(scanButton);
+    layout->addWidget(saveButton);
 
-    setLayout(grid);
+    setLayout(layout);
 
     manager = new QNetworkAccessManager(this);
 

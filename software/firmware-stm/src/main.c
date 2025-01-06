@@ -51,8 +51,7 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin) {
 	motor_interrupt_callback(&motor, GPIO_Pin);
 }
 
-static void protocol_cb_transmit(void *user, const void *data, const uint32_t size) {
-    (void)user;
+static void protocol_cb_transmit(const void *data, const uint32_t size) {
     HAL_UART_Transmit_DMA(&huart1, data, size);
 }
 
@@ -60,10 +59,7 @@ static bool jsoneq(const char *json, const jsmntok_t *tok, const char *s) {
     return ((tok->type==JSMN_STRING) && ((int)strlen(s)==(tok->end-tok->start)) && (strncmp(json+tok->start, s, tok->end-tok->start)==0));
 }
 
-static void protocol_cb_receive(void *user, const uint8_t id, const uint32_t time, const void *payload, const uint32_t size) {
-    (void)user;
-    (void)time;
-
+static void protocol_cb_receive(const uint8_t id, const void *payload, const uint32_t size) {
     if(id==0) {
         const char *json = payload;
 
@@ -85,18 +81,12 @@ static void protocol_cb_receive(void *user, const uint8_t id, const uint32_t tim
     }
 }
 
-static uint32_t protocol_cb_time(void *user) {
-	(void)user;
-	return HAL_GetTick();
-}
-
 void app_main() {
 
     motor_init(&motor);
 
     protocol.callback_tx = protocol_cb_transmit;
 	protocol.callback_rx = protocol_cb_receive;
-	protocol.callback_time = protocol_cb_time;
 	protocol.fifo_rx.buffer = protocol_buffer_rx;
 	protocol.fifo_rx.size = sizeof(protocol_buffer_rx);
 	protocol.fifo_tx.buffer = protocol_buffer_tx;
@@ -105,7 +95,6 @@ void app_main() {
 	protocol.max = sizeof(protocol_buffer_decode);
 	HAL_UART_Receive_DMA(&huart1, protocol.fifo_rx.buffer, protocol.fifo_rx.size);
 
-    uint32_t task_protocol = 0;
     uint32_t task_state = 0;
 
     char json[1024];
@@ -128,8 +117,8 @@ void app_main() {
     while(1) {
         const uint32_t time = HAL_GetTick();
 
-        if((time - task_protocol)>=1) {
-            task_protocol = time;
+        if((time - protocol.time)>=1) {
+            protocol.time = time;
             protocol.fifo_rx.write = (protocol.fifo_rx.size - __HAL_DMA_GET_COUNTER(huart1.hdmarx)) % protocol.fifo_rx.size;
             protocol.available = (HAL_DMA_GetState(huart1.hdmatx)==HAL_DMA_STATE_READY);
             protocol_process(&protocol);

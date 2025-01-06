@@ -6,8 +6,9 @@
 #include <QJsonDocument>
 #include <QComboBox>
 #include <QPushButton>
+#include <QGroupBox>
 
-class Network : public QWidget {
+class Network : public QGroupBox {
     Q_OBJECT
 
 	bool started;
