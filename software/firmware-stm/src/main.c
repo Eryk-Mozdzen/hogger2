@@ -229,18 +229,18 @@ void app_main() {
             cmp_init(&cmp, &buffer, NULL, NULL, buffer_writer);
 
             cmp_write_map(&cmp, 5);
-            cmp_write_str(&cmp, "timestamp", 9);
+            cmp_write_str(&cmp, "time", 4);
             cmp_write_u32(&cmp, time);
             cmp_write_str(&cmp, "state", 5);
             cmp_write_str(&cmp, robot_state[0], strlen(robot_state[0]));
-            cmp_write_str(&cmp, "battery", 7);
+            cmp_write_str(&cmp, "supply", 6);
             cmp_write_float(&cmp, vbus_volt);
 
             cmp_write_str(&cmp, "hog1", 4);
             cmp_write_map(&cmp, 4);
-            cmp_write_str(&cmp, "servo x", 7);
+            cmp_write_str(&cmp, "servox", 6);
             cmp_write_float(&cmp, 0);
-            cmp_write_str(&cmp, "servo y", 7);
+            cmp_write_str(&cmp, "servoy", 6);
             cmp_write_float(&cmp, 0);
             cmp_write_str(&cmp, "motor", 5);
             cmp_write_float(&cmp, motor.vel);
@@ -249,9 +249,9 @@ void app_main() {
 
             cmp_write_str(&cmp, "hog2", 4);
             cmp_write_map(&cmp, 4);
-            cmp_write_str(&cmp, "servo x", 7);
+            cmp_write_str(&cmp, "servox", 6);
             cmp_write_float(&cmp, 0);
-            cmp_write_str(&cmp, "servo y", 7);
+            cmp_write_str(&cmp, "servoy", 6);
             cmp_write_float(&cmp, 0);
             cmp_write_str(&cmp, "motor", 5);
             cmp_write_float(&cmp, 0);

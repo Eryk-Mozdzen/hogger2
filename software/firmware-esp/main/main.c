@@ -37,7 +37,7 @@ static uint8_t msgpack[BUFFER_SIZE] = {0};
 
 static void uart_init() {
     const uart_config_t config = {
-        .baud_rate = 115200,
+        .baud_rate = 230400,
         .data_bits = UART_DATA_8_BITS,
         .stop_bits = UART_STOP_BITS_1,
         .parity = UART_PARITY_DISABLE,
