@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <jsmn/jsmn.h>
+#include <stm32u5xx_hal.h>
+#include <cmp/cmp.h>
 
-#include "stm32u5xx_hal.h"
 #include "main.h"
 #include "motor.h"
 #include "protocol/protocol.h"
@@ -30,14 +30,21 @@ static uint8_t protocol_buffer_rx[BUFFER_SIZE];
 static uint8_t protocol_buffer_tx[BUFFER_SIZE];
 static uint8_t protocol_buffer_decode[BUFFER_SIZE];
 
-static jsmn_parser json_parser;
-static jsmntok_t json_tokes[JSON_TOKEN_MAX];
+typedef enum {
+    REFERENCE_TYPE_NONE,
+    REFERENCE_TYPE_CONFIGURATION,
+    REFERENCE_TYPE_TRAJECTORY,
+} reference_type_t;
 
 typedef struct {
-    float number;
-} control_t;
+    reference_type_t type;
+    union {
+        float configuration[6];
+        float trajectory[3];
+    };
+} reference_t;
 
-static control_t control = {0};
+static reference_t reference = {.type = REFERENCE_TYPE_NONE};
 
 void HAL_TIMEx_CommutCallback(TIM_HandleTypeDef *htim) {
 	motor_commutation_callback(&motor, htim);
@@ -51,29 +58,104 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin) {
 	motor_interrupt_callback(&motor, GPIO_Pin);
 }
 
+typedef struct {
+    uint8_t *buffer;
+    size_t capacity;
+    size_t position;
+    size_t size;
+} buffer_t;
+
+size_t buffer_writer(cmp_ctx_t *ctx, const void *data, size_t count) {
+    buffer_t *buf = (buffer_t *)ctx->buf;
+
+    if((buf->position+count)>buf->capacity) {
+        return 0;
+    }
+
+    memcpy(buf->buffer+buf->position, data, count);
+    buf->position +=count;
+    buf->size = buf->position;
+    return count;
+}
+
+bool buffer_reader(cmp_ctx_t *ctx, void *data, size_t count) {
+    buffer_t *buf = (buffer_t *)ctx->buf;
+
+    if((buf->position+count)>buf->size) {
+        return false;
+    }
+
+    memcpy(data, buf->buffer + buf->position, count);
+    buf->position +=count;
+    return true;
+}
+
 static void protocol_cb_transmit(const void *data, const uint32_t size) {
     HAL_UART_Transmit_DMA(&huart1, data, size);
 }
 
-static bool jsoneq(const char *json, const jsmntok_t *tok, const char *s) {
-    return ((tok->type==JSMN_STRING) && ((int)strlen(s)==(tok->end-tok->start)) && (strncmp(json+tok->start, s, tok->end-tok->start)==0));
-}
-
 static void protocol_cb_receive(const uint8_t id, const void *payload, const uint32_t size) {
     if(id==0) {
-        const char *json = payload;
+        buffer_t buffer = {
+            .buffer = (void *)payload,
+            .capacity = size,
+            .size = size,
+            .position = 0,
+        };
+        cmp_ctx_t cmp;
+        cmp_init(&cmp, &buffer, buffer_reader, NULL, NULL);
 
-        jsmn_init(&json_parser);
-        memset(json_tokes, 0, sizeof(json_tokes));
+        uint32_t map_size = 0;
+        if(!cmp_read_map(&cmp, &map_size)) {
+            return;
+        }
+        if(map_size!=2) {
+            return;
+        }
 
-        const int result = jsmn_parse(&json_parser, json, size, json_tokes, JSON_TOKEN_MAX);
+        char key[32] = {0};
+        uint32_t key_size = sizeof(key);
+        if(!cmp_read_str(&cmp, key, &key_size)) {
+            return;
+        }
+        if(strncmp(key, "command", key_size)!=0) {
+            return;
+        }
 
-        for(int i=0; i<result; i++) {
-            if(jsoneq(json, &json_tokes[i], "number")) {
-                control.number = atof(json + json_tokes[i + 1].start);
-                i++;
+        char command[32] = {0};
+        uint32_t command_size = sizeof(command);
+        if(!cmp_read_str(&cmp, command, &command_size)) {
+            return;
+        }
+        if(strncmp(command, "manual", command_size)!=0) {
+            return;
+        }
+
+        key_size = sizeof(key);
+        if(!cmp_read_str(&cmp, key, &key_size)) {
+            return;
+        }
+        if(strncmp(key, "ref_cfg", key_size)!=0) {
+            return;
+        }
+
+        uint32_t array_size = 0;
+        if(!cmp_read_array(&cmp, &array_size)) {
+            return;
+        }
+        if(array_size!=6) {
+            return;
+        }
+
+        for(uint8_t i=0; i<6; i++) {
+            float floating = 0;
+            if(!cmp_read_float(&cmp, &floating)) {
+                reference.configuration[i] = floating;
+                return;
             }
         }
+
+        reference.type = REFERENCE_TYPE_CONFIGURATION;
     }
 
     if((id==1) && (size==1)) {
@@ -97,7 +179,7 @@ void app_main() {
 
     uint32_t task_state = 0;
 
-    char json[1024];
+    uint8_t msgpack[1024];
 
     const char *robot_state[] = {
         "stopped",
@@ -137,38 +219,46 @@ void app_main() {
             const uint32_t vbus_raw = HAL_ADC_GetValue(&hadc1);
             const float vbus_volt = (6.1f*3.3f*vbus_raw)/((float)(1<<14));
 
-            sprintf(json,
-                "{\n"
-                "    \"timestamp\": %lu,\n"
-                "    \"state\": \"%s\",\n"
-                "    \"battery\": %.2f,\n"
-                "    \"hog1\": {\n"
-                "        \"servo x\": %.3f,\n"
-                "        \"servo y\": %.3f,\n"
-                "        \"motor\": %.3f,\n"
-                "        \"state\": \"%s\"\n"
-                "    },\n"
-                "    \"hog2\": {\n"
-                "        \"servo x\": %.3f,\n"
-                "        \"servo y\": %.3f,\n"
-                "        \"motor\": %.3f,\n"
-                "        \"state\": \"%s\"\n"
-                "    }\n"
-                "}",
-                HAL_GetTick(),
-                robot_state[0],
-                vbus_volt,
-                0.f,
-                0.f,
-                motor.vel,
-                motor_state[motor.state],
-                0.f,
-                0.f,
-                0.f,
-                motor_state[0]
-            );
+            buffer_t buffer = {
+                .buffer = msgpack,
+                .capacity = sizeof(msgpack),
+                .size = 0,
+                .position = 0,
+            };
+            cmp_ctx_t cmp = {0};
+            cmp_init(&cmp, &buffer, NULL, NULL, buffer_writer);
 
-            protocol_enqueue(&protocol, 0, json, strlen(json)+1);
+            cmp_write_map(&cmp, 5);
+            cmp_write_str(&cmp, "timestamp", 9);
+            cmp_write_u32(&cmp, time);
+            cmp_write_str(&cmp, "state", 5);
+            cmp_write_str(&cmp, robot_state[0], strlen(robot_state[0]));
+            cmp_write_str(&cmp, "battery", 7);
+            cmp_write_float(&cmp, vbus_volt);
+
+            cmp_write_str(&cmp, "hog1", 4);
+            cmp_write_map(&cmp, 4);
+            cmp_write_str(&cmp, "servo x", 7);
+            cmp_write_float(&cmp, 0);
+            cmp_write_str(&cmp, "servo y", 7);
+            cmp_write_float(&cmp, 0);
+            cmp_write_str(&cmp, "motor", 5);
+            cmp_write_float(&cmp, motor.vel);
+            cmp_write_str(&cmp, "state", 5);
+            cmp_write_str(&cmp, motor_state[motor.state], strlen(motor_state[motor.state]));
+
+            cmp_write_str(&cmp, "hog2", 4);
+            cmp_write_map(&cmp, 4);
+            cmp_write_str(&cmp, "servo x", 7);
+            cmp_write_float(&cmp, 0);
+            cmp_write_str(&cmp, "servo y", 7);
+            cmp_write_float(&cmp, 0);
+            cmp_write_str(&cmp, "motor", 5);
+            cmp_write_float(&cmp, 0);
+            cmp_write_str(&cmp, "state", 5);
+            cmp_write_str(&cmp, motor_state[0], strlen(motor_state[0]));
+
+            protocol_enqueue(&protocol, 0, buffer.buffer, buffer.size);
         }
 
         if(!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_2)) {

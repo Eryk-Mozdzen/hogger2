@@ -29,8 +29,8 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         QGroupBox *group = new QGroupBox("State");
         QVBoxLayout *layout  = new QVBoxLayout(group);
 
-        group->setMinimumWidth(300);
-        group->setMinimumHeight(400);
+        group->setMinimumWidth(350);
+        group->setMinimumHeight(350);
 
         QFont font("System", 10);
         font.setStyleHint(QFont::TypeWriter);
@@ -48,8 +48,8 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         QGroupBox *group = new QGroupBox("Controls");
         QVBoxLayout *layout  = new QVBoxLayout(group);
 
-        group->setMinimumWidth(300);
-        group->setMinimumHeight(400);
+        group->setMinimumWidth(350);
+        group->setMinimumHeight(350);
 
         QFont font("System", 10);
         font.setStyleHint(QFont::TypeWriter);

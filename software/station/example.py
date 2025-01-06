@@ -11,11 +11,16 @@ while True:
     print(response.text)
 
     data = {
-        'number': float(time.time() - begin),
-        'boolean': True,
-        'string': 'witajcie w mojej kuchni',
-        'zero': None,
+        'command': 'manual',
+        'ref_cfg': [
+            1500,
+            1500,
+            0,
+            1500,
+            1500,
+            0,
+        ],
     }
     requests.post(f'http://{IP}/post', json=data)
 
-    time.sleep(0.01)
+    time.sleep(0.05)

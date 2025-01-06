@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <stm32u5xx_hal.h>
 
-#include "stm32u5xx_hal.h"
 #include "motor.h"
 
 #define MOTOR_POLE_PAIRS		7

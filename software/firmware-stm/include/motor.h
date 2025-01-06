@@ -2,8 +2,7 @@
 #define MOTOR_H
 
 #include <stdint.h>
-
-#include "stm32u5xx_hal.h"
+#include <stm32u5xx_hal.h>
 
 typedef enum {
     MOTOR_STATE_IDLE,

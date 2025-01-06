@@ -1,16 +1,18 @@
 #include <stdio.h>
 #include <string.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <freertos/semphr.h>
+#include <esp_wifi.h>
+#include <esp_http_server.h>
+#include <esp_log.h>
+#include <nvs_flash.h>
+#include <driver/uart.h>
+#include <driver/gpio.h>
+#include <cJSON.h>
+#include <cmp/cmp.h>
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/semphr.h"
-#include "esp_wifi.h"
-#include "esp_http_server.h"
-#include "esp_log.h"
-#include "nvs_flash.h"
-#include "driver/uart.h"
-#include "driver/gpio.h"
-#include "common/protocol/protocol.h"
+#include "protocol/protocol.h"
 
 #define WIFI_SSID       "Hogger^2"
 #define WIFI_PASSWORD   "12345678"
@@ -27,8 +29,11 @@ static uint8_t protocol_buffer_decode[BUFFER_SIZE];
 static SemaphoreHandle_t protocol_lock;
 
 static SemaphoreHandle_t state_lock;
-static char state[BUFFER_SIZE] = {0};
+static uint8_t state[BUFFER_SIZE] = {0};
 static size_t state_size = 0;
+
+static char json[BUFFER_SIZE] = {0};
+static uint8_t msgpack[BUFFER_SIZE] = {0};
 
 static void uart_init() {
     const uart_config_t config = {
@@ -124,26 +129,217 @@ static void wifi_init() {
     ESP_LOGI("app", "wifi started ssid: \"%s\" password: \"%s\"", WIFI_SSID, WIFI_PASSWORD);
 }
 
+typedef struct {
+    uint8_t *buffer;
+    size_t capacity;
+    size_t size;
+    size_t position;
+} buffer_t;
+
+bool buffer_reader(cmp_ctx_t *ctx, void *data, size_t count) {
+    buffer_t *buf = (buffer_t *)ctx->buf;
+
+    if((buf->position+count)>buf->capacity) {
+        return false;
+    }
+
+    memcpy(data, buf->buffer+buf->position, count);
+    buf->position +=count;
+
+    return true;
+}
+
+bool buffer_skipper(cmp_ctx_t *ctx, size_t count) {
+    buffer_t *buf = (buffer_t *)ctx->buf;
+
+    if((buf->position+count)>buf->capacity) {
+        return false;
+    }
+
+    buf->position +=count;
+
+    return true;
+}
+
+size_t buffer_writer(cmp_ctx_t *ctx, const void *data, size_t count) {
+    buffer_t *buf = (buffer_t *)ctx->buf;
+
+    //ESP_LOGI("kurwa", "(write) pos %d count %d", buf->position, count);
+
+    if((buf->position+count)>buf->capacity) {
+        return 0;
+    }
+
+    memcpy(buf->buffer+buf->position, data, count);
+    buf->position +=count;
+    buf->size = buf->position;
+
+    return count;
+}
+
+void to_msgpack(cmp_ctx_t *cmp, cJSON *json) {
+    if(cJSON_IsObject(json)) {
+        const int size = cJSON_GetArraySize(json);
+        cmp_write_map(cmp, size);
+
+        cJSON *child = NULL;
+        cJSON_ArrayForEach(child, json) {
+            cmp_write_str(cmp, child->string, strlen(child->string));
+            to_msgpack(cmp, child);
+        }
+
+        return;
+    }
+
+    if(cJSON_IsArray(json)) {
+        const int size = cJSON_GetArraySize(json);
+        cmp_write_array(cmp, size);
+
+        cJSON *element = NULL;
+        cJSON_ArrayForEach(element, json) {
+            to_msgpack(cmp, element);
+        }
+
+        return;
+    }
+
+    if(cJSON_IsString(json)) {
+        const char *str = cJSON_GetStringValue(json);
+        cmp_write_str(cmp, str, strlen(str));
+        return;
+    }
+
+    if(cJSON_IsNumber(json)) {
+        cmp_write_float(cmp, json->valuedouble);
+        return;
+    }
+
+    if(cJSON_IsBool(json)) {
+        cmp_write_bool(cmp, cJSON_IsTrue(json));
+        return;
+    }
+
+    if(cJSON_IsNull(json)) {
+        cmp_write_nil(cmp);
+        return;
+    }
+}
+
+cJSON *to_json(cmp_ctx_t *cmp) {
+    cmp_object_t object;
+    if(!cmp_read_object(cmp, &object)) {
+        ESP_LOGE("MSGPACK to JSON", "parse error");
+        return NULL;
+    }
+
+    uint32_t array_size = 0;
+    if(cmp_object_as_array(&object, &array_size)) {
+        cJSON *array = cJSON_CreateArray();
+
+        for(uint32_t i=0; i<array_size; i++) {
+            cJSON_AddItemToArray(array, to_json(cmp));
+        }
+
+        return array;
+    }
+
+    uint32_t map_size = 0;
+    if(cmp_object_as_map(&object, &map_size)) {
+        cJSON *object = cJSON_CreateObject();
+
+        for(uint32_t i=0; i<map_size; i++) {
+            char key[256];
+            uint32_t key_len = sizeof(key);
+            if(!cmp_read_str(cmp, key, &key_len)) {
+                ESP_LOGE("MSGPACK to JSON", "parse error (in map %lu) error %d", map_size, cmp->error);
+                return NULL;
+            }
+
+            cJSON_AddItemToObject(object, key, to_json(cmp));
+        }
+
+        return object;
+    }
+
+    char str[256];
+    uint32_t str_len = 0;
+    if(cmp_object_as_str(&object, &str_len)) {
+        if(!cmp_object_to_str(cmp, &object, str, sizeof(str))) {
+            ESP_LOGE("MSGPACK to JSON", "parse error (in str) error %d", cmp->error);
+            return NULL;
+        }
+        return cJSON_CreateString(str);
+    }
+
+    int64_t integer = 0;
+    if(cmp_object_as_long(&object, &integer)) {
+        return cJSON_CreateNumber(integer);
+    }
+
+    float floating = 0;
+    if(cmp_object_as_float(&object, &floating)) {
+        return cJSON_CreateNumber(floating);
+    }
+
+    bool boolean = false;
+    if(cmp_object_as_bool(&object, &boolean)) {
+        return cJSON_CreateBool(boolean);
+    }
+
+    return cJSON_CreateNull();
+}
+
 static esp_err_t http_handler_get(httpd_req_t *req) {
     xSemaphoreTake(state_lock, portMAX_DELAY);
-    httpd_resp_send(req, state, state_size);
+    buffer_t buffer = {
+        .buffer = state,
+        .capacity = state_size,
+        .size = state_size,
+        .position = 0,
+    };
+    cmp_ctx_t cmp;
+    cmp_init(&cmp, &buffer, buffer_reader, NULL, NULL);
+    cJSON *json_obj = to_json(&cmp);
     xSemaphoreGive(state_lock);
+
+    if(json_obj) {
+        char *str = cJSON_Print(json_obj);
+        httpd_resp_send(req, str, HTTPD_RESP_USE_STRLEN);
+        free(str);
+        cJSON_Delete(json_obj);
+    } else {
+        ESP_LOGE("app", "JSON parser failed");
+        httpd_resp_send(req, NULL, 0);
+    }
 
     return ESP_OK;
 }
 
 static esp_err_t http_handler_post(httpd_req_t *req) {
-    char payload[BUFFER_SIZE] = {0};
+    httpd_req_recv(req, json, sizeof(json));
+    httpd_resp_send(req, NULL, 0);
 
-    const int size = httpd_req_recv(req, payload, sizeof(payload));
-
-    if(size>0) {
-        xSemaphoreTake(protocol_lock, portMAX_DELAY);
-        protocol_enqueue(&protocol, 0, payload, size);
-        xSemaphoreGive(protocol_lock);
+    cJSON *json_obj = cJSON_Parse(json);
+    if(!json_obj) {
+        ESP_LOGE("app", "Error parsing incoming JSON\n");
+        return ESP_OK;
     }
 
-    httpd_resp_send(req, NULL, 0);
+    buffer_t buffer = {
+        .buffer = msgpack,
+        .capacity = sizeof(msgpack),
+        .size = 0,
+        .position = 0,
+    };
+    cmp_ctx_t cmp;
+    cmp_init(&cmp, &buffer, NULL, NULL, buffer_writer);
+    to_msgpack(&cmp, json_obj);
+
+    cJSON_Delete(json_obj);
+
+    xSemaphoreTake(protocol_lock, portMAX_DELAY);
+    protocol_enqueue(&protocol, 0, buffer.buffer, buffer.size);
+    xSemaphoreGive(protocol_lock);
 
     return ESP_OK;
 }

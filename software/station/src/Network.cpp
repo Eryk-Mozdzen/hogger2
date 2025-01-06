@@ -57,7 +57,7 @@ Network::Network(QWidget *parent) : QGroupBox{"Network connection", parent}, sta
             manager->get(request);
         }
     });
-    timer->start(10);
+    timer->start(20);
 }
 
 void Network::transmit(const QJsonDocument &json) {

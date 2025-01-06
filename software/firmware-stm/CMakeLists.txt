@@ -104,6 +104,7 @@ add_executable(${TARGET}
 	"src/main.c"
     "src/motor.c"
     "../common/protocol/protocol.c"
+    "../common/cmp/cmp.c"
 )
 
 target_include_directories(${TARGET} PRIVATE
