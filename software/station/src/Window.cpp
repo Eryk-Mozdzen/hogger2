@@ -128,7 +128,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
 
             QJsonObject json;
             json["command"] = "manual";
-            json["reference_configuration"] = referenceConfiguration;
+            json["ref_cfg"] = referenceConfiguration;
 
             const QJsonDocument document(json);
 
