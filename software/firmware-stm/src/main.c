@@ -6,6 +6,7 @@
 
 #include "main.h"
 #include "motor.h"
+#include "mpu6050_regs.h"
 #include "protocol/protocol.h"
 
 #define BUFFER_SIZE		(10*1024)
@@ -17,6 +18,7 @@ extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim8;
 extern UART_HandleTypeDef huart1;
 extern ADC_HandleTypeDef hadc1;
+extern I2C_HandleTypeDef hi2c1;
 
 static motor_t motor1 = {
 	.control_timer = &htim1,
@@ -57,6 +59,18 @@ typedef struct {
 
 static reference_t reference = {.type = REFERENCE_TYPE_NONE};
 
+static volatile bool imu_ready = false;
+static uint8_t imu_buffer[14];
+static float imu_accel[3] = {0};
+static float imu_gyro[3] = {0};
+
+typedef struct {
+    uint8_t *buffer;
+    size_t capacity;
+    size_t position;
+    size_t size;
+} buffer_t;
+
 void HAL_TIMEx_CommutCallback(TIM_HandleTypeDef *htim) {
 	motor_commutation_callback(&motor1, htim);
     motor_commutation_callback(&motor2, htim);
@@ -65,6 +79,10 @@ void HAL_TIMEx_CommutCallback(TIM_HandleTypeDef *htim) {
 void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin) {
 	motor_interrupt_callback(&motor1, GPIO_Pin);
     motor_interrupt_callback(&motor2, GPIO_Pin);
+
+    if(GPIO_Pin==IMU_INT_Pin) {
+		HAL_I2C_Mem_Read_DMA(&hi2c1, MPU6050_ADDR<<1, MPU6050_REG_ACCEL_XOUT_H, 1, imu_buffer, sizeof(imu_buffer));
+	}
 }
 
 void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin) {
@@ -72,12 +90,11 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin) {
     motor_interrupt_callback(&motor2, GPIO_Pin);
 }
 
-typedef struct {
-    uint8_t *buffer;
-    size_t capacity;
-    size_t position;
-    size_t size;
-} buffer_t;
+void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c) {
+	if(hi2c==&hi2c1) {
+	    imu_ready = true;
+	}
+}
 
 size_t buffer_writer(cmp_ctx_t *ctx, const void *data, size_t count) {
     buffer_t *buf = (buffer_t *)ctx->buf;
@@ -177,10 +194,95 @@ static void protocol_cb_receive(const uint8_t id, const void *payload, const uin
     }
 }
 
+static void mpu6050_write(uint8_t address, uint8_t value) {
+	HAL_I2C_Mem_Write(&hi2c1, MPU6050_ADDR<<1, address, 1, &value, 1, 100);
+}
+
+static void mpu6050_init() {
+	mpu6050_write(MPU6050_REG_PWR_MGMT_1,
+		MPU6050_PWR_MGMT_1_DEVICE_RESET
+	);
+
+	HAL_Delay(100);
+
+	mpu6050_write(MPU6050_REG_SIGNAL_PATH_RESET,
+		MPU6050_SIGNAL_PATH_RESET_GYRO |
+		MPU6050_SIGNAL_PATH_RESET_ACCEL |
+		MPU6050_SIGNAL_PATH_RESET_TEMP
+	);
+
+	HAL_Delay(100);
+
+	mpu6050_write(MPU6050_REG_INT_ENABLE,
+		MPU6050_INT_ENABLE_FIFO_OVERLOW_DISABLE |
+		MPU6050_INT_ENABLE_I2C_MST_INT_DISABLE |
+		MPU6050_INT_ENABLE_DATA_RDY_ENABLE
+	);
+
+	mpu6050_write(MPU6050_REG_INT_PIN_CFG,
+		MPU6050_INT_PIN_CFG_LEVEL_ACTIVE_HIGH |
+		MPU6050_INT_PIN_CFG_PUSH_PULL |
+		MPU6050_INT_PIN_CFG_PULSE |
+		MPU6050_INT_PIN_CFG_STATUS_CLEAR_AFTER_ANY |
+		MPU6050_INT_PIN_CFG_FSYNC_DISABLE |
+		MPU6050_INT_PIN_CFG_I2C_BYPASS_DISABLE
+	);
+
+	mpu6050_write(MPU6050_REG_PWR_MGMT_1,
+		MPU6050_PWR_MGMT_1_TEMP_DIS |
+		MPU6050_PWR_MGMT_1_CLOCK_INTERNAL
+	);
+
+	mpu6050_write(MPU6050_REG_CONFIG,
+		MPU6050_CONFIG_EXT_SYNC_DISABLED |
+		MPU6050_CONFIG_DLPF_SETTING_6
+	);
+
+	mpu6050_write(MPU6050_REG_ACCEL_CONFIG,
+		MPU6050_ACCEL_CONFIG_RANGE_4G
+	);
+
+	mpu6050_write(MPU6050_REG_GYRO_CONFIG,
+		MPU6050_GYRO_CONFIG_RANGE_500DPS
+	);
+
+	mpu6050_write(MPU6050_REG_SMPLRT_DIV, 0);
+}
+
+static void mpu6050_read(float *acc, float *gyr, const uint8_t *buffer) {
+	{
+		const int16_t raw_x = (((int16_t)buffer[8])<<8) | buffer[9];
+		const int16_t raw_y = (((int16_t)buffer[10])<<8) | buffer[11];
+		const int16_t raw_z = (((int16_t)buffer[12])<<8) | buffer[13];
+
+		const float gain = 65.5f;
+		const float dps_to_rads = 0.017453292519943f;
+
+		gyr[0] = -raw_x*dps_to_rads/gain;
+		gyr[1] = -raw_y*dps_to_rads/gain;
+		gyr[2] = +raw_z*dps_to_rads/gain;
+	}
+
+	{
+		const int16_t raw_x = (((int16_t)buffer[0])<<8) | buffer[1];
+		const int16_t raw_y = (((int16_t)buffer[2])<<8) | buffer[3];
+		const int16_t raw_z = (((int16_t)buffer[4])<<8) | buffer[5];
+
+		const float gain = 8192.f;
+		const float g_to_ms2 = 9.80665f;
+
+		acc[0] = -raw_x*g_to_ms2/gain;
+		acc[1] = -raw_y*g_to_ms2/gain;
+		acc[2] = +raw_z*g_to_ms2/gain;
+	}
+}
+
 void app_main() {
 
     motor_init(&motor1);
     motor_init(&motor2);
+
+    mpu6050_init();
 
     protocol.callback_tx = protocol_cb_transmit;
 	protocol.callback_rx = protocol_cb_receive;
@@ -194,7 +296,7 @@ void app_main() {
 
     uint32_t task_state = 0;
 
-    uint8_t msgpack[1024];
+    uint8_t msgpack[10*1024];
 
     const char *robot_state[] = {
         "stopped",
@@ -226,7 +328,12 @@ void app_main() {
             HAL_UART_Receive_DMA(&huart1, protocol.fifo_rx.buffer, protocol.fifo_rx.size);
         }
 
-        if((time - task_state)>=10) {
+        if(imu_ready) {
+		    imu_ready = false;
+		    mpu6050_read(imu_accel, imu_gyro, imu_buffer);
+	    }
+
+        if((time - task_state)>=20) {
             task_state = time;
 
             HAL_ADC_Start(&hadc1);
@@ -243,7 +350,8 @@ void app_main() {
             cmp_ctx_t cmp = {0};
             cmp_init(&cmp, &buffer, NULL, NULL, buffer_writer);
 
-            cmp_write_map(&cmp, 5);
+            cmp_write_map(&cmp, 6);
+
             cmp_write_str(&cmp, "time", 4);
             cmp_write_u32(&cmp, time);
             cmp_write_str(&cmp, "state", 5);
@@ -273,13 +381,36 @@ void app_main() {
             cmp_write_str(&cmp, "state", 5);
             cmp_write_str(&cmp, motor_state[motor2.state], strlen(motor_state[motor2.state]));
 
+            cmp_write_str(&cmp, "sensors", 7);
+            cmp_write_array(&cmp, 2);
+            cmp_write_map(&cmp, 3);
+            cmp_write_str(&cmp, "name", 4);
+            cmp_write_str(&cmp, "accelerometer", 13);
+            cmp_write_str(&cmp, "unit", 4);
+            cmp_write_str(&cmp, "m/s^2", 5);
+            cmp_write_str(&cmp, "data", 4);
+            cmp_write_array(&cmp, 3);
+            cmp_write_float(&cmp, imu_accel[0]);
+            cmp_write_float(&cmp, imu_accel[1]);
+            cmp_write_float(&cmp, imu_accel[2]);
+            cmp_write_map(&cmp, 3);
+            cmp_write_str(&cmp, "name", 4);
+            cmp_write_str(&cmp, "gyroscope", 9);
+            cmp_write_str(&cmp, "unit", 4);
+            cmp_write_str(&cmp, "rad/s", 5);
+            cmp_write_str(&cmp, "data", 4);
+            cmp_write_array(&cmp, 3);
+            cmp_write_float(&cmp, imu_gyro[0]);
+            cmp_write_float(&cmp, imu_gyro[1]);
+            cmp_write_float(&cmp, imu_gyro[2]);
+
             protocol_enqueue(&protocol, 0, buffer.buffer, buffer.size);
         }
 
-        if(!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_2)) {
+        /*if(!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_2)) {
             motor_set_vel(&motor1, 200);
             motor_set_vel(&motor2, 200);
-        }
+        }*/
 
         motor_tick(&motor1);
         motor_tick(&motor2);
