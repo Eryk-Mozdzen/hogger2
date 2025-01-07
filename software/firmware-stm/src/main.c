@@ -13,16 +13,27 @@
 
 extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim2;
+extern TIM_HandleTypeDef htim3;
+extern TIM_HandleTypeDef htim8;
 extern UART_HandleTypeDef huart1;
 extern ADC_HandleTypeDef hadc1;
 
-static motor_t motor = {
+static motor_t motor1 = {
 	.control_timer = &htim1,
 	.control_timer_itr = TIM_TS_ITR1,
 	.commut_timer = &htim2,
     .bemf[MOTOR_PHASE_U] = MOTOR1_BEMF_U_Pin,
     .bemf[MOTOR_PHASE_V] = MOTOR1_BEMF_V_Pin,
     .bemf[MOTOR_PHASE_W] = MOTOR1_BEMF_W_Pin,
+};
+
+static motor_t motor2 = {
+	.control_timer = &htim8,
+	.control_timer_itr = TIM_TS_ITR2,
+	.commut_timer = &htim3,
+    .bemf[MOTOR_PHASE_U] = MOTOR2_BEMF_U_Pin,
+    .bemf[MOTOR_PHASE_V] = MOTOR2_BEMF_V_Pin,
+    .bemf[MOTOR_PHASE_W] = MOTOR2_BEMF_W_Pin,
 };
 
 static protocol_t protocol = PROTOCOL_INIT;
@@ -47,15 +58,18 @@ typedef struct {
 static reference_t reference = {.type = REFERENCE_TYPE_NONE};
 
 void HAL_TIMEx_CommutCallback(TIM_HandleTypeDef *htim) {
-	motor_commutation_callback(&motor, htim);
+	motor_commutation_callback(&motor1, htim);
+    motor_commutation_callback(&motor2, htim);
 }
 
 void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin) {
-	motor_interrupt_callback(&motor, GPIO_Pin);
+	motor_interrupt_callback(&motor1, GPIO_Pin);
+    motor_interrupt_callback(&motor2, GPIO_Pin);
 }
 
 void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin) {
-	motor_interrupt_callback(&motor, GPIO_Pin);
+	motor_interrupt_callback(&motor1, GPIO_Pin);
+    motor_interrupt_callback(&motor2, GPIO_Pin);
 }
 
 typedef struct {
@@ -165,7 +179,8 @@ static void protocol_cb_receive(const uint8_t id, const void *payload, const uin
 
 void app_main() {
 
-    motor_init(&motor);
+    motor_init(&motor1);
+    motor_init(&motor2);
 
     protocol.callback_tx = protocol_cb_transmit;
 	protocol.callback_rx = protocol_cb_receive;
@@ -243,9 +258,9 @@ void app_main() {
             cmp_write_str(&cmp, "servoy", 6);
             cmp_write_float(&cmp, 0);
             cmp_write_str(&cmp, "motor", 5);
-            cmp_write_float(&cmp, motor.vel);
+            cmp_write_float(&cmp, motor1.vel);
             cmp_write_str(&cmp, "state", 5);
-            cmp_write_str(&cmp, motor_state[motor.state], strlen(motor_state[motor.state]));
+            cmp_write_str(&cmp, motor_state[motor1.state], strlen(motor_state[motor1.state]));
 
             cmp_write_str(&cmp, "hog2", 4);
             cmp_write_map(&cmp, 4);
@@ -254,17 +269,19 @@ void app_main() {
             cmp_write_str(&cmp, "servoy", 6);
             cmp_write_float(&cmp, 0);
             cmp_write_str(&cmp, "motor", 5);
-            cmp_write_float(&cmp, 0);
+            cmp_write_float(&cmp, motor2.vel);
             cmp_write_str(&cmp, "state", 5);
-            cmp_write_str(&cmp, motor_state[0], strlen(motor_state[0]));
+            cmp_write_str(&cmp, motor_state[motor2.state], strlen(motor_state[motor2.state]));
 
             protocol_enqueue(&protocol, 0, buffer.buffer, buffer.size);
         }
 
         if(!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_2)) {
-            motor_set_vel(&motor, 200);
+            motor_set_vel(&motor1, 200);
+            motor_set_vel(&motor2, 200);
         }
 
-        motor_tick(&motor);
+        motor_tick(&motor1);
+        motor_tick(&motor2);
     }
 }
