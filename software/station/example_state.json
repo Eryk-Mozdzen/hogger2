@@ -42,8 +42,8 @@
             ]
         },
         {
-            "name": "optical flow",
-            "unit": "m/s",
+            "name": "optical_flow",
+            "unit": "1/s",
             "data": [
                 0,
                 0

@@ -7,6 +7,7 @@
 #include "main.h"
 #include "motor.h"
 #include "mpu6050_regs.h"
+#include "pmw3901_regs.h"
 #include "protocol/protocol.h"
 
 #define BUFFER_SIZE		(10*1024)
@@ -19,6 +20,7 @@ extern TIM_HandleTypeDef htim8;
 extern UART_HandleTypeDef huart1;
 extern ADC_HandleTypeDef hadc1;
 extern I2C_HandleTypeDef hi2c1;
+extern SPI_HandleTypeDef hspi2;
 
 static motor_t motor1 = {
 	.control_timer = &htim1,
@@ -64,6 +66,11 @@ static uint8_t imu_buffer[14];
 static float imu_accel[3] = {0};
 static float imu_gyro[3] = {0};
 
+static volatile bool flow_ready = false;
+static uint8_t flow_buffer_tx[32];
+static uint8_t flow_buffer_rx[32];
+static float flow_vel[2] = {0};
+
 typedef struct {
     uint8_t *buffer;
     size_t capacity;
@@ -93,6 +100,12 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin) {
 void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c) {
 	if(hi2c==&hi2c1) {
 	    imu_ready = true;
+	}
+}
+
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
+	if(hspi==&hspi2) {
+	    flow_ready = true;
 	}
 }
 
@@ -277,12 +290,115 @@ static void mpu6050_read(float *acc, float *gyr, const uint8_t *buffer) {
 	}
 }
 
+void pmw3901_write(const uint8_t address, const uint8_t value) {
+	uint8_t tx[] = {address | 0x80, value};
+
+	HAL_GPIO_WritePin(FLOW_CS_GPIO_Port, FLOW_CS_Pin, GPIO_PIN_RESET);
+	HAL_Delay(1);
+	HAL_SPI_Transmit(&hspi2, tx, sizeof(tx), HAL_MAX_DELAY);
+	HAL_Delay(1);
+	HAL_GPIO_WritePin(FLOW_CS_GPIO_Port, FLOW_CS_Pin, GPIO_PIN_SET);
+	HAL_Delay(1);
+}
+
+void pmw3901_init() {
+	pmw3901_write(0x3A, 0x5A);
+
+	HAL_Delay(5);
+
+	pmw3901_write(0x7F, 0x00);
+	pmw3901_write(0x61, 0xAD);
+	pmw3901_write(0x7F, 0x03);
+	pmw3901_write(0x40, 0x00);
+	pmw3901_write(0x7F, 0x05);
+	pmw3901_write(0x41, 0xB3);
+	pmw3901_write(0x43, 0xF1);
+	pmw3901_write(0x45, 0x14);
+	pmw3901_write(0x5B, 0x32);
+	pmw3901_write(0x5F, 0x34);
+	pmw3901_write(0x7B, 0x08);
+	pmw3901_write(0x7F, 0x06);
+	pmw3901_write(0x44, 0x1B);
+	pmw3901_write(0x40, 0xBF);
+	pmw3901_write(0x4E, 0x3F);
+	pmw3901_write(0x7F, 0x08);
+	pmw3901_write(0x65, 0x20);
+	pmw3901_write(0x6A, 0x18);
+	pmw3901_write(0x7F, 0x09);
+	pmw3901_write(0x4F, 0xAF);
+	pmw3901_write(0x5F, 0x40);
+	pmw3901_write(0x48, 0x80);
+	pmw3901_write(0x49, 0x80);
+	pmw3901_write(0x57, 0x77);
+	pmw3901_write(0x60, 0x78);
+	pmw3901_write(0x61, 0x78);
+	pmw3901_write(0x62, 0x08);
+	pmw3901_write(0x63, 0x50);
+	pmw3901_write(0x7F, 0x0A);
+	pmw3901_write(0x45, 0x60);
+	pmw3901_write(0x7F, 0x00);
+	pmw3901_write(0x4D, 0x11);
+	pmw3901_write(0x55, 0x80);
+	pmw3901_write(0x74, 0x1F);
+	pmw3901_write(0x75, 0x1F);
+	pmw3901_write(0x4A, 0x78);
+	pmw3901_write(0x4B, 0x78);
+	pmw3901_write(0x44, 0x08);
+	pmw3901_write(0x45, 0x50);
+	pmw3901_write(0x64, 0xFF);
+	pmw3901_write(0x65, 0x1F);
+	pmw3901_write(0x7F, 0x14);
+	pmw3901_write(0x65, 0x60);
+	pmw3901_write(0x66, 0x08);
+	pmw3901_write(0x63, 0x78);
+	pmw3901_write(0x7F, 0x15);
+	pmw3901_write(0x48, 0x58);
+	pmw3901_write(0x7F, 0x07);
+	pmw3901_write(0x41, 0x0D);
+	pmw3901_write(0x43, 0x14);
+	pmw3901_write(0x4B, 0x0E);
+	pmw3901_write(0x45, 0x0F);
+	pmw3901_write(0x44, 0x42);
+	pmw3901_write(0x4C, 0x80);
+	pmw3901_write(0x7F, 0x10);
+	pmw3901_write(0x5B, 0x02);
+	pmw3901_write(0x7F, 0x07);
+	pmw3901_write(0x40, 0x41);
+	pmw3901_write(0x70, 0x00);
+
+	HAL_Delay(100);
+
+	pmw3901_write(0x32, 0x44);
+	pmw3901_write(0x7F, 0x07);
+	pmw3901_write(0x40, 0x40);
+	pmw3901_write(0x7F, 0x06);
+	pmw3901_write(0x62, 0xf0);
+	pmw3901_write(0x63, 0x00);
+	pmw3901_write(0x7F, 0x0D);
+	pmw3901_write(0x48, 0xC0);
+	pmw3901_write(0x6F, 0xd5);
+	pmw3901_write(0x7F, 0x00);
+	pmw3901_write(0x5B, 0xa0);
+	pmw3901_write(0x4E, 0xA8);
+	pmw3901_write(0x5A, 0x50);
+	pmw3901_write(0x40, 0x80);
+}
+
+void pmw3901_read(float *flow, const uint8_t *buffer, const float dt) {
+	const int16_t delta_x = (((int16_t)buffer[2])<<8) | buffer[1];
+	const int16_t delta_y = (((int16_t)buffer[4])<<8) | buffer[3];
+
+	flow[0] = -delta_y/(dt*PMW3901_FOCAL_LENGTH);
+	flow[1] = -delta_x/(dt*PMW3901_FOCAL_LENGTH);
+}
+
 void app_main() {
 
     motor_init(&motor1);
     motor_init(&motor2);
 
     mpu6050_init();
+    pmw3901_init();
 
     protocol.callback_tx = protocol_cb_transmit;
 	protocol.callback_rx = protocol_cb_receive;
@@ -295,6 +411,7 @@ void app_main() {
 	HAL_UART_Receive_DMA(&huart1, protocol.fifo_rx.buffer, protocol.fifo_rx.size);
 
     uint32_t task_state = 0;
+    uint32_t task_flow = 0;
 
     uint8_t msgpack[10*1024];
 
@@ -332,6 +449,31 @@ void app_main() {
 		    imu_ready = false;
 		    mpu6050_read(imu_accel, imu_gyro, imu_buffer);
 	    }
+
+        if((time - task_flow)>=20) {
+            task_flow = time;
+            for(uint8_t i=0; i<5; i++) {
+                flow_buffer_tx[2*i] = (PMW3901_REG_MOTION + i) & ~0x80;
+            }
+            HAL_GPIO_WritePin(FLOW_CS_GPIO_Port, FLOW_CS_Pin, GPIO_PIN_RESET);
+            HAL_SPI_TransmitReceive_IT(&hspi2, flow_buffer_tx, flow_buffer_rx, 10);
+        }
+
+        if(flow_ready) {
+            flow_ready = false;
+            HAL_GPIO_WritePin(FLOW_CS_GPIO_Port, FLOW_CS_Pin, GPIO_PIN_SET);
+            uint8_t motion[5];
+            for(uint8_t i=0; i<sizeof(motion); i++) {
+                motion[i] = flow_buffer_rx[2*i + 1];
+            }
+
+            float tmp[2];
+            pmw3901_read(tmp, motion, 0.02f);
+            if((fabs(tmp[0])<7.4f) && (fabs(tmp[1])<7.4f)) {
+                flow_vel[0] = tmp[0];
+                flow_vel[1] = tmp[1];
+            }
+        }
 
         if((time - task_state)>=20) {
             task_state = time;
@@ -382,7 +524,7 @@ void app_main() {
             cmp_write_str(&cmp, motor_state[motor2.state], strlen(motor_state[motor2.state]));
 
             cmp_write_str(&cmp, "sensors", 7);
-            cmp_write_array(&cmp, 2);
+            cmp_write_array(&cmp, 3);
             cmp_write_map(&cmp, 3);
             cmp_write_str(&cmp, "name", 4);
             cmp_write_str(&cmp, "accelerometer", 13);
@@ -403,6 +545,15 @@ void app_main() {
             cmp_write_float(&cmp, imu_gyro[0]);
             cmp_write_float(&cmp, imu_gyro[1]);
             cmp_write_float(&cmp, imu_gyro[2]);
+            cmp_write_map(&cmp, 3);
+            cmp_write_str(&cmp, "name", 4);
+            cmp_write_str(&cmp, "optical_flow", 12);
+            cmp_write_str(&cmp, "unit", 4);
+            cmp_write_str(&cmp, "1/s", 5);
+            cmp_write_str(&cmp, "data", 4);
+            cmp_write_array(&cmp, 2);
+            cmp_write_float(&cmp, flow_vel[0]);
+            cmp_write_float(&cmp, flow_vel[1]);
 
             protocol_enqueue(&protocol, 0, buffer.buffer, buffer.size);
         }
