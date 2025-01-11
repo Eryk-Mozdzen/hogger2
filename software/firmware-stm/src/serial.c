@@ -3,8 +3,6 @@
 
 #include "serial.h"
 
-#define TX_SIZE_THRESHOLD   (2*1024)
-#define TX_TIME_THRESHOLD   1
 #define RX_TIME_WATCHDOG    1000
 
 #define MIN(a, b) ((a)<(b) ? (a) : (b))
@@ -43,7 +41,7 @@ void serial_init(serial_t *serial, UART_HandleTypeDef *uart) {
 
     serial->uart = uart;
     serial->time_last_rx = 0;
-    serial->time_last_tx = 0;
+    serial->transmission = 0;
 
     serial->fifo_rx.read = 0;
     serial->fifo_rx.write = 0;
@@ -55,7 +53,6 @@ void serial_init(serial_t *serial, UART_HandleTypeDef *uart) {
 
 void serial_tick(serial_t *serial) {
     const uint32_t time = HAL_GetTick();
-    const uint32_t tx_available = (HAL_DMA_GetState(serial->uart->hdmatx)==HAL_DMA_STATE_READY);
     const uint32_t rx_position = (sizeof(serial->fifo_rx.buffer) - __HAL_DMA_GET_COUNTER(serial->uart->hdmarx)) % sizeof(serial->fifo_rx.buffer);
 
     if(rx_position!=serial->fifo_rx.write) {
@@ -69,16 +66,33 @@ void serial_tick(serial_t *serial) {
         HAL_UART_Receive_DMA(serial->uart, serial->fifo_rx.buffer, sizeof(serial->fifo_rx.buffer));
     }
 
-    const uint32_t tx_wait = time - serial->time_last_tx;
     const uint32_t tx_pending = fifo_pending(&serial->fifo_tx);
 
-    if(tx_available && tx_pending && (tx_pending>=TX_SIZE_THRESHOLD || tx_wait>=TX_TIME_THRESHOLD)) {
+    if(!serial->transmission && tx_pending) {
         const uint32_t len = MIN(tx_pending, sizeof(serial->fifo_tx.buffer) - serial->fifo_tx.read);
 
+        serial->transmission = 1;
         HAL_UART_Transmit_DMA(serial->uart, &serial->fifo_tx.buffer[serial->fifo_tx.read], len);
         serial->fifo_tx.read +=len;
         serial->fifo_tx.read %=sizeof(serial->fifo_tx.buffer);
+    }
+}
 
-        serial->time_last_tx = time;
+void serial_transmit_callback(serial_t *serial, UART_HandleTypeDef *huart) {
+    if(huart!=serial->uart) {
+        return;
+    }
+
+    serial->transmission = 0;
+
+    const uint32_t tx_pending = fifo_pending(&serial->fifo_tx);
+
+    if(tx_pending) {
+        const uint32_t len = MIN(tx_pending, sizeof(serial->fifo_tx.buffer) - serial->fifo_tx.read);
+
+        serial->transmission = 1;
+        HAL_UART_Transmit_DMA(serial->uart, &serial->fifo_tx.buffer[serial->fifo_tx.read], len);
+        serial->fifo_tx.read +=len;
+        serial->fifo_tx.read %=sizeof(serial->fifo_tx.buffer);
     }
 }

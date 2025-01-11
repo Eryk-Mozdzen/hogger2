@@ -138,7 +138,7 @@ target_compile_options(${TARGET} PRIVATE
 	>
 
 	$<$<COMPILE_LANGUAGE:C>:
-		-Os
+		-Os -g
 		-std=c17
 		-Wall
         -Wextra

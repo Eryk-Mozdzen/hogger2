@@ -71,6 +71,8 @@ typedef struct {
     size_t size;
 } buffer_t;
 
+static serial_t serial;
+
 void HAL_TIMEx_CommutCallback(TIM_HandleTypeDef *htim) {
 	motor_commutation_callback(&motor1, htim);
     motor_commutation_callback(&motor2, htim);
@@ -100,6 +102,10 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 	if(hspi==&hspi2) {
 	    flow_ready = true;
 	}
+}
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
+    serial_transmit_callback(&serial, huart);
 }
 
 size_t buffer_writer(cmp_ctx_t *ctx, const void *data, size_t count) {
@@ -313,7 +319,7 @@ void pmw3901_read(float *flow, const uint8_t *buffer, const float dt) {
 }
 
 void app_main() {
-    serial_t serial;
+
     serial_init(&serial, &huart1);
 
     motor_init(&motor1);
