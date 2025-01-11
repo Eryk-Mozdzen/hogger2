@@ -185,9 +185,9 @@ bool deserialize_reference(const void *src, const uint32_t src_size, reference_t
     for(uint8_t i=0; i<6; i++) {
         float floating = 0;
         if(!cmp_read_float(&cmp, &floating)) {
-            reference->configuration[i] = floating;
             return false;
         }
+        reference->configuration[i] = floating;
     }
 
     reference->type = REFERENCE_TYPE_CONFIGURATION;

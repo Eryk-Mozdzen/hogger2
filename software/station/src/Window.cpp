@@ -29,8 +29,8 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         QGroupBox *group = new QGroupBox("State");
         QVBoxLayout *layout  = new QVBoxLayout(group);
 
-        group->setMinimumWidth(350);
-        group->setMinimumHeight(350);
+        group->setMinimumWidth(400);
+        group->setMinimumHeight(400);
 
         QFont font("System", 10);
         font.setStyleHint(QFont::TypeWriter);
@@ -48,8 +48,8 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         QGroupBox *group = new QGroupBox("Controls");
         QVBoxLayout *layout  = new QVBoxLayout(group);
 
-        group->setMinimumWidth(350);
-        group->setMinimumHeight(350);
+        group->setMinimumWidth(400);
+        group->setMinimumHeight(400);
 
         QFont font("System", 10);
         font.setStyleHint(QFont::TypeWriter);
@@ -103,8 +103,8 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         QTimer *timer = new QTimer();
 
         connect(timer, &QTimer::timeout, [this]() {
-            const double v = -1.*joystick.get(JoystickWidget::Analog::LY);
-            const double w = -5.*joystick.get(JoystickWidget::Analog::LX);
+            const double v = -2.*joystick.get(JoystickWidget::Analog::LY);
+            const double w = -10.*joystick.get(JoystickWidget::Analog::LX);
             const double X = joystick.get(JoystickWidget::Analog::RX);
 
             constexpr double L = 0.13;  // m

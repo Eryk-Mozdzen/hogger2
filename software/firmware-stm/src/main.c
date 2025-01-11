@@ -74,10 +74,6 @@ static robot_t robot = {
     .flow = &flow,
 };
 
-static reference_t reference = {
-    .type = REFERENCE_TYPE_NONE
-};
-
 void HAL_TIMEx_CommutCallback(TIM_HandleTypeDef *htim) {
 	motor_commutation_callback(&hog1.motor, htim);
     motor_commutation_callback(&hog2.motor, htim);
@@ -130,11 +126,6 @@ void app_main() {
     while(1) {
         robot.time = HAL_GetTick();
 
-        servo_set_pos(&hog1.servo_x, sinf(2*3.1415f*robot.time*0.001f));
-        servo_set_pos(&hog1.servo_y, sinf(2*3.1415f*robot.time*0.001f));
-        servo_set_pos(&hog2.servo_x, sinf(2*3.1415f*robot.time*0.001f));
-        servo_set_pos(&hog2.servo_y, sinf(2*3.1415f*robot.time*0.001f));
-
         if((robot.time - task_state)>=20) {
             task_state = robot.time;
 
@@ -154,8 +145,34 @@ void app_main() {
             if(size==1) {
                 HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, *(uint8_t *)decoder_payload);
             } else if(size>0) {
+                reference_t reference = {0};
                 if(deserialize_reference(decoder_payload, size, &reference)) {
-                    // TODO
+                    switch(reference.type) {
+                        case REFERENCE_TYPE_NONE: {
+                            servo_set_pos(&hog1.servo_x, 0);
+                            servo_set_pos(&hog1.servo_y, 0);
+                            motor_set_vel(&hog1.motor, 0);
+                            servo_set_pos(&hog2.servo_x, 0);
+                            servo_set_pos(&hog2.servo_y, 0);
+                            motor_set_vel(&hog2.motor, 0);
+                        } break;
+                        case REFERENCE_TYPE_CONFIGURATION: {
+                            servo_set_cmp(&hog1.servo_x, reference.configuration[0]);
+                            servo_set_cmp(&hog1.servo_y, reference.configuration[1]);
+                            motor_set_vel(&hog1.motor, reference.configuration[2]);
+                            servo_set_cmp(&hog2.servo_x, reference.configuration[3]);
+                            servo_set_cmp(&hog2.servo_y, reference.configuration[4]);
+                            motor_set_vel(&hog2.motor, reference.configuration[5]);
+                        } break;
+                        case REFERENCE_TYPE_TRAJECTORY: {
+                            servo_set_pos(&hog1.servo_x, 0);
+                            servo_set_pos(&hog1.servo_y, 0);
+                            motor_set_vel(&hog1.motor, 0);
+                            servo_set_pos(&hog2.servo_x, 0);
+                            servo_set_pos(&hog2.servo_y, 0);
+                            motor_set_vel(&hog2.motor, 0);
+                        } break;
+                    }
                 }
             }
         }
