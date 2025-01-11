@@ -103,6 +103,7 @@ add_executable(${TARGET}
 
 	"src/main.c"
     "src/motor.c"
+    "src/servo.c"
     "src/serial.c"
     "src/serialize.c"
     "src/imu.c"

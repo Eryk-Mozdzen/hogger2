@@ -76,24 +76,24 @@ uint32_t serialize_robot(const robot_t *robot, void *dest, const uint32_t dest_c
     cmp_write_str(&cmp, "hog1", 4);
     cmp_write_map(&cmp, 4);
     cmp_write_str(&cmp, "servox", 6);
-    cmp_write_float(&cmp, robot->hog[0].servo_x);
+    cmp_write_float(&cmp, robot->hog[0]->servo_x.position);
     cmp_write_str(&cmp, "servoy", 6);
-    cmp_write_float(&cmp, robot->hog[0].servo_y);
+    cmp_write_float(&cmp, robot->hog[0]->servo_y.position);
     cmp_write_str(&cmp, "motor", 5);
-    cmp_write_float(&cmp, robot->hog[0].motor->vel);
+    cmp_write_float(&cmp, robot->hog[0]->motor.vel);
     cmp_write_str(&cmp, "state", 5);
-    cmp_write_str(&cmp, motor_state[robot->hog[0].motor->state], strlen(motor_state[robot->hog[0].motor->state]));
+    cmp_write_str(&cmp, motor_state[robot->hog[0]->motor.state], strlen(motor_state[robot->hog[0]->motor.state]));
 
     cmp_write_str(&cmp, "hog2", 4);
     cmp_write_map(&cmp, 4);
     cmp_write_str(&cmp, "servox", 6);
-    cmp_write_float(&cmp, robot->hog[1].servo_x);
+    cmp_write_float(&cmp, robot->hog[1]->servo_x.position);
     cmp_write_str(&cmp, "servoy", 6);
-    cmp_write_float(&cmp, robot->hog[1].servo_y);
+    cmp_write_float(&cmp, robot->hog[1]->servo_y.position);
     cmp_write_str(&cmp, "motor", 5);
-    cmp_write_float(&cmp, robot->hog[1].motor->vel);
+    cmp_write_float(&cmp, robot->hog[1]->motor.vel);
     cmp_write_str(&cmp, "state", 5);
-    cmp_write_str(&cmp, motor_state[robot->hog[1].motor->state], strlen(motor_state[robot->hog[1].motor->state]));
+    cmp_write_str(&cmp, motor_state[robot->hog[1]->motor.state], strlen(motor_state[robot->hog[1]->motor.state]));
 
     cmp_write_str(&cmp, "sensors", 7);
     cmp_write_array(&cmp, 3);

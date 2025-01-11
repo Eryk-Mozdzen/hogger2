@@ -2,6 +2,7 @@
 #define ROBOT_H
 
 #include "motor.h"
+#include "servo.h"
 #include "imu.h"
 #include "flow.h"
 
@@ -12,14 +13,16 @@ typedef enum {
 } robot_state_t;
 
 typedef struct {
+    motor_t motor;
+    servo_t servo_x;
+    servo_t servo_y;
+} robot_hog_t;
+
+typedef struct {
     robot_state_t state;
     uint32_t time;
     float supply;
-    struct {
-        motor_t *motor;
-        float servo_x;
-        float servo_y;
-    } hog[2];
+    robot_hog_t *hog[2];
     imu_t *imu;
     flow_t *flow;
 } robot_t;
