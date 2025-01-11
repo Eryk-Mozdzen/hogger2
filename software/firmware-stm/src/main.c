@@ -3,15 +3,13 @@
 #include <string.h>
 #include <stm32u5xx_hal.h>
 #include <cmp/cmp.h>
+#include <lrcp/frame.h>
 
 #include "main.h"
 #include "motor.h"
 #include "mpu6050_regs.h"
 #include "pmw3901_regs.h"
-#include "protocol/protocol.h"
-
-#define BUFFER_SIZE		(10*1024)
-#define JSON_TOKEN_MAX  128
+#include "serial.h"
 
 extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim2;
@@ -39,11 +37,6 @@ static motor_t motor2 = {
     .bemf[MOTOR_PHASE_V] = MOTOR2_BEMF_V_Pin,
     .bemf[MOTOR_PHASE_W] = MOTOR2_BEMF_W_Pin,
 };
-
-static protocol_t protocol = PROTOCOL_INIT;
-static uint8_t protocol_buffer_rx[BUFFER_SIZE];
-static uint8_t protocol_buffer_tx[BUFFER_SIZE];
-static uint8_t protocol_buffer_decode[BUFFER_SIZE];
 
 typedef enum {
     REFERENCE_TYPE_NONE,
@@ -132,79 +125,6 @@ bool buffer_reader(cmp_ctx_t *ctx, void *data, size_t count) {
     memcpy(data, buf->buffer + buf->position, count);
     buf->position +=count;
     return true;
-}
-
-static void protocol_cb_transmit(const void *data, const uint32_t size) {
-    HAL_UART_Transmit_DMA(&huart1, data, size);
-}
-
-static void protocol_cb_receive(const uint8_t id, const void *payload, const uint32_t size) {
-    if(id==0) {
-        buffer_t buffer = {
-            .buffer = (void *)payload,
-            .capacity = size,
-            .size = size,
-            .position = 0,
-        };
-        cmp_ctx_t cmp;
-        cmp_init(&cmp, &buffer, buffer_reader, NULL, NULL);
-
-        uint32_t map_size = 0;
-        if(!cmp_read_map(&cmp, &map_size)) {
-            return;
-        }
-        if(map_size!=2) {
-            return;
-        }
-
-        char key[32] = {0};
-        uint32_t key_size = sizeof(key);
-        if(!cmp_read_str(&cmp, key, &key_size)) {
-            return;
-        }
-        if(strncmp(key, "command", key_size)!=0) {
-            return;
-        }
-
-        char command[32] = {0};
-        uint32_t command_size = sizeof(command);
-        if(!cmp_read_str(&cmp, command, &command_size)) {
-            return;
-        }
-        if(strncmp(command, "manual", command_size)!=0) {
-            return;
-        }
-
-        key_size = sizeof(key);
-        if(!cmp_read_str(&cmp, key, &key_size)) {
-            return;
-        }
-        if(strncmp(key, "ref_cfg", key_size)!=0) {
-            return;
-        }
-
-        uint32_t array_size = 0;
-        if(!cmp_read_array(&cmp, &array_size)) {
-            return;
-        }
-        if(array_size!=6) {
-            return;
-        }
-
-        for(uint8_t i=0; i<6; i++) {
-            float floating = 0;
-            if(!cmp_read_float(&cmp, &floating)) {
-                reference.configuration[i] = floating;
-                return;
-            }
-        }
-
-        reference.type = REFERENCE_TYPE_CONFIGURATION;
-    }
-
-    if((id==1) && (size==1)) {
-    	HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, *(uint8_t *)payload);
-    }
 }
 
 static void mpu6050_write(uint8_t address, uint8_t value) {
@@ -393,6 +313,8 @@ void pmw3901_read(float *flow, const uint8_t *buffer, const float dt) {
 }
 
 void app_main() {
+    serial_t serial;
+    serial_init(&serial, &huart1);
 
     motor_init(&motor1);
     motor_init(&motor2);
@@ -400,20 +322,8 @@ void app_main() {
     mpu6050_init();
     pmw3901_init();
 
-    protocol.callback_tx = protocol_cb_transmit;
-	protocol.callback_rx = protocol_cb_receive;
-	protocol.fifo_rx.buffer = protocol_buffer_rx;
-	protocol.fifo_rx.size = sizeof(protocol_buffer_rx);
-	protocol.fifo_tx.buffer = protocol_buffer_tx;
-	protocol.fifo_tx.size = sizeof(protocol_buffer_tx);
-	protocol.decoded = protocol_buffer_decode;
-	protocol.max = sizeof(protocol_buffer_decode);
-	HAL_UART_Receive_DMA(&huart1, protocol.fifo_rx.buffer, protocol.fifo_rx.size);
-
     uint32_t task_state = 0;
     uint32_t task_flow = 0;
-
-    uint8_t msgpack[10*1024];
 
     const char *robot_state[] = {
         "stopped",
@@ -430,20 +340,13 @@ void app_main() {
         "panic",
     };
 
+    uint8_t msgpack[10*1024];
+    uint8_t decoder_payload[10*1024];
+    lrcp_decoder_t decoder;
+    lrcp_frame_decoder_init(&decoder);
+
     while(1) {
         const uint32_t time = HAL_GetTick();
-
-        if((time - protocol.time)>=1) {
-            protocol.time = time;
-            protocol.fifo_rx.write = (protocol.fifo_rx.size - __HAL_DMA_GET_COUNTER(huart1.hdmarx)) % protocol.fifo_rx.size;
-            protocol.available = (HAL_DMA_GetState(huart1.hdmatx)==HAL_DMA_STATE_READY);
-            protocol_process(&protocol);
-        }
-
-        if((time - protocol.time_last_rx)>=1000) {
-            protocol.time_last_rx = time;
-            HAL_UART_Receive_DMA(&huart1, protocol.fifo_rx.buffer, protocol.fifo_rx.size);
-        }
 
         if(imu_ready) {
 		    imu_ready = false;
@@ -555,7 +458,76 @@ void app_main() {
             cmp_write_float(&cmp, flow_vel[0]);
             cmp_write_float(&cmp, flow_vel[1]);
 
-            protocol_enqueue(&protocol, 0, buffer.buffer, buffer.size);
+            lrcp_frame_encode(&serial.base, buffer.buffer, buffer.size);
+        }
+
+        {
+            const uint32_t size = lrcp_frame_decode(&serial.base, &decoder, decoder_payload, sizeof(decoder_payload));
+
+            if(size==1) {
+                HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, *(uint8_t *)decoder_payload);
+            } else if(size>0) {
+                buffer_t buffer = {
+                    .buffer = (void *)decoder_payload,
+                    .capacity = size,
+                    .size = size,
+                    .position = 0,
+                };
+                cmp_ctx_t cmp;
+                cmp_init(&cmp, &buffer, buffer_reader, NULL, NULL);
+
+                uint32_t map_size = 0;
+                if(!cmp_read_map(&cmp, &map_size)) {
+                    return;
+                }
+                if(map_size!=2) {
+                    return;
+                }
+
+                char key[32] = {0};
+                uint32_t key_size = sizeof(key);
+                if(!cmp_read_str(&cmp, key, &key_size)) {
+                    return;
+                }
+                if(strncmp(key, "command", key_size)!=0) {
+                    return;
+                }
+
+                char command[32] = {0};
+                uint32_t command_size = sizeof(command);
+                if(!cmp_read_str(&cmp, command, &command_size)) {
+                    return;
+                }
+                if(strncmp(command, "manual", command_size)!=0) {
+                    return;
+                }
+
+                key_size = sizeof(key);
+                if(!cmp_read_str(&cmp, key, &key_size)) {
+                    return;
+                }
+                if(strncmp(key, "ref_cfg", key_size)!=0) {
+                    return;
+                }
+
+                uint32_t array_size = 0;
+                if(!cmp_read_array(&cmp, &array_size)) {
+                    return;
+                }
+                if(array_size!=6) {
+                    return;
+                }
+
+                for(uint8_t i=0; i<6; i++) {
+                    float floating = 0;
+                    if(!cmp_read_float(&cmp, &floating)) {
+                        reference.configuration[i] = floating;
+                        return;
+                    }
+                }
+
+                reference.type = REFERENCE_TYPE_CONFIGURATION;
+            }
         }
 
         /*if(!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_2)) {
@@ -565,5 +537,6 @@ void app_main() {
 
         motor_tick(&motor1);
         motor_tick(&motor2);
+        serial_tick(&serial);
     }
 }

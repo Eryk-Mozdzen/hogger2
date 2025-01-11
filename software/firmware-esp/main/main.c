@@ -3,6 +3,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
+#include <freertos/timers.h>
 #include <esp_wifi.h>
 #include <esp_http_server.h>
 #include <esp_log.h>
@@ -11,31 +12,66 @@
 #include <driver/gpio.h>
 #include <cJSON.h>
 #include <cmp/cmp.h>
-
-#include "protocol/protocol.h"
+#include <lrcp/stream.h>
+#include <lrcp/frame.h>
 
 #define WIFI_SSID       "Hogger^2"
 #define WIFI_PASSWORD   "12345678"
 #define BUFFER_SIZE     (2*1024)
 #define GPIO_LED        10
 
-static httpd_handle_t server = NULL;
-static QueueHandle_t uart_queue;
+typedef struct {
+    lrcp_stream_t base;
+    QueueHandle_t queue;
+} serial_t;
 
-static protocol_t protocol = PROTOCOL_INIT;
-static uint8_t protocol_buffer_rx[BUFFER_SIZE];
-static uint8_t protocol_buffer_tx[BUFFER_SIZE];
-static uint8_t protocol_buffer_decode[BUFFER_SIZE];
-static SemaphoreHandle_t protocol_lock;
+typedef struct {
+    uint8_t *buffer;
+    size_t capacity;
+    size_t size;
+    size_t position;
+} buffer_t;
+
+static httpd_handle_t server = NULL;
 
 static SemaphoreHandle_t state_lock;
+static TimerHandle_t state_timer;
 static uint8_t state[BUFFER_SIZE] = {0};
 static size_t state_size = 0;
 
 static char json[BUFFER_SIZE] = {0};
 static uint8_t msgpack[BUFFER_SIZE] = {0};
 
-static void uart_init() {
+static serial_t serial;
+static uint8_t decoder_payload[BUFFER_SIZE];
+
+static uint32_t serial_reader(void *context, void *data, const uint32_t data_capacity) {
+    (void)context;
+
+    const int result = uart_read_bytes(UART_NUM_0, data, data_capacity, 1);
+
+    if(result<0) {
+        return 0;
+    }
+
+    return result;
+}
+
+static uint32_t serial_writer(void *context, const void *data, const uint32_t data_size) {
+    (void)context;
+
+    const int result = uart_write_bytes(UART_NUM_0, data, data_size);
+
+    if(result<0) {
+        return 0;
+    }
+
+    return result;
+}
+
+static void serial_init() {
+    lrcp_stream_init(&serial.base, NULL, serial_reader, serial_writer);
+
     const uart_config_t config = {
         .baud_rate = 230400,
         .data_bits = UART_DATA_8_BITS,
@@ -46,62 +82,43 @@ static void uart_init() {
 
     uart_param_config(UART_NUM_0, &config);
     uart_set_pin(UART_NUM_0, 21, 20, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-    uart_driver_install(UART_NUM_0, BUFFER_SIZE, BUFFER_SIZE, BUFFER_SIZE, &uart_queue, 0);
+    uart_driver_install(UART_NUM_0, BUFFER_SIZE, BUFFER_SIZE, BUFFER_SIZE, &serial.queue, 0);
 
-    ESP_LOGI("app", "uart started");
+    ESP_LOGI("app", "serial started");
 }
 
-static void protocol_cb_receive(const uint8_t id, const void *payload, const uint32_t size) {
-    (void)id;
-
-    xSemaphoreTake(state_lock, portMAX_DELAY);
-    memcpy(state, payload, size);
-    state_size = size;
-    xSemaphoreGive(state_lock);
-}
-
-static void protocol_init() {
-    protocol_lock = xSemaphoreCreateBinary();
-
-	protocol.callback_rx = protocol_cb_receive;
-    protocol.fifo_rx.buffer = protocol_buffer_rx;
-    protocol.fifo_rx.size = sizeof(protocol_buffer_rx);
-    protocol.fifo_tx.buffer = protocol_buffer_tx;
-    protocol.fifo_tx.size = sizeof(protocol_buffer_tx);
-    protocol.decoded = protocol_buffer_decode;
-    protocol.max = sizeof(protocol_buffer_decode);
-
-    xSemaphoreGive(protocol_lock);
-
-    ESP_LOGI("app", "protocol started");
-}
-
-static void uart_task(void *params) {
+static void decoder_task(void *params) {
     (void)params;
 
-    char data[BUFFER_SIZE];
+    lrcp_decoder_t decoder;
+    lrcp_frame_decoder_init(&decoder);
 
-    ESP_LOGI("app", "uart task started");
+    ESP_LOGI("app", "decoder task started");
 
     while(1) {
-        const int rx = uart_read_bytes(UART_NUM_0, data, sizeof(data), 1);
-        for(int i=0; i<rx; i++) {
-            fifo_write(&protocol.fifo_rx, data[i]);
+        const uint32_t size = lrcp_frame_decode(&serial.base, &decoder, decoder_payload, sizeof(decoder_payload));
+
+        if(size>0) {
+            xSemaphoreTake(state_lock, portMAX_DELAY);
+            memcpy(state, decoder_payload, size);
+            state_size = size;
+            xSemaphoreGive(state_lock);
+            xTimerReset(state_timer, portMAX_DELAY);
+        } else {
+            vTaskDelay(1);
         }
-
-        xSemaphoreTake(protocol_lock, portMAX_DELAY);
-        protocol_process(&protocol);
-
-        const int tx = fifo_pending(&protocol.fifo_tx);
-        for(int i=0; i<tx; i++) {
-            data[i] = fifo_read(&protocol.fifo_tx);
-        }
-        xSemaphoreGive(protocol_lock);
-
-        uart_write_bytes(UART_NUM_0, data, tx);
-
-        vTaskDelay(1);
     }
+}
+
+static void state_watchdog(TimerHandle_t timer) {
+    (void)timer;
+
+    xSemaphoreTake(state_lock, portMAX_DELAY);
+    memset(state, 0, sizeof(state));
+    state_size = 0;
+    xSemaphoreGive(state_lock);
+
+    ESP_LOGW("app", "state watchdog");
 }
 
 static void wifi_init() {
@@ -128,13 +145,6 @@ static void wifi_init() {
 
     ESP_LOGI("app", "wifi started ssid: \"%s\" password: \"%s\"", WIFI_SSID, WIFI_PASSWORD);
 }
-
-typedef struct {
-    uint8_t *buffer;
-    size_t capacity;
-    size_t size;
-    size_t position;
-} buffer_t;
 
 bool buffer_reader(cmp_ctx_t *ctx, void *data, size_t count) {
     buffer_t *buf = (buffer_t *)ctx->buf;
@@ -163,8 +173,6 @@ bool buffer_skipper(cmp_ctx_t *ctx, size_t count) {
 
 size_t buffer_writer(cmp_ctx_t *ctx, const void *data, size_t count) {
     buffer_t *buf = (buffer_t *)ctx->buf;
-
-    //ESP_LOGI("kurwa", "(write) pos %d count %d", buf->position, count);
 
     if((buf->position+count)>buf->capacity) {
         return 0;
@@ -228,7 +236,7 @@ void to_msgpack(cmp_ctx_t *cmp, cJSON *json) {
 cJSON *to_json(cmp_ctx_t *cmp) {
     cmp_object_t object;
     if(!cmp_read_object(cmp, &object)) {
-        ESP_LOGE("MSGPACK to JSON", "parse error");
+        ESP_LOGE("MSGPACK to JSON", "parse error (in object): %s", cmp_strerror(cmp));
         return NULL;
     }
 
@@ -251,7 +259,7 @@ cJSON *to_json(cmp_ctx_t *cmp) {
             char key[256];
             uint32_t key_len = sizeof(key);
             if(!cmp_read_str(cmp, key, &key_len)) {
-                ESP_LOGE("MSGPACK to JSON", "parse error (in map %lu) error %d", map_size, cmp->error);
+                ESP_LOGE("MSGPACK to JSON", "parse error (in map %lu): %s", map_size, cmp_strerror(cmp));
                 return NULL;
             }
 
@@ -265,7 +273,7 @@ cJSON *to_json(cmp_ctx_t *cmp) {
     uint32_t str_len = 0;
     if(cmp_object_as_str(&object, &str_len)) {
         if(!cmp_object_to_str(cmp, &object, str, sizeof(str))) {
-            ESP_LOGE("MSGPACK to JSON", "parse error (in str) error %d", cmp->error);
+            ESP_LOGE("MSGPACK to JSON", "parse error (in str): %s", cmp_strerror(cmp));
             return NULL;
         }
         return cJSON_CreateString(str);
@@ -308,7 +316,7 @@ static esp_err_t http_handler_get(httpd_req_t *req) {
         free(str);
         cJSON_Delete(json_obj);
     } else {
-        ESP_LOGE("app", "JSON parser failed");
+        ESP_LOGE("app", "JSON parser failed, buffer.size = %d", buffer.size);
         httpd_resp_send(req, NULL, 0);
     }
 
@@ -337,9 +345,7 @@ static esp_err_t http_handler_post(httpd_req_t *req) {
 
     cJSON_Delete(json_obj);
 
-    xSemaphoreTake(protocol_lock, portMAX_DELAY);
-    protocol_enqueue(&protocol, 0, buffer.buffer, buffer.size);
-    xSemaphoreGive(protocol_lock);
+    lrcp_frame_encode(&serial.base, buffer.buffer, buffer.size);
 
     return ESP_OK;
 }
@@ -386,9 +392,7 @@ static void blink_task(void *params) {
     while(1) {
         led = !led;
 
-        xSemaphoreTake(protocol_lock, portMAX_DELAY);
-        protocol_enqueue(&protocol, 1, &led, sizeof(led));
-        xSemaphoreGive(protocol_lock);
+        lrcp_frame_encode(&serial.base, &led, sizeof(led));
 
         gpio_set_level(GPIO_LED, led);
         vTaskDelay(pdMS_TO_TICKS(led ? 100 : 900));
@@ -402,14 +406,16 @@ void app_main() {
         ESP_ERROR_CHECK(nvs_flash_init());
     }
 
-    uart_init();
-    protocol_init();
+    serial_init();
     wifi_init();
     http_init();
 
+    state_timer = xTimerCreate("state watchdog", pdMS_TO_TICKS(1000), true, NULL, state_watchdog);
     state_lock = xSemaphoreCreateBinary();
+
+    xTimerStart(state_timer, portMAX_DELAY);
     xSemaphoreGive(state_lock);
 
-    xTaskCreate(uart_task, "uart reader", 4096, NULL, 5, NULL);
+    xTaskCreate(decoder_task, "decoder", 4096, NULL, 5, NULL);
     xTaskCreate(blink_task, "blink", 4096, NULL, 5, NULL);
 }

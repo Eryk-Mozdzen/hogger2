@@ -103,7 +103,9 @@ add_executable(${TARGET}
 
 	"src/main.c"
     "src/motor.c"
-    "../common/protocol/protocol.c"
+    "src/serial.c"
+    "../common/lrcp/stream.c"
+    "../common/lrcp/frame.c"
     "../common/cmp/cmp.c"
 )
 
