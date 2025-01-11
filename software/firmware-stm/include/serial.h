@@ -19,7 +19,7 @@ typedef struct {
     uint32_t time_last_rx;
 } serial_t;
 
-void serial_init(serial_t *serial, UART_HandleTypeDef *uart);
+void serial_init(serial_t *serial);
 void serial_tick(serial_t *serial);
 
 void serial_transmit_callback(serial_t *serial, UART_HandleTypeDef *huart);

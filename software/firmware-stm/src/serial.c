@@ -36,10 +36,9 @@ static uint32_t writer(void *context, const void *data, const uint32_t data_size
     return data_size;
 }
 
-void serial_init(serial_t *serial, UART_HandleTypeDef *uart) {
+void serial_init(serial_t *serial) {
     lrcp_stream_init(&serial->base, serial, reader, writer);
 
-    serial->uart = uart;
     serial->time_last_rx = 0;
     serial->transmission = 0;
 
