@@ -119,10 +119,10 @@ Window::Window(QWidget *parent) : QWidget(parent) {
 
             const QJsonArray referenceConfiguration = {
                 sliders[0]->value() + lerp(+a1, -M_PI, M_PI, 1000, 2000),
-                sliders[1]->value() + 1500 + X*100,
+                sliders[1]->value() + 1500 + X*20,
                 joystick.get(JoystickWidget::Button::A) ? 200 : 0,
                 sliders[2]->value() + lerp(-a2, -M_PI, M_PI, 1000, 2000),
-                sliders[3]->value() + 1500 - X*100,
+                sliders[3]->value() + 1500 + X*20,
                 joystick.get(JoystickWidget::Button::A) ? 200 : 0,
             };
 
