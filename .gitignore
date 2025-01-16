@@ -1,8 +1,20 @@
 
-.metadata
-firmware/Debug
-firmware/Release
-firmware/.settings
-
 build
 .vscode
+
+*.lck
+*.kicad_prl
+*-backups
+*.bak
+*auto_saved_files*
+fp-info-cache
+
+controller.step
+controller.csv
+gerbers
+gerbers.zip
+
+sdkconfig.old
+
+software/firmware-stm/cubemx/*
+!software/firmware-stm/cubemx/cubemx.ioc

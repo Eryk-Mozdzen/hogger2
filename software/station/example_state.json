@@ -1,0 +1,53 @@
+{
+    "time": 2137,
+    "state": "idle",
+    "battery": 11.1,
+    "hog1": {
+        "servo x": 0.1,
+        "servo y": 0.2,
+        "motor": 200.1,
+        "state": "running"
+    },
+    "hog2": {
+        "servo x": 0.1,
+        "servo y": 0.2,
+        "motor": 200.1,
+        "state": "startup"
+    },
+    "estimation": {
+        "x": -0.1,
+        "y": 2.1,
+        "theta": 1.56,
+        "dx": -0.1,
+        "dy": 2.1,
+        "dtheta": 1.56
+    },
+    "sensors": [
+        {
+            "name": "accelerometer",
+            "unit": "m/s^2",
+            "data": [
+                -9.81,
+                0,
+                0
+            ]
+        },
+        {
+            "name": "gyroscope",
+            "unit": "rad/s",
+            "data": [
+                0,
+                0,
+                2.137
+            ]
+        },
+        {
+            "name": "optical_flow",
+            "unit": "1/s",
+            "data": [
+                0,
+                0
+            ]
+        }
+    ]
+}

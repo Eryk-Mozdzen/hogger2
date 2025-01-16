@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "hogger2")(type "KiCad")(uri "/home/emozdzen/repos/hogger2/hardware/hogger2.kicad_sym")(options "")(descr ""))
+)
