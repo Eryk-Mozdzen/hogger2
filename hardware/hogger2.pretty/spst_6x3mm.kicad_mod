@@ -1,0 +1,139 @@
+(footprint "spst_6x3mm"
+	(version 20240108)
+	(generator "pcbnew")
+	(generator_version "8.0")
+	(layer "F.Cu")
+	(property "Reference" "REF**"
+		(at 0 -3 0)
+		(unlocked yes)
+		(layer "F.SilkS")
+		(uuid "91567de9-498a-4325-b866-d1af43312e4e")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.2)
+				(bold yes)
+			)
+		)
+	)
+	(property "Value" "spst_6x3mm"
+		(at 0 3 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(uuid "eeff602f-d090-4d75-8b22-fc2564a6b944")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Footprint" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "4105ffc6-3e0f-48b2-85d6-94e056e76e8a")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "05d005d8-d70b-4b87-a4f1-362571dce034")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "8e59fe94-36b7-4af4-b9fc-cdee2a31ca76")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(attr smd)
+	(fp_rect
+		(start -3.1 -1.6)
+		(end 3.1 1.6)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(fill none)
+		(layer "F.SilkS")
+		(uuid "e96845ee-a889-496c-9bfa-fe548af3a128")
+	)
+	(fp_rect
+		(start -6 -2)
+		(end 6 2)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(fill none)
+		(layer "F.CrtYd")
+		(uuid "1b84e3d7-732f-4f4e-9416-e289108a0770")
+	)
+	(fp_rect
+		(start -3 -1.5)
+		(end 3 1.5)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(fill none)
+		(layer "F.Fab")
+		(uuid "79bbb881-88ed-41dc-9c62-b32524c707ca")
+	)
+	(fp_text user "${REFERENCE}"
+		(at 0 4.5 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(uuid "a66f661d-c712-4992-b87e-841c6e35f6d2")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(pad "1" smd rect
+		(at -4.5 0)
+		(size 2.18 1.6)
+		(layers "F.Cu" "F.Paste" "F.Mask")
+		(uuid "23a3ec8b-49cf-461f-aa89-a4ad62b93aa5")
+	)
+	(pad "2" smd rect
+		(at 4.5 0)
+		(size 2.18 1.6)
+		(layers "F.Cu" "F.Paste" "F.Mask")
+		(uuid "d323c430-0962-4b21-be63-503a5d38fd26")
+	)
+	(model "${HOGGER2}/models/spst_6x3mm.step"
+		(offset
+			(xyz 0 -1.8 0)
+		)
+		(scale
+			(xyz 1 1 1)
+		)
+		(rotate
+			(xyz -90 0 0)
+		)
+	)
+)
