@@ -14,7 +14,8 @@ class Network : public QGroupBox {
 	bool started;
 	QString ip;
 	QSettings settings;
-    QNetworkAccessManager *manager;
+    QNetworkAccessManager *manager_get;
+	QNetworkAccessManager *manager_post;
 	QComboBox *listComboBox;
 	QPushButton *scanButton;
 	QPushButton *saveButton;

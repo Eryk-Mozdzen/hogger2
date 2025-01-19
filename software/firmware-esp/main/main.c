@@ -324,6 +324,7 @@ static esp_err_t http_handler_get(httpd_req_t *req) {
 }
 
 static esp_err_t http_handler_post(httpd_req_t *req) {
+    memset(json, 0, sizeof(json));
     httpd_req_recv(req, json, sizeof(json));
     httpd_resp_send(req, NULL, 0);
 
@@ -351,8 +352,7 @@ static esp_err_t http_handler_post(httpd_req_t *req) {
 }
 
 static void http_init() {
-    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.uri_match_fn = httpd_uri_match_wildcard;
+    const httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
     if(httpd_start(&server, &config)!=ESP_OK) {
         return;

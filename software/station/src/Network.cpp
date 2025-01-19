@@ -37,9 +37,10 @@ Network::Network(QWidget *parent) : QGroupBox{"Network connection", parent}, sta
 
     setLayout(layout);
 
-    manager = new QNetworkAccessManager(this);
+    manager_get = new QNetworkAccessManager(this);
+    manager_post = new QNetworkAccessManager(this);
 
-    connect(manager, &QNetworkAccessManager::finished, this, [this](QNetworkReply *reply) {
+    connect(manager_get, &QNetworkAccessManager::finished, this, [this](QNetworkReply *reply) {
         if(reply->error()==QNetworkReply::NoError) {
             const QByteArray bytes = reply->readAll().simplified().replace(" ", "").replace(0x00, "");
             const QJsonDocument document = QJsonDocument::fromJson(bytes);
@@ -52,19 +53,23 @@ Network::Network(QWidget *parent) : QGroupBox{"Network connection", parent}, sta
 
     QTimer *timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, [this]() {
-        const QNetworkRequest request(QUrl(QString("http://%1/get").arg(ip)));
         if(started) {
-            manager->get(request);
+            const QUrl url = QString("http://%1/get").arg(ip);
+
+            manager_get->get(QNetworkRequest(url));
         }
     });
-    timer->start(20);
+    timer->start(33);
 }
 
 void Network::transmit(const QJsonDocument &json) {
-    QNetworkRequest request(QUrl(QString("http://%1/post").arg(ip)));
-    request.setHeader(QNetworkRequest::ContentTypeHeader, "text/plain");
     if(started) {
-        manager->post(request, json.toJson());
+        const QUrl url = QString("http://%1/post").arg(ip);
+        const QByteArray data = json.toJson().simplified().replace(" ", "");
+
+        QNetworkRequest request(url);
+        request.setHeader(QNetworkRequest::ContentTypeHeader, "text/plain");
+        manager_post->post(request, data);
     }
 }
 
