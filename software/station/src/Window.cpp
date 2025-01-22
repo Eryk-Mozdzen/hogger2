@@ -114,16 +114,16 @@ Window::Window(QWidget *parent) : QWidget(parent) {
             const double v1 = v - L*w;
             const double v2 = v + L*w;
 
-            const double a1 = std::asin(std::clamp(v1/(W*R), -1., 1.));
-            const double a2 = std::asin(std::clamp(v2/(W*R), -1., 1.));
+            const double a1 = std::asin(std::clamp(v1/(+W*R), -1., 1.));
+            const double a2 = std::asin(std::clamp(v2/(-W*R), -1., 1.));
 
             const QJsonArray referenceConfiguration = {
                 sliders[0]->value() + lerp(+a1, -M_PI, M_PI, 1000, 2000),
-                sliders[1]->value() + 1500 + X*20,
-                joystick.get(JoystickWidget::Button::A) ? 200 : 0,
+                sliders[1]->value() + 1500 + X*50,
+                joystick.get(JoystickWidget::Analog::LT)>0.5 ? 200 : 0,
                 sliders[2]->value() + lerp(-a2, -M_PI, M_PI, 1000, 2000),
-                sliders[3]->value() + 1500 + X*20,
-                joystick.get(JoystickWidget::Button::A) ? 200 : 0,
+                sliders[3]->value() + 1500 - X*50,
+                joystick.get(JoystickWidget::Analog::LT)>0.5 ? 200 : 0,
             };
 
             QJsonObject json;
