@@ -103,9 +103,9 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         QTimer *timer = new QTimer();
 
         connect(timer, &QTimer::timeout, [this]() {
-            const double v = -2.*joystick.get(JoystickWidget::Analog::LY);
-            const double w = -10.*joystick.get(JoystickWidget::Analog::LX);
-            const double X = joystick.get(JoystickWidget::Analog::RX);
+            const double v = -5.*joystick.get(JoystickWidget::Analog::LY);
+            const double w = -10.*joystick.get(JoystickWidget::Analog::RX);
+            const double X = joystick.get(JoystickWidget::Analog::LX);
 
             constexpr double L = 0.13;  // m
             constexpr double R = 0.05;  // m
@@ -137,7 +137,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
             transmit(document);
         });
 
-        timer->start(20);
+        timer->start(50);
     }
 }
 
