@@ -2,12 +2,10 @@ import socket
 import json
 import time
 
-TCP_IP = '192.168.4.1'
-TCP_PORT = 3333
+IP = '192.168.4.1'
+PORT = 3333
 
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as soc:
-    soc.connect((TCP_IP, TCP_PORT))
-
+with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
     while True:
         data = {
             'command': 'manual',
@@ -20,6 +18,6 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as soc:
                 0,
             ],
         }
-        soc.sendall(bytes(json.dumps(data), encoding='utf-8'))
+        sock.sendto(bytes(json.dumps(data), encoding='utf-8'), (IP, PORT))
 
         time.sleep(0.05)

@@ -6,18 +6,18 @@
 #include <QComboBox>
 #include <QPushButton>
 #include <QGroupBox>
-#include <QTcpSocket>
 #include <QUdpSocket>
 
 class Network : public QGroupBox {
     Q_OBJECT
 
-	static constexpr int tcp_port = 3333;
-	static constexpr int udp_port = 4444;
+	static constexpr int tx_port = 3333;
+	static constexpr int rx_port = 4444;
 
 	QSettings settings;
-	QTcpSocket *tcpSocket;
-    QUdpSocket *udpSocket;
+	QHostAddress ip;
+    QUdpSocket *rxSocket;
+	QUdpSocket *txSocket;
 	QComboBox *listComboBox;
 	QPushButton *scanButton;
 	QPushButton *saveButton;

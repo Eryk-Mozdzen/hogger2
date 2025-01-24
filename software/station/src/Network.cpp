@@ -7,7 +7,6 @@
 #include <QVBoxLayout>
 #include <QComboBox>
 #include <QPushButton>
-#include <QTcpSocket>
 #include <QUdpSocket>
 
 #include "Network.h"
@@ -18,7 +17,7 @@ Network::Network(QWidget *parent) : QGroupBox{"Network connection", parent} {
     listComboBox = new QComboBox();
     listComboBox->setMinimumWidth(200);
     connect(listComboBox, &QComboBox::currentTextChanged, this, [this](QString device) {
-        tcpSocket->connectToHost(device, tcp_port);
+        ip = QHostAddress(device);
     });
 
     scanButton = new QPushButton("Scan IP");
@@ -35,18 +34,18 @@ Network::Network(QWidget *parent) : QGroupBox{"Network connection", parent} {
 
     setLayout(layout);
 
-    tcpSocket = new QTcpSocket(this);
-    udpSocket = new QUdpSocket(this);
+    txSocket = new QUdpSocket(this);
+    rxSocket = new QUdpSocket(this);
 
-    if(udpSocket->bind(udp_port, QUdpSocket::ShareAddress)) {
-        connect(udpSocket, &QUdpSocket::readyRead, this, [this]() {
-            while(udpSocket->hasPendingDatagrams()) {
+    if(rxSocket->bind(rx_port, QUdpSocket::ShareAddress)) {
+        connect(rxSocket, &QUdpSocket::readyRead, this, [this]() {
+            while(rxSocket->hasPendingDatagrams()) {
                 QByteArray datagram;
-                datagram.resize(udpSocket->pendingDatagramSize());
+                datagram.resize(rxSocket->pendingDatagramSize());
                 QHostAddress sender;
                 quint16 senderPort;
 
-                udpSocket->readDatagram(datagram.data(), datagram.size(), &sender, &senderPort);
+                rxSocket->readDatagram(datagram.data(), datagram.size(), &sender, &senderPort);
 
                 const QByteArray bytes = datagram.simplified().replace(" ", "").replace(0x00, "");
                 const QJsonDocument document = QJsonDocument::fromJson(bytes);
@@ -59,12 +58,9 @@ Network::Network(QWidget *parent) : QGroupBox{"Network connection", parent} {
 }
 
 void Network::transmit(const QJsonDocument &json) {
-    if(tcpSocket->isValid()) {
-        QByteArray data = json.toJson(QJsonDocument::Compact);
-        data.append('\0');
+    const QByteArray data = json.toJson(QJsonDocument::Compact);
 
-        tcpSocket->write(data);
-    }
+    txSocket->writeDatagram(data, ip, tx_port);
 }
 
 void Network::deviceScan() {

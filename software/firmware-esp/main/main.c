@@ -18,8 +18,8 @@
 
 #define WIFI_SSID       "Hogger^2"
 #define WIFI_PASSWORD   "12345678"
-#define TCP_PORT        3333
-#define UDP_PORT        4444
+#define RX_PORT         3333
+#define TX_PORT         4444
 #define BUFFER_SIZE     (4*1024)
 
 typedef struct {
@@ -300,11 +300,11 @@ static void udp_broadcast_task(void *params) {
 
     struct sockaddr_in dest_addr = {
         .sin_family = AF_INET,
-        .sin_port = htons(UDP_PORT),
+        .sin_port = htons(TX_PORT),
         .sin_addr.s_addr = inet_addr("192.168.4.255"),
     };
 
-    ESP_LOGI("app", "UDP broadcasting on port %d", UDP_PORT);
+    ESP_LOGI("app", "UDP broadcasting on port %d", TX_PORT);
 
     cJSON *json = NULL;
 
@@ -345,95 +345,58 @@ static void udp_broadcast_task(void *params) {
     }
 }
 
-static void tcp_receive_task(void *params) {
-    const int *client_sock = params;
+void udp_server_task(void *pvParameters) {
+    const int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+    struct sockaddr_in addr = {
+        .sin_family = AF_INET,
+        .sin_port = htons(RX_PORT),
+        .sin_addr.s_addr = htonl(INADDR_ANY)
+    };
 
-    char chunk[128];
-    size_t buffer_rx_len = 0;
+    bind(sock, (struct sockaddr *)&addr, sizeof(addr));
+
     char buffer_rx[BUFFER_SIZE];
     uint8_t buffer_tx[BUFFER_SIZE];
 
-    ESP_LOGI("app", "TCP client connected");
+    struct sockaddr_storage source_addr;
+    socklen_t addr_len = sizeof(source_addr);
+
+    ESP_LOGI("app", "UDP server started on port %d", RX_PORT);
 
     while(1) {
-        const int len = recv(*client_sock, chunk, sizeof(chunk), 0);
+        const int len = recvfrom(sock, buffer_rx, sizeof(buffer_rx), 0, (struct sockaddr *)&source_addr, &addr_len);
 
-        if(len<0) {
-            ESP_LOGE("app", "TCP receive error");
-            break;
-        } else if(len==0) {
-            ESP_LOGI("app", "TCP client disconnected");
-            break;
-        }
+        if(len>0) {
+            //ESP_LOGI("app", "%.*s", len, buffer_rx);
 
-        for(int i=0; i<len; i++) {
-            if(chunk[i] == '\0') {
-                buffer_rx[buffer_rx_len] = '\0';
-
-                ESP_LOGI("app", "%s", buffer_rx);
-
-                cJSON *json = cJSON_Parse(buffer_rx);
-                if(!json) {
-                    ESP_LOGE("app", "Error parsing incoming JSON");
-                    continue;
-                }
-
-                buffer_t buffer = {
-                    .buffer = buffer_tx,
-                    .capacity = sizeof(buffer_tx),
-                    .size = 0,
-                    .position = 0,
-                };
-                cmp_ctx_t cmp;
-                cmp_init(&cmp, &buffer, NULL, NULL, buffer_writer);
-                json_to_msgpack(&cmp, json);
-
-                cJSON_Delete(json);
-
-                xTimerReset(station_watchdog, portMAX_DELAY);
-
-                lrcp_frame_encode(&serial.base, buffer.buffer, buffer.size);
-
-                buffer_rx_len = 0;
-            } else if(buffer_rx_len<(sizeof(buffer_rx)-1)) {
-                buffer_rx[buffer_rx_len] = chunk[i];
-                buffer_rx_len++;
-            } else {
-                buffer_rx_len = 0;
+            cJSON *json = cJSON_Parse(buffer_rx);
+            if(!json) {
+                ESP_LOGE("app", "Error parsing incoming JSON");
+                continue;
             }
+
+            buffer_t buffer = {
+                .buffer = buffer_tx,
+                .capacity = sizeof(buffer_tx),
+                .size = 0,
+                .position = 0,
+            };
+            cmp_ctx_t cmp;
+            cmp_init(&cmp, &buffer, NULL, NULL, buffer_writer);
+            json_to_msgpack(&cmp, json);
+
+            cJSON_Delete(json);
+
+            xTimerReset(station_watchdog, portMAX_DELAY);
+
+            lrcp_frame_encode(&serial.base, buffer.buffer, buffer.size);
         }
 
         vTaskDelay(1);
     }
 
-    close(*client_sock);
+    close(sock);
     vTaskDelete(NULL);
-}
-
-static void tcp_listen_task(void *params) {
-    const int tcp_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    struct sockaddr_in tcp_addr = {
-        .sin_family = AF_INET,
-        .sin_port = htons(TCP_PORT),
-        .sin_addr.s_addr = htonl(INADDR_ANY)
-    };
-
-    bind(tcp_sock, (struct sockaddr *)&tcp_addr, sizeof(tcp_addr));
-    listen(tcp_sock, 4);
-
-    ESP_LOGI("app", "TCP listening on port %d", TCP_PORT);
-
-    while(1) {
-        struct sockaddr_in client_addr;
-        socklen_t addr_len = sizeof(client_addr);
-        int client_sock = accept(tcp_sock, (struct sockaddr *)&client_addr, &addr_len);
-        if(client_sock<0) {
-            ESP_LOGE("app", "TCP accept failed");
-            continue;
-        }
-
-        xTaskCreate(tcp_receive_task, "tcp receive", 16384, &client_sock, 5, NULL);
-    }
 }
 
 static void blink_task(void *params) {
@@ -513,5 +476,5 @@ void app_main() {
     xTaskCreate(blink_task, "blink", 4096, NULL, 5, NULL);
     xTaskCreate(serial_receive_task, "serial receive", 8192, NULL, 5, NULL);
     xTaskCreate(udp_broadcast_task, "udp broadcast", 4096, NULL, 5, NULL);
-    xTaskCreate(tcp_listen_task, "tcp listen", 4096, NULL, 5, NULL);
+    xTaskCreate(udp_server_task, "udp server", 16384, NULL, 5, NULL);
 }
