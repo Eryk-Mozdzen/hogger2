@@ -27,21 +27,29 @@ typedef struct {
     volatile float value;
     volatile float error_integral;
     volatile float error_prev;
+    volatile float dt;
 } motor_pid_t;
+
+typedef struct {
+    uint16_t pin;
+    GPIO_TypeDef *port;
+} motor_bemf_t;
 
 typedef struct {
     TIM_HandleTypeDef *control_timer;
     TIM_HandleTypeDef *commut_timer;
     uint32_t control_timer_itr;
-    uint16_t bemf[3];
+    motor_bemf_t bemf[3];
     motor_pid_t pid;
     motor_state_t state;
     uint32_t state_start_time;
     uint32_t ramp_task;
     uint32_t vel_task;
-    volatile uint32_t zc_count;
-    volatile uint8_t step;
     volatile float pulse;
+    volatile uint8_t step;
+    volatile uint8_t zc_filter;
+    volatile uint8_t zc_occur;
+    volatile uint32_t zc_count;
     float vel;
     float vel_setpoint;
 } motor_t;
@@ -51,6 +59,6 @@ void motor_tick(motor_t *motor);
 void motor_set_vel(motor_t *motor, const float vel);
 
 void motor_commutation_callback(motor_t *motor, const TIM_HandleTypeDef *htim);
-void motor_interrupt_callback(motor_t *motor, const uint16_t pin);
+void motor_sample_callback(motor_t *motor, const TIM_HandleTypeDef *htim);
 
 #endif
