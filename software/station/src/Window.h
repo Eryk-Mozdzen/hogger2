@@ -5,6 +5,7 @@
 #include <QSettings>
 #include <QTextEdit>
 #include <QJsonDocument>
+#include <QJsonObject>
 
 #include "JoystickWidget.h"
 
@@ -14,6 +15,7 @@ class Window : public QWidget {
     QSlider *sliders[4];
     QTextEdit *text[2];
     QSettings settings;
+    QJsonObject feedback;
 
     JoystickWidget joystick;
 

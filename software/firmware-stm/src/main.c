@@ -27,9 +27,12 @@ static robot_hog_t hog1 = {
     .motor.control_timer = &htim1,
 	.motor.control_timer_itr = TIM_TS_ITR1,
 	.motor.commut_timer = &htim2,
-    .motor.bemf[MOTOR_PHASE_U] = MOTOR1_BEMF_U_Pin,
-    .motor.bemf[MOTOR_PHASE_V] = MOTOR1_BEMF_V_Pin,
-    .motor.bemf[MOTOR_PHASE_W] = MOTOR1_BEMF_W_Pin,
+    .motor.bemf[MOTOR_PHASE_U].pin = MOTOR1_BEMF_U_Pin,
+    .motor.bemf[MOTOR_PHASE_U].port = MOTOR1_BEMF_U_GPIO_Port,
+    .motor.bemf[MOTOR_PHASE_V].pin = MOTOR1_BEMF_V_Pin,
+    .motor.bemf[MOTOR_PHASE_V].port = MOTOR1_BEMF_V_GPIO_Port,
+    .motor.bemf[MOTOR_PHASE_W].pin = MOTOR1_BEMF_W_Pin,
+    .motor.bemf[MOTOR_PHASE_W].port = MOTOR1_BEMF_W_GPIO_Port,
 
     .servo_x.timer = &htim5,
     .servo_x.channel = TIM_CHANNEL_1,
@@ -41,9 +44,12 @@ static robot_hog_t hog2 = {
 	.motor.control_timer = &htim8,
 	.motor.control_timer_itr = TIM_TS_ITR2,
 	.motor.commut_timer = &htim3,
-    .motor.bemf[MOTOR_PHASE_U] = MOTOR2_BEMF_U_Pin,
-    .motor.bemf[MOTOR_PHASE_V] = MOTOR2_BEMF_V_Pin,
-    .motor.bemf[MOTOR_PHASE_W] = MOTOR2_BEMF_W_Pin,
+    .motor.bemf[MOTOR_PHASE_U].pin = MOTOR2_BEMF_U_Pin,
+    .motor.bemf[MOTOR_PHASE_U].port = MOTOR2_BEMF_U_GPIO_Port,
+    .motor.bemf[MOTOR_PHASE_V].pin = MOTOR2_BEMF_V_Pin,
+    .motor.bemf[MOTOR_PHASE_V].port = MOTOR2_BEMF_V_GPIO_Port,
+    .motor.bemf[MOTOR_PHASE_W].pin = MOTOR2_BEMF_W_Pin,
+    .motor.bemf[MOTOR_PHASE_W].port = MOTOR2_BEMF_W_GPIO_Port,
 
     .servo_x.timer = &htim5,
     .servo_x.channel = TIM_CHANNEL_3,
@@ -79,15 +85,13 @@ void HAL_TIMEx_CommutCallback(TIM_HandleTypeDef *htim) {
     motor_commutation_callback(&hog2.motor, htim);
 }
 
-void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin) {
-	motor_interrupt_callback(&hog1.motor, GPIO_Pin);
-    motor_interrupt_callback(&hog2.motor, GPIO_Pin);
-    imu_interrupt_callback(&imu, GPIO_Pin);
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+	motor_sample_callback(&hog1.motor, htim);
+    motor_sample_callback(&hog2.motor, htim);
 }
 
-void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin) {
-	motor_interrupt_callback(&hog1.motor, GPIO_Pin);
-    motor_interrupt_callback(&hog2.motor, GPIO_Pin);
+void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin) {
+    imu_interrupt_callback(&imu, GPIO_Pin);
 }
 
 void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c) {
