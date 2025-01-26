@@ -12,7 +12,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
             'ref_cfg': [
                 1500,
                 1500,
-                0,
+                500,
                 1500,
                 1500,
                 0,

@@ -45,6 +45,7 @@ typedef struct {
     uint32_t state_start_time;
     uint32_t ramp_task;
     uint32_t vel_task;
+    float switch_over;
     volatile float pulse;
     volatile uint8_t step;
     volatile uint8_t zc_filter;
