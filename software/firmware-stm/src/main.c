@@ -178,6 +178,15 @@ void app_main() {
                         } break;
                     }
                 }
+
+                if(deserialize_stop(decoder_payload, size)) {
+                    servo_set_pos(&hog1.servo_x, 0);
+                    servo_set_pos(&hog1.servo_y, 0);
+                    motor_set_vel(&hog1.motor, 0);
+                    servo_set_pos(&hog2.servo_x, 0);
+                    servo_set_pos(&hog2.servo_y, 0);
+                    motor_set_vel(&hog2.motor, 0);
+                }
             }
         }
 
