@@ -147,7 +147,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
             transmit(document);
         });
 
-        timer->start(20);
+        timer->start(50);
     }
 }
 

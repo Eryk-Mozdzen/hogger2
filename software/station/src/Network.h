@@ -1,21 +1,23 @@
 #pragma once
 
 #include <QWidget>
-#include <QNetworkAccessManager>
 #include <QSettings>
 #include <QJsonDocument>
 #include <QComboBox>
 #include <QPushButton>
 #include <QGroupBox>
+#include <QUdpSocket>
 
 class Network : public QGroupBox {
     Q_OBJECT
 
-	bool started;
-	QString ip;
+	static constexpr int tx_port = 3333;
+	static constexpr int rx_port = 4444;
+
 	QSettings settings;
-    QNetworkAccessManager *manager_get;
-	QNetworkAccessManager *manager_post;
+	QHostAddress ip;
+    QUdpSocket *rxSocket;
+	QUdpSocket *txSocket;
 	QComboBox *listComboBox;
 	QPushButton *scanButton;
 	QPushButton *saveButton;

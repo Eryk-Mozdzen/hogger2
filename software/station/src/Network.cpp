@@ -2,25 +2,22 @@
 #include <QHostAddress>
 #include <QProcess>
 #include <QWidget>
-#include <QTimer>
-#include <QNetworkAccessManager>
-#include <QNetworkRequest>
-#include <QNetworkReply>
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QVBoxLayout>
 #include <QComboBox>
 #include <QPushButton>
+#include <QUdpSocket>
 
 #include "Network.h"
 
-Network::Network(QWidget *parent) : QGroupBox{"Network connection", parent}, started{false} {
+Network::Network(QWidget *parent) : QGroupBox{"Network connection", parent} {
     QVBoxLayout *layout = new QVBoxLayout(this);
 
     listComboBox = new QComboBox();
     listComboBox->setMinimumWidth(200);
     connect(listComboBox, &QComboBox::currentTextChanged, this, [this](QString device) {
-        ip = device;
+        ip = QHostAddress(device);
     });
 
     scanButton = new QPushButton("Scan IP");
@@ -37,40 +34,33 @@ Network::Network(QWidget *parent) : QGroupBox{"Network connection", parent}, sta
 
     setLayout(layout);
 
-    manager_get = new QNetworkAccessManager(this);
-    manager_post = new QNetworkAccessManager(this);
+    txSocket = new QUdpSocket(this);
+    rxSocket = new QUdpSocket(this);
 
-    connect(manager_get, &QNetworkAccessManager::finished, this, [this](QNetworkReply *reply) {
-        if(reply->error()==QNetworkReply::NoError) {
-            const QByteArray bytes = reply->readAll().simplified().replace(" ", "").replace(0x00, "");
-            const QJsonDocument document = QJsonDocument::fromJson(bytes);
-            if(!document.isNull()) {
-                receive(document);
+    if(rxSocket->bind(rx_port, QUdpSocket::ShareAddress)) {
+        connect(rxSocket, &QUdpSocket::readyRead, this, [this]() {
+            while(rxSocket->hasPendingDatagrams()) {
+                QByteArray datagram;
+                datagram.resize(rxSocket->pendingDatagramSize());
+                QHostAddress sender;
+                quint16 senderPort;
+
+                rxSocket->readDatagram(datagram.data(), datagram.size(), &sender, &senderPort);
+
+                const QByteArray bytes = datagram.simplified().replace(" ", "").replace(0x00, "");
+                const QJsonDocument document = QJsonDocument::fromJson(bytes);
+                if(!document.isNull()) {
+                    receive(document);
+                }
             }
-        }
-        reply->deleteLater();
-    });
-
-    QTimer *timer = new QTimer(this);
-    connect(timer, &QTimer::timeout, this, [this]() {
-        if(started) {
-            const QUrl url = QString("http://%1/get").arg(ip);
-
-            manager_get->get(QNetworkRequest(url));
-        }
-    });
-    timer->start(33);
+        });
+    }
 }
 
 void Network::transmit(const QJsonDocument &json) {
-    if(started) {
-        const QUrl url = QString("http://%1/post").arg(ip);
-        const QByteArray data = json.toJson().simplified().replace(" ", "");
+    const QByteArray data = json.toJson(QJsonDocument::Compact);
 
-        QNetworkRequest request(url);
-        request.setHeader(QNetworkRequest::ContentTypeHeader, "text/plain");
-        manager_post->post(request, data);
-    }
+    txSocket->writeDatagram(data, ip, tx_port);
 }
 
 void Network::deviceScan() {
@@ -127,8 +117,6 @@ void Network::deviceScan() {
                 listComboBox->setDisabled(false);
                 scanButton->setDisabled(false);
                 saveButton->setDisabled(false);
-
-                started = true;
 
                 delete finished;
                 delete list;
