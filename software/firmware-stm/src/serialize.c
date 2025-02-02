@@ -194,3 +194,42 @@ bool deserialize_reference(const void *src, const uint32_t src_size, reference_t
 
     return true;
 }
+
+bool deserialize_stop(const void *src, const uint32_t src_size) {
+    buffer_t buffer = {
+        .buffer = (void *)src,
+        .capacity = src_size,
+        .size = src_size,
+        .position = 0,
+    };
+    cmp_ctx_t cmp;
+    cmp_init(&cmp, &buffer, buffer_reader, NULL, NULL);
+
+    uint32_t map_size = 0;
+    if(!cmp_read_map(&cmp, &map_size)) {
+        return false;
+    }
+    if(map_size!=1) {
+        return false;
+    }
+
+    char key[32] = {0};
+    uint32_t key_size = sizeof(key);
+    if(!cmp_read_str(&cmp, key, &key_size)) {
+        return false;
+    }
+    if(strncmp(key, "command", key_size)!=0) {
+        return false;
+    }
+
+    char command[32] = {0};
+    uint32_t command_size = sizeof(command);
+    if(!cmp_read_str(&cmp, command, &command_size)) {
+        return false;
+    }
+    if(strncmp(command, "stop", command_size)!=0) {
+        return false;
+    }
+
+    return true;
+}

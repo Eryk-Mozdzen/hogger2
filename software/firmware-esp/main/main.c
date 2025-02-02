@@ -1,11 +1,12 @@
 #include <stdio.h>
 #include <string.h>
+#include <sys/socket.h>
+#include <netdb.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
 #include <freertos/timers.h>
 #include <esp_wifi.h>
-#include <esp_http_server.h>
 #include <esp_log.h>
 #include <nvs_flash.h>
 #include <driver/uart.h>
@@ -17,8 +18,9 @@
 
 #define WIFI_SSID       "Hogger^2"
 #define WIFI_PASSWORD   "12345678"
-#define BUFFER_SIZE     (2*1024)
-#define GPIO_LED        10
+#define RX_PORT         3333
+#define TX_PORT         4444
+#define BUFFER_SIZE     (4*1024)
 
 typedef struct {
     lrcp_stream_t base;
@@ -32,18 +34,14 @@ typedef struct {
     size_t position;
 } buffer_t;
 
-static httpd_handle_t server = NULL;
+static TimerHandle_t host_watchdog;
+static TimerHandle_t station_watchdog;
 
 static SemaphoreHandle_t state_lock;
-static TimerHandle_t state_timer;
-static uint8_t state[BUFFER_SIZE] = {0};
+static uint8_t state_data[BUFFER_SIZE];
 static size_t state_size = 0;
 
-static char json[BUFFER_SIZE] = {0};
-static uint8_t msgpack[BUFFER_SIZE] = {0};
-
 static serial_t serial;
-static uint8_t decoder_payload[BUFFER_SIZE];
 
 static uint32_t serial_reader(void *context, void *data, const uint32_t data_capacity) {
     (void)context;
@@ -87,38 +85,28 @@ static void serial_init() {
     ESP_LOGI("app", "serial started");
 }
 
-static void decoder_task(void *params) {
+static void serial_receive_task(void *params) {
     (void)params;
 
+    uint8_t buffer[BUFFER_SIZE];
     lrcp_decoder_t decoder;
     lrcp_frame_decoder_init(&decoder);
 
-    ESP_LOGI("app", "decoder task started");
+    ESP_LOGI("app", "serial receive task started");
 
     while(1) {
-        const uint32_t size = lrcp_frame_decode(&serial.base, &decoder, decoder_payload, sizeof(decoder_payload));
+        const uint32_t size = lrcp_frame_decode(&serial.base, &decoder, buffer, sizeof(buffer));
 
         if(size>0) {
             xSemaphoreTake(state_lock, portMAX_DELAY);
-            memcpy(state, decoder_payload, size);
+            memcpy(state_data, buffer, size);
             state_size = size;
             xSemaphoreGive(state_lock);
-            xTimerReset(state_timer, portMAX_DELAY);
+            xTimerReset(host_watchdog, portMAX_DELAY);
         } else {
             vTaskDelay(1);
         }
     }
-}
-
-static void state_watchdog(TimerHandle_t timer) {
-    (void)timer;
-
-    xSemaphoreTake(state_lock, portMAX_DELAY);
-    memset(state, 0, sizeof(state));
-    state_size = 0;
-    xSemaphoreGive(state_lock);
-
-    ESP_LOGW("app", "state watchdog");
 }
 
 static void wifi_init() {
@@ -135,7 +123,8 @@ static void wifi_init() {
             .ssid_len = strlen(WIFI_SSID),
             .password = WIFI_PASSWORD,
             .max_connection = 4,
-            .authmode = WIFI_AUTH_WPA_WPA2_PSK
+            .authmode = WIFI_AUTH_WPA_WPA2_PSK,
+            .channel = 1,
         },
     };
 
@@ -185,7 +174,7 @@ size_t buffer_writer(cmp_ctx_t *ctx, const void *data, size_t count) {
     return count;
 }
 
-void to_msgpack(cmp_ctx_t *cmp, cJSON *json) {
+void json_to_msgpack(cmp_ctx_t *cmp, const cJSON *json) {
     if(cJSON_IsObject(json)) {
         const int size = cJSON_GetArraySize(json);
         cmp_write_map(cmp, size);
@@ -193,7 +182,7 @@ void to_msgpack(cmp_ctx_t *cmp, cJSON *json) {
         cJSON *child = NULL;
         cJSON_ArrayForEach(child, json) {
             cmp_write_str(cmp, child->string, strlen(child->string));
-            to_msgpack(cmp, child);
+            json_to_msgpack(cmp, child);
         }
 
         return;
@@ -205,7 +194,7 @@ void to_msgpack(cmp_ctx_t *cmp, cJSON *json) {
 
         cJSON *element = NULL;
         cJSON_ArrayForEach(element, json) {
-            to_msgpack(cmp, element);
+            json_to_msgpack(cmp, element);
         }
 
         return;
@@ -233,7 +222,7 @@ void to_msgpack(cmp_ctx_t *cmp, cJSON *json) {
     }
 }
 
-cJSON *to_json(cmp_ctx_t *cmp) {
+cJSON *msgpack_to_json(cmp_ctx_t *cmp) {
     cmp_object_t object;
     if(!cmp_read_object(cmp, &object)) {
         ESP_LOGE("MSGPACK to JSON", "parse error (in object): %s", cmp_strerror(cmp));
@@ -245,7 +234,7 @@ cJSON *to_json(cmp_ctx_t *cmp) {
         cJSON *array = cJSON_CreateArray();
 
         for(uint32_t i=0; i<array_size; i++) {
-            cJSON_AddItemToArray(array, to_json(cmp));
+            cJSON_AddItemToArray(array, msgpack_to_json(cmp));
         }
 
         return array;
@@ -263,7 +252,7 @@ cJSON *to_json(cmp_ctx_t *cmp) {
                 return NULL;
             }
 
-            cJSON_AddItemToObject(object, key, to_json(cmp));
+            cJSON_AddItemToObject(object, key, msgpack_to_json(cmp));
         }
 
         return object;
@@ -297,93 +286,125 @@ cJSON *to_json(cmp_ctx_t *cmp) {
     return cJSON_CreateNull();
 }
 
-static esp_err_t http_handler_get(httpd_req_t *req) {
-    xSemaphoreTake(state_lock, portMAX_DELAY);
-    buffer_t buffer = {
-        .buffer = state,
-        .capacity = state_size,
-        .size = state_size,
-        .position = 0,
-    };
-    cmp_ctx_t cmp;
-    cmp_init(&cmp, &buffer, buffer_reader, NULL, NULL);
-    cJSON *json_obj = to_json(&cmp);
-    xSemaphoreGive(state_lock);
+static void udp_broadcast_task(void *params) {
+    (void)params;
 
-    if(json_obj) {
-        char *str = cJSON_Print(json_obj);
-        httpd_resp_send(req, str, HTTPD_RESP_USE_STRLEN);
-        free(str);
-        cJSON_Delete(json_obj);
-    } else {
-        ESP_LOGE("app", "JSON parser failed, buffer.size = %d", buffer.size);
-        httpd_resp_send(req, NULL, 0);
+    const int udp_sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+    if(udp_sock<0) {
+        ESP_LOGE("app", "Failed to create UDP socket");
+        vTaskDelete(NULL);
     }
 
-    return ESP_OK;
+    int broadcast = 1;
+    setsockopt(udp_sock, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast));
+
+    struct sockaddr_in dest_addr = {
+        .sin_family = AF_INET,
+        .sin_port = htons(TX_PORT),
+        .sin_addr.s_addr = inet_addr("192.168.4.255"),
+    };
+
+    ESP_LOGI("app", "UDP broadcasting on port %d", TX_PORT);
+
+    cJSON *json = NULL;
+
+    while(1) {
+        xSemaphoreTake(state_lock, portMAX_DELAY);
+
+        if(state_size>0) {
+            buffer_t buffer = {
+                .buffer = state_data,
+                .capacity = state_size,
+                .size = state_size,
+                .position = 0,
+            };
+            cmp_ctx_t cmp;
+            cmp_init(&cmp, &buffer, buffer_reader, NULL, NULL);
+            json = msgpack_to_json(&cmp);
+
+            if(!json) {
+                ESP_LOGE("app", "JSON parser failed, buffer.size = %d", buffer.size);
+            }
+        } else {
+            json = cJSON_CreateObject();
+            cJSON_AddItemToObject(json, "error", cJSON_CreateString("host timeout"));
+        }
+
+        xSemaphoreGive(state_lock);
+
+        if(json) {
+            char *str = cJSON_Print(json);
+            cJSON_Delete(json);
+
+            sendto(udp_sock, str, strlen(str), 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+
+            free(str);
+        }
+
+        vTaskDelay(1);
+    }
 }
 
-static esp_err_t http_handler_post(httpd_req_t *req) {
-    httpd_req_recv(req, json, sizeof(json));
-    httpd_resp_send(req, NULL, 0);
+void udp_server_task(void *pvParameters) {
+    const int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+    struct sockaddr_in addr = {
+        .sin_family = AF_INET,
+        .sin_port = htons(RX_PORT),
+        .sin_addr.s_addr = htonl(INADDR_ANY)
+    };
 
-    cJSON *json_obj = cJSON_Parse(json);
-    if(!json_obj) {
-        ESP_LOGE("app", "Error parsing incoming JSON\n");
-        return ESP_OK;
+    bind(sock, (struct sockaddr *)&addr, sizeof(addr));
+
+    char buffer_rx[BUFFER_SIZE];
+    uint8_t buffer_tx[BUFFER_SIZE];
+
+    struct sockaddr_storage source_addr;
+    socklen_t addr_len = sizeof(source_addr);
+
+    ESP_LOGI("app", "UDP server started on port %d", RX_PORT);
+
+    while(1) {
+        const int len = recvfrom(sock, buffer_rx, sizeof(buffer_rx), 0, (struct sockaddr *)&source_addr, &addr_len);
+
+        if(len>0) {
+            //ESP_LOGI("app", "%.*s", len, buffer_rx);
+
+            cJSON *json = cJSON_Parse(buffer_rx);
+            if(!json) {
+                ESP_LOGE("app", "Error parsing incoming JSON");
+                continue;
+            }
+
+            buffer_t buffer = {
+                .buffer = buffer_tx,
+                .capacity = sizeof(buffer_tx),
+                .size = 0,
+                .position = 0,
+            };
+            cmp_ctx_t cmp;
+            cmp_init(&cmp, &buffer, NULL, NULL, buffer_writer);
+            json_to_msgpack(&cmp, json);
+
+            cJSON_Delete(json);
+
+            xTimerReset(station_watchdog, portMAX_DELAY);
+
+            lrcp_frame_encode(&serial.base, buffer.buffer, buffer.size);
+        }
+
+        vTaskDelay(1);
     }
 
-    buffer_t buffer = {
-        .buffer = msgpack,
-        .capacity = sizeof(msgpack),
-        .size = 0,
-        .position = 0,
-    };
-    cmp_ctx_t cmp;
-    cmp_init(&cmp, &buffer, NULL, NULL, buffer_writer);
-    to_msgpack(&cmp, json_obj);
-
-    cJSON_Delete(json_obj);
-
-    lrcp_frame_encode(&serial.base, buffer.buffer, buffer.size);
-
-    return ESP_OK;
-}
-
-static void http_init() {
-    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.uri_match_fn = httpd_uri_match_wildcard;
-
-    if(httpd_start(&server, &config)!=ESP_OK) {
-        return;
-    }
-
-    const httpd_uri_t uri_get = {
-        .uri      = "/get",
-        .method   = HTTP_GET,
-        .handler  = http_handler_get,
-        .user_ctx = NULL
-    };
-
-    const httpd_uri_t uri_post = {
-        .uri      = "/post",
-        .method   = HTTP_POST,
-        .handler  = http_handler_post,
-        .user_ctx = NULL
-    };
-
-    httpd_register_uri_handler(server, &uri_get);
-    httpd_register_uri_handler(server, &uri_post);
-
-    ESP_LOGI("app", "http server started");
+    close(sock);
+    vTaskDelete(NULL);
 }
 
 static void blink_task(void *params) {
     (void)params;
 
-    gpio_reset_pin(GPIO_LED);
-    gpio_set_direction(GPIO_LED, GPIO_MODE_OUTPUT);
-    gpio_set_level(GPIO_LED, 0);
+    gpio_reset_pin(10);
+    gpio_set_direction(10, GPIO_MODE_OUTPUT);
+    gpio_set_level(10, 0);
 
     uint8_t led = false;
 
@@ -394,9 +415,43 @@ static void blink_task(void *params) {
 
         lrcp_frame_encode(&serial.base, &led, sizeof(led));
 
-        gpio_set_level(GPIO_LED, led);
+        gpio_set_level(10, led);
         vTaskDelay(pdMS_TO_TICKS(led ? 100 : 900));
     }
+}
+
+static void host_timeout(TimerHandle_t timer) {
+    (void)timer;
+
+    xSemaphoreTake(state_lock, portMAX_DELAY);
+    memset(state_data, 0, sizeof(state_data));
+    state_size = 0;
+    xSemaphoreGive(state_lock);
+
+    ESP_LOGW("app", "host timeout");
+}
+
+static void station_timeout(TimerHandle_t timer) {
+    (void)timer;
+
+    uint8_t buf[128];
+
+    buffer_t buffer = {
+        .buffer = buf,
+        .capacity = sizeof(buf),
+        .size = 0,
+        .position = 0,
+    };
+    cmp_ctx_t cmp;
+    cmp_init(&cmp, &buffer, NULL, NULL, buffer_writer);
+
+    cmp_write_map(&cmp, 1);
+    cmp_write_str(&cmp, "command", 7);
+    cmp_write_str(&cmp, "stop", 4);
+
+    lrcp_frame_encode(&serial.base, buffer.buffer, buffer.size);
+
+    ESP_LOGW("app", "station timeout");
 }
 
 void app_main() {
@@ -408,14 +463,18 @@ void app_main() {
 
     serial_init();
     wifi_init();
-    http_init();
 
-    state_timer = xTimerCreate("state watchdog", pdMS_TO_TICKS(1000), true, NULL, state_watchdog);
     state_lock = xSemaphoreCreateBinary();
-
-    xTimerStart(state_timer, portMAX_DELAY);
     xSemaphoreGive(state_lock);
 
-    xTaskCreate(decoder_task, "decoder", 4096, NULL, 5, NULL);
+    host_watchdog = xTimerCreate("host watchdog", pdMS_TO_TICKS(1000), true, NULL, host_timeout);
+    station_watchdog = xTimerCreate("station watchdog", pdMS_TO_TICKS(1000), true, NULL, station_timeout);
+
+    xTimerStart(host_watchdog, portMAX_DELAY);
+    xTimerStart(station_watchdog, portMAX_DELAY);
+
     xTaskCreate(blink_task, "blink", 4096, NULL, 5, NULL);
+    xTaskCreate(serial_receive_task, "serial receive", 8192, NULL, 5, NULL);
+    xTaskCreate(udp_broadcast_task, "udp broadcast", 4096, NULL, 5, NULL);
+    xTaskCreate(udp_server_task, "udp server", 16384, NULL, 5, NULL);
 }

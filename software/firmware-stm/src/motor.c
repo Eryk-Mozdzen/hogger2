@@ -13,18 +13,51 @@
 #define ALIGN_TIME              200
 #define ALIGN_PULSE             0.3f
 
-#define OPEN_LOOP_PULSE			0.2f
-#define OPEN_LOOP_RAMP_TIME		2000
-#define OPEN_LOOP_RAMP_LAMBDA	3.f
-#define OPEN_LOOP_RAMP_MIN		2000
+#define OPEN_LOOP_PULSE			0.4f
+#define OPEN_LOOP_RAMP_TIME		1000
+#define OPEN_LOOP_RAMP_LAMBDA	1.f
+#define OPEN_LOOP_RAMP_MIN		1000
 #define OPEN_LOOP_RAMP_MAX		200000
 
-#define CLOSED_LOOP_PULSE_MIN   0.1f
-#define CLOSED_LOOP_PULSE_MAX   0.3f
+#define CLOSED_LOOP_SWITCH		1000
+#define CLOSED_LOOP_PULSE_MIN   0.15f
+#define CLOSED_LOOP_PULSE_MAX   0.8f
 #define CLOSED_LOOP_KP          0.001f
 #define CLOSED_LOOP_KI          0.000001f
 
 #define CLAMP(val, min, max)	(((val)>(max)) ? (max) : (((val)<(min)) ? (min) : (val)));
+
+static const motor_phase_t feedback_src_lookup[6] = {
+	MOTOR_PHASE_U,
+	MOTOR_PHASE_W,
+    MOTOR_PHASE_V,
+	MOTOR_PHASE_U,
+	MOTOR_PHASE_W,
+    MOTOR_PHASE_V,
+};
+
+static const uint8_t feedback_dir_lookup[6] = {
+	0, 1, 0, 1, 0, 1,
+};
+
+static const uint8_t filter_lookup[256] = {
+    0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4,
+    1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
+    1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
+    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+    1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
+    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+    3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
+    1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
+    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+    3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
+    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+    3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
+    3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
+    4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8,
+};
 
 static void config_pwm(const motor_t *motor, const uint32_t channel) {
     const uint32_t pulse = motor->pulse*motor->control_timer->Instance->ARR;
@@ -74,6 +107,7 @@ static void config_oc(const motor_t *motor, const uint32_t channel, const uint32
 
 static void shutdown(const motor_t *motor) {
 	HAL_TIM_Base_Stop(motor->commut_timer);
+	HAL_TIM_Base_Stop_IT(motor->control_timer);
 
 	HAL_TIM_OC_Stop(motor->control_timer, TIM_CHANNEL_1);
 	HAL_TIM_OC_Stop(motor->control_timer, TIM_CHANNEL_2);
@@ -112,6 +146,7 @@ static void pid_init(motor_pid_t *pid) {
 	pid->process = 0;
 	pid->setpoint = 0;
 	pid->value = 0;
+	pid->dt = 1;
 
 	pid->error_integral = 0;
 	pid->error_prev = 0;
@@ -120,7 +155,7 @@ static void pid_init(motor_pid_t *pid) {
 static void pid_calculate(motor_pid_t *pid) {
 	const float error = pid->setpoint - pid->process;
 
-	pid->error_integral +=0.5f*(pid->error_prev + error);
+	pid->error_integral +=0.5f*pid->dt*(pid->error_prev + error);
 
 	pid->value = pid->kp*error + pid->ki*pid->error_integral;
 
@@ -144,10 +179,10 @@ void motor_tick(motor_t *motor) {
 	const uint32_t time = HAL_GetTick() - motor->state_start_time;
 
 	if(software_timer(&motor->vel_task, time, VEL_PERIOD)) {
-		const uint32_t zc_count = motor->zc_count;
+		const uint32_t count = motor->zc_count;
 		motor->zc_count = 0;
 
-		const float velocity = (2.f*PI*zc_count)/(6*MOTOR_POLE_PAIRS*VEL_PERIOD*0.001f);
+		const float velocity = (2.f*PI*count)/(6*MOTOR_POLE_PAIRS*VEL_PERIOD*0.001f);
 		motor->vel = VEL_FILTER*motor->vel + (1.f - VEL_FILTER)*velocity;
 	}
 
@@ -163,6 +198,7 @@ void motor_tick(motor_t *motor) {
 				__HAL_TIM_SET_COUNTER(motor->commut_timer, 0);
 				__HAL_TIM_SET_AUTORELOAD(motor->commut_timer, 1000);
 				HAL_TIM_Base_Start(motor->commut_timer);
+				HAL_TIM_Base_Start_IT(motor->control_timer);
 				HAL_TIMEx_ConfigCommutEvent_IT(motor->control_timer, motor->control_timer_itr, TIM_COMMUTATION_TRGI);
 			}
         } break;
@@ -191,6 +227,7 @@ void motor_tick(motor_t *motor) {
 
 				motor->ramp_task = 0;
 				motor->zc_count = 0;
+				motor->switch_over = 0;
 			}
         } break;
         case MOTOR_STATE_STARTUP_OPEN_LOOP: {
@@ -218,6 +255,12 @@ void motor_tick(motor_t *motor) {
 			}
         } break;
         case MOTOR_STATE_RUNNING: {
+			if(time<=CLOSED_LOOP_SWITCH) {
+				motor->switch_over = ((float)time)/((float)CLOSED_LOOP_SWITCH);
+			} else {
+				motor->switch_over = 1.f;
+			}
+
 			if(motor->vel_setpoint<VEL_THRESHOLD) {
 				state_change(motor, MOTOR_STATE_PANIC);
 			}
@@ -249,9 +292,10 @@ void motor_commutation_callback(motor_t *motor, const TIM_HandleTypeDef *htim) {
 	if(motor->state==MOTOR_STATE_RUNNING) {
 		motor->pid.process = motor->vel;
 		motor->pid.setpoint = motor->vel_setpoint;
+		motor->pid.dt = __HAL_TIM_GET_AUTORELOAD(motor->commut_timer)*0.001f;
 		pid_calculate(&motor->pid);
 		motor->pulse = CLAMP(
-			CLOSED_LOOP_PULSE_MIN + motor->pid.value,
+			OPEN_LOOP_PULSE + motor->switch_over*motor->pid.value,
 			CLOSED_LOOP_PULSE_MIN,
 			CLOSED_LOOP_PULSE_MAX
 		);
@@ -294,21 +338,42 @@ void motor_commutation_callback(motor_t *motor, const TIM_HandleTypeDef *htim) {
 			config_pwm(motor, TIM_CHANNEL_3);
 		} break;
 	}
+
+	motor->zc_filter = 0;
+	motor->zc_occur = 0;
 }
 
-void motor_interrupt_callback(motor_t *motor, const uint16_t pin) {
-	if((motor->bemf[MOTOR_PHASE_U]!=pin)
-		&& (motor->bemf[MOTOR_PHASE_V]!=pin)
-		&& (motor->bemf[MOTOR_PHASE_W]!=pin)) {
-		return;
-	}
-
+void motor_sample_callback(motor_t *motor, const TIM_HandleTypeDef *htim) {
 	const uint32_t counter = __HAL_TIM_GET_COUNTER(motor->commut_timer);
 	const uint32_t autoreload = __HAL_TIM_GET_AUTORELOAD(motor->commut_timer);
 
-	if(motor->state==MOTOR_STATE_RUNNING) {
-		__HAL_TIM_SET_AUTORELOAD(motor->commut_timer, counter + autoreload/2);
+	if((htim!=motor->control_timer) || motor->zc_occur) {
+		return;
 	}
 
-	motor->zc_count++;
+	const motor_bemf_t *bemf = &motor->bemf[feedback_src_lookup[motor->step]];
+	const uint8_t state = HAL_GPIO_ReadPin(bemf->port, bemf->pin);
+
+	motor->zc_filter <<=1;
+	motor->zc_filter |=(state^feedback_dir_lookup[motor->step]);
+
+	if(filter_lookup[motor->zc_filter]>=4) {
+		motor->zc_occur = 1;
+		motor->zc_count++;
+
+		if(motor->state==MOTOR_STATE_RUNNING) {
+			uint32_t period = 0.2f*2*counter + 0.8f*autoreload;
+
+			if(motor->switch_over<1.f) {
+				const uint32_t time = HAL_GetTick() - motor->state_start_time + OPEN_LOOP_RAMP_TIME;
+				const float t = time*0.001f;
+				const float f = 1.f - expf(-OPEN_LOOP_RAMP_LAMBDA*t);
+				const uint32_t T = CLAMP(OPEN_LOOP_RAMP_MIN/f, OPEN_LOOP_RAMP_MIN, OPEN_LOOP_RAMP_MAX);
+
+				period = (1.f - motor->switch_over)*T + motor->switch_over*period;
+			}
+
+			__HAL_TIM_SET_AUTORELOAD(motor->commut_timer, period);
+		}
+	}
 }

@@ -70,7 +70,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         sliders[3] = new QSlider(Qt::Orientation::Vertical);
 
         for(QSlider *slider : sliders) {
-            slider->setRange(-150, 150);
+            slider->setRange(-100, 100);
             slider->setTickInterval(1);
         }
 
@@ -103,27 +103,37 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         QTimer *timer = new QTimer();
 
         connect(timer, &QTimer::timeout, [this]() {
-            const double v = -2.*joystick.get(JoystickWidget::Analog::LY);
-            const double w = -10.*joystick.get(JoystickWidget::Analog::LX);
-            const double X = joystick.get(JoystickWidget::Analog::RX);
+            const int offsets[4] = {
+                +sliders[0]->value() - sliders[1]->value(),
+                +sliders[2]->value(),
+                +sliders[0]->value() + sliders[1]->value(),
+                +sliders[3]->value(),
+            };
 
             constexpr double L = 0.13;  // m
             constexpr double R = 0.05;  // m
-            constexpr double W = 200;   // rad/s
+            constexpr double W = 500;   // rad/s
+            constexpr double h = 0.07;  // m
 
-            const double v1 = v - L*w;
-            const double v2 = v + L*w;
+            const double dx = h*feedback["sensors"][2]["data"][0].toDouble();
+            const double dtheta = feedback["sensors"][1]["data"][2].toDouble();
 
-            const double a1 = std::asin(std::clamp(v1/(W*R), -1., 1.));
-            const double a2 = std::asin(std::clamp(v2/(W*R), -1., 1.));
+            const double dx_ref = -0.3*joystick.get(JoystickWidget::Analog::LY);
+            const double dtheta_ref = -3.14*joystick.get(JoystickWidget::Analog::LX);
+
+            const double v1 = -15*(dx - dx_ref) + L*3*(dtheta - dtheta_ref);
+            const double v2 = -15*(dx - dx_ref) - L*3*(dtheta - dtheta_ref);
+
+            const double a1 = std::asin(std::clamp(v1/(+W*R), -1., 1.));
+            const double a2 = std::asin(std::clamp(v2/(-W*R), -1., 1.));
 
             const QJsonArray referenceConfiguration = {
-                sliders[0]->value() + lerp(+a1, -M_PI, M_PI, 1000, 2000),
-                sliders[1]->value() + 1500 + X*20,
-                joystick.get(JoystickWidget::Button::A) ? 200 : 0,
-                sliders[2]->value() + lerp(-a2, -M_PI, M_PI, 1000, 2000),
-                sliders[3]->value() + 1500 + X*20,
-                joystick.get(JoystickWidget::Button::A) ? 200 : 0,
+                offsets[0] + lerp(a1, -M_PI, M_PI, 1000, 2000),
+                offsets[1] + 1500,
+                joystick.get(JoystickWidget::Analog::LT)>0.5 ? W : 0,
+                offsets[2] + lerp(-a2, -M_PI, M_PI, 1000, 2000),
+                offsets[3] + 1500,
+                joystick.get(JoystickWidget::Analog::LT)>0.5 ? W : 0,
             };
 
             QJsonObject json;
@@ -137,10 +147,12 @@ Window::Window(QWidget *parent) : QWidget(parent) {
             transmit(document);
         });
 
-        timer->start(20);
+        timer->start(50);
     }
 }
 
 void Window::receive(const QJsonDocument &json) {
     text[0]->setText(json.toJson());
+
+    feedback = json.object();
 }
