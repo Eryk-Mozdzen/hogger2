@@ -6,8 +6,8 @@
 	(paper "A4")
 	(title_block
 		(title "Hogger2 Controller")
-		(date "2024-11-09")
-		(rev "V1.0")
+		(date "2025-02-18")
+		(rev "V1.1")
 		(comment 4 "Author: Eryk Możdżeń")
 	)
 	(lib_symbols
@@ -4541,7 +4541,6 @@
 	)
 	(label "BEMF_ZERO"
 		(at 231.14 55.88 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4552,7 +4551,6 @@
 	)
 	(label "BEMF_V"
 		(at 210.82 93.98 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4563,7 +4561,6 @@
 	)
 	(label "BEMF_W"
 		(at 210.82 137.16 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4574,7 +4571,6 @@
 	)
 	(label "PHASE_V"
 		(at 203.2 82.55 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4585,7 +4581,6 @@
 	)
 	(label "PHASE_U"
 		(at 88.9 50.8 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4596,7 +4591,6 @@
 	)
 	(label "PHASE_U"
 		(at 127 90.17 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4607,7 +4601,6 @@
 	)
 	(label "BEMF_U"
 		(at 165.1 86.36 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4618,7 +4611,6 @@
 	)
 	(label "PHASE_W"
 		(at 203.2 125.73 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4629,7 +4621,6 @@
 	)
 	(label "PHASE_U"
 		(at 203.2 39.37 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4640,7 +4631,6 @@
 	)
 	(label "BEMF_V"
 		(at 165.1 93.98 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4651,7 +4641,6 @@
 	)
 	(label "BEMF_ZERO"
 		(at 180.34 93.98 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4662,7 +4651,6 @@
 	)
 	(label "BEMF_ZERO"
 		(at 231.14 142.24 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4673,7 +4661,6 @@
 	)
 	(label "BEMF_U"
 		(at 210.82 50.8 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4684,7 +4671,6 @@
 	)
 	(label "PHASE_V"
 		(at 127 93.98 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4695,7 +4681,6 @@
 	)
 	(label "BEMF_ZERO"
 		(at 231.14 99.06 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4706,7 +4691,6 @@
 	)
 	(label "PHASE_V"
 		(at 88.9 93.98 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4717,7 +4701,6 @@
 	)
 	(label "PHASE_W"
 		(at 127 97.79 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4728,7 +4711,6 @@
 	)
 	(label "BEMF_W"
 		(at 165.1 101.6 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4739,7 +4721,6 @@
 	)
 	(label "PHASE_W"
 		(at 88.9 137.16 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
