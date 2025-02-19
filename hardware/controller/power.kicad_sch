@@ -6,7 +6,7 @@
 	(paper "A4")
 	(title_block
 		(title "Hogger2 Controller")
-		(date "2025-02-18")
+		(date "2025-02-19")
 		(rev "V1.1")
 		(comment 4 "Author: Eryk Możdżeń")
 	)
@@ -5877,7 +5877,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "51k"
+		(property "Value" "47k"
 			(at 154.94 54.6099 0)
 			(effects
 				(font

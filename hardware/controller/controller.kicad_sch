@@ -6,7 +6,7 @@
 	(paper "A4")
 	(title_block
 		(title "Hogger2 Controller")
-		(date "2025-02-18")
+		(date "2025-02-19")
 		(rev "V1.1")
 		(comment 4 "Author: Eryk Możdżeń")
 	)
@@ -647,7 +647,7 @@
 		)
 	)
 	(sheet
-		(at 195.58 50.8)
+		(at 151.765 117.475)
 		(size 37.465 26.035)
 		(fields_autoplaced yes)
 		(stroke
@@ -657,9 +657,9 @@
 		(fill
 			(color 0 0 0 0.0000)
 		)
-		(uuid "271b47c6-c6c6-4fa8-a848-2271fd9bebf4")
-		(property "Sheetname" "hog1"
-			(at 195.58 50.0884 0)
+		(uuid "3ac54464-9759-4092-adde-e5df53f5c8cc")
+		(property "Sheetname" "servos"
+			(at 151.765 116.7634 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -667,8 +667,46 @@
 				(justify left bottom)
 			)
 		)
-		(property "Sheetfile" "hog1.kicad_sch"
-			(at 195.58 77.4196 0)
+		(property "Sheetfile" "servos.kicad_sch"
+			(at 151.765 144.0946 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "controller"
+				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f"
+					(page "8")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 151.765 50.8)
+		(size 37.465 26.035)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "4c5bca81-4f34-4971-a15e-b37425719f36")
+		(property "Sheetname" "motor1"
+			(at 151.765 50.0884 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "motor1.kicad_sch"
+			(at 151.765 77.4196 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -685,8 +723,8 @@
 		)
 	)
 	(sheet
-		(at 63.5 50.8)
-		(size 38.1 59.69)
+		(at 64.135 50.8)
+		(size 37.465 26.035)
 		(fields_autoplaced yes)
 		(stroke
 			(width 0.1524)
@@ -697,7 +735,7 @@
 		)
 		(uuid "54c19fa3-aa0d-4e7d-a7c9-c109aa98901f")
 		(property "Sheetname" "power"
-			(at 63.5 50.0884 0)
+			(at 64.135 50.0884 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -706,7 +744,7 @@
 			)
 		)
 		(property "Sheetfile" "power.kicad_sch"
-			(at 63.5 111.0746 0)
+			(at 64.135 77.4196 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -723,8 +761,8 @@
 		)
 	)
 	(sheet
-		(at 151.13 50.8)
-		(size 38.1 59.69)
+		(at 64.135 83.82)
+		(size 37.465 59.69)
 		(fields_autoplaced yes)
 		(stroke
 			(width 0.1524)
@@ -735,7 +773,7 @@
 		)
 		(uuid "9b959a7f-7785-4fbc-97ae-e71bdac42a24")
 		(property "Sheetname" "sensors"
-			(at 151.13 50.0884 0)
+			(at 64.135 83.1084 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -744,7 +782,7 @@
 			)
 		)
 		(property "Sheetfile" "sensors.kicad_sch"
-			(at 151.13 111.0746 0)
+			(at 64.135 144.0946 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -761,8 +799,46 @@
 		)
 	)
 	(sheet
+		(at 151.765 83.82)
+		(size 37.465 26.035)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "a096c3cd-db90-4cf1-b1e9-dfd3d439d72f")
+		(property "Sheetname" "motor2"
+			(at 151.765 83.1084 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "motor2.kicad_sch"
+			(at 151.765 110.4396 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "controller"
+				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f"
+					(page "7")
+				)
+			)
+		)
+	)
+	(sheet
 		(at 107.315 50.8)
-		(size 38.1 59.69)
+		(size 38.1 92.71)
 		(fields_autoplaced yes)
 		(stroke
 			(width 0.1524)
@@ -782,7 +858,7 @@
 			)
 		)
 		(property "Sheetfile" "microcontroller.kicad_sch"
-			(at 107.315 111.0746 0)
+			(at 107.315 144.0946 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -794,44 +870,6 @@
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f"
 					(page "2")
-				)
-			)
-		)
-	)
-	(sheet
-		(at 195.58 84.455)
-		(size 37.465 26.035)
-		(fields_autoplaced yes)
-		(stroke
-			(width 0.1524)
-			(type solid)
-		)
-		(fill
-			(color 0 0 0 0.0000)
-		)
-		(uuid "e70dc713-c3b8-49b5-85a5-9763f650e50f")
-		(property "Sheetname" "hog2"
-			(at 195.58 83.7434 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left bottom)
-			)
-		)
-		(property "Sheetfile" "hog2.kicad_sch"
-			(at 195.58 111.0746 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-			)
-		)
-		(instances
-			(project "controller"
-				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f"
-					(page "7")
 				)
 			)
 		)
