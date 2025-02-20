@@ -6,7 +6,7 @@
 	(paper "A4")
 	(title_block
 		(title "Hogger2 Controller")
-		(date "2025-02-19")
+		(date "2025-02-20")
 		(rev "V1.1")
 		(comment 4 "Author: Eryk Możdżeń")
 	)
@@ -113,200 +113,22 @@
 				)
 			)
 		)
-		(symbol "power:GND"
-			(power)
-			(pin_numbers hide)
-			(pin_names
-				(offset 0) hide)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(property "Reference" "#PWR"
-				(at 0 -6.35 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Value" "GND"
-				(at 0 -3.81 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Footprint" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Datasheet" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "ki_keywords" "global power"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(symbol "GND_0_1"
-				(polyline
-					(pts
-						(xy 0 0) (xy 0 -1.27) (xy 1.27 -1.27) (xy 0 -2.54) (xy -1.27 -1.27) (xy 0 -1.27)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-			)
-			(symbol "GND_1_1"
-				(pin power_in line
-					(at 0 0 270)
-					(length 0)
-					(name "~"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-		)
 	)
-	(junction
-		(at 146.05 179.07)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "17dcc64f-1b09-44b1-8aa3-48abbfc347b6")
+	(no_connect
+		(at 148.59 163.83)
+		(uuid "06e5fe96-4eef-41ae-b313-3d6aceb0f136")
 	)
-	(junction
-		(at 146.05 173.99)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "36e953c3-86ee-4e30-a2c5-3acec044c83a")
+	(no_connect
+		(at 148.59 179.07)
+		(uuid "2bb310cb-1191-49cc-97d3-9171765af58f")
 	)
-	(junction
-		(at 146.05 168.91)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "40b9c65c-89b5-40b2-9917-d546a2199b78")
+	(no_connect
+		(at 148.59 173.99)
+		(uuid "58cbffda-b457-4c7e-b4fe-e5a06fec71d9")
 	)
-	(wire
-		(pts
-			(xy 146.05 168.91) (xy 146.05 173.99)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "007b4013-6cee-41e6-bf10-7d71a111b796")
-	)
-	(wire
-		(pts
-			(xy 146.05 163.83) (xy 146.05 168.91)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "19752bfd-6b87-4792-b7bc-1ae91a22ee71")
-	)
-	(wire
-		(pts
-			(xy 146.05 173.99) (xy 146.05 179.07)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "76911525-f360-419a-a6c7-72928c876fbf")
-	)
-	(wire
-		(pts
-			(xy 148.59 173.99) (xy 146.05 173.99)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "7a4bc4b6-dbb9-4e2d-bf9d-9d27a713ca06")
-	)
-	(wire
-		(pts
-			(xy 146.05 179.07) (xy 146.05 181.61)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "7b87d5a6-39a9-4a0d-b615-08d43e6e8b8f")
-	)
-	(wire
-		(pts
-			(xy 148.59 163.83) (xy 146.05 163.83)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "8017d509-ae9f-45fc-9640-5548d2918fc6")
-	)
-	(wire
-		(pts
-			(xy 148.59 179.07) (xy 146.05 179.07)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "af3fbbb1-3138-4fad-9aaa-175e6478d689")
-	)
-	(wire
-		(pts
-			(xy 148.59 168.91) (xy 146.05 168.91)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "dd2968d9-2cea-43ea-b8d7-59731d7b509c")
+	(no_connect
+		(at 148.59 168.91)
+		(uuid "ce7e73fa-583d-4f6e-a60d-4233040386d8")
 	)
 	(symbol
 		(lib_id "Mechanical:MountingHole_Pad")
@@ -575,72 +397,6 @@
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f"
 					(reference "H3")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:GND")
-		(at 146.05 181.61 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "cdcce8dc-9636-4d9e-8e8d-2d45c4aa5cbe")
-		(property "Reference" "#PWR01"
-			(at 146.05 187.96 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "GND"
-			(at 146.05 186.69 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 146.05 181.61 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 146.05 181.61 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 146.05 181.61 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "f878f219-3f1f-4a19-9f0f-650f31cf9041")
-		)
-		(instances
-			(project ""
-				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f"
-					(reference "#PWR01")
 					(unit 1)
 				)
 			)
