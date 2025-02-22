@@ -67,6 +67,17 @@
 		)
 	)
 	(attr smd)
+	(fp_rect
+		(start -4.5 0.95)
+		(end 4.5 4.55)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(fill none)
+		(layer "F.SilkS")
+		(uuid "66147b97-af9b-491b-84c0-ca006150607b")
+	)
 	(fp_circle
 		(center -3.4 2.75)
 		(end -2.95 2.75)
@@ -99,17 +110,6 @@
 		(fill none)
 		(layer "F.CrtYd")
 		(uuid "e6f31868-dddd-41c2-bef1-324851615fca")
-	)
-	(fp_rect
-		(start -4.5 0.95)
-		(end 4.5 4.55)
-		(stroke
-			(width 0.1)
-			(type default)
-		)
-		(fill none)
-		(layer "F.Fab")
-		(uuid "66147b97-af9b-491b-84c0-ca006150607b")
 	)
 	(fp_rect
 		(start 0.3 4.55)

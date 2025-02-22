@@ -6,7 +6,7 @@
 	(paper "A4")
 	(title_block
 		(title "Hogger2 Controller")
-		(date "2025-02-20")
+		(date "2025-02-22")
 		(rev "V1.1")
 		(comment 4 "Author: Eryk Możdżeń")
 	)
@@ -1859,7 +1859,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "15cc3032-080d-4d9a-b717-c8e9c7e6bbff")
-		(property "Reference" "J15"
+		(property "Reference" "J13"
 			(at 160.02 53.34 0)
 			(effects
 				(font
@@ -1914,7 +1914,7 @@
 		(instances
 			(project ""
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/3ac54464-9759-4092-adde-e5df53f5c8cc"
-					(reference "J15")
+					(reference "J13")
 					(unit 1)
 				)
 			)
@@ -2665,7 +2665,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "6df65411-54fe-4ec4-89ef-2ff0c2a5bde3")
-		(property "Reference" "J16"
+		(property "Reference" "J14"
 			(at 160.02 118.11 0)
 			(effects
 				(font
@@ -2720,7 +2720,7 @@
 		(instances
 			(project "controller"
 				(path "/b81e4285-7ba7-4843-ab37-49bb8c6c135f/3ac54464-9759-4092-adde-e5df53f5c8cc"
-					(reference "J16")
+					(reference "J14")
 					(unit 1)
 				)
 			)
