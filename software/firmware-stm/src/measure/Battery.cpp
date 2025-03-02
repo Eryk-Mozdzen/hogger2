@@ -6,7 +6,7 @@
 
 extern ADC_HandleTypeDef hadc1;
 
-class Battery : public freertos::TaskClass<128>, TelemetrySource {
+class Battery : freertos::TaskClass<128>, TelemetrySource {
     freertos::Mutex lock;
     float voltage;
 
@@ -20,7 +20,7 @@ public:
 
 Battery battery;
 
-Battery::Battery() : TaskClass{"battery", 1}, voltage{0} {
+Battery::Battery() : TaskClass{"battery", 2}, voltage{0} {
 }
 
 void Battery::task() {

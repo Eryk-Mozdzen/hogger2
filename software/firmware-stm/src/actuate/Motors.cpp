@@ -9,15 +9,16 @@ extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim8;
 
-class Motors : public freertos::TaskClass<1024> {
+class Motors : freertos::TaskClass<1024> {
     static BLDC::Config getConfig(const int number);
+
+    void task();
 
 public:
     BLDC motor1;
     BLDC motor2;
 
     Motors();
-    void task();
 };
 
 Motors motors;
@@ -79,7 +80,11 @@ void Motors::task() {
     }
 }
 
-void Motors_SetVelocity(const float vel1, const float vel2) {
+namespace motor {
+
+void setVelocity(const float vel1, const float vel2) {
     motors.motor1.setVelocity(vel1);
     motors.motor2.setVelocity(vel2);
+}
+
 }

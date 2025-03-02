@@ -1,13 +1,12 @@
 #include <lrcp/frame.h>
-#include <main.h>
 #include <stm32u5xx_hal.h>
 
-#include "Internals.hpp"
-#include "actuate/Servos.hpp"
+#include "com/MailboxRegistry.hpp"
+#include "com/TelemetrySerializer.hpp"
 #include "freertos/Mutex.hpp"
 #include "freertos/Task.hpp"
 #include "freertos/Timer.hpp"
-#include "lrcp.hpp"
+#include "utils/lrcp.hpp"
 
 extern UART_HandleTypeDef huart1;
 
@@ -39,13 +38,17 @@ static void transmitISR(UART_HandleTypeDef *huart) {
 
 Communication::Communication()
     : stream(streamBuffer, sizeof(streamBuffer)),
-      transmitter{"com tx", this, &Communication::transmitterTask, 8},
+      transmitter{"com tx", this, &Communication::transmitterTask, 7},
       receiver{"com rx", this, &Communication::receiverTask, 8},
       timer{"com rx timeout", this, &Communication::timeout, 2000, pdTRUE} {
 }
 
 void Communication::transmitterTask() {
+    const TelemetrySerializer &serializer = TelemetrySerializer::getInstance();
+
     uint8_t buffer[1024];
+    uint8_t encoded[1024];
+    uint32_t time = 0;
 
     if(xSemaphoreTake(lock, portMAX_DELAY)) {
         HAL_UART_RegisterCallback(&huart1, HAL_UART_TX_COMPLETE_CB_ID, transmitISR);
@@ -53,18 +56,24 @@ void Communication::transmitterTask() {
     }
 
     while(true) {
-        const size_t bytes =
-            xMessageBufferReceive(internals::comTxQueue(), buffer, sizeof(buffer), portMAX_DELAY);
+        const uint32_t size = serializer.serialize(buffer, sizeof(buffer));
 
-        if(xSemaphoreTake(lock, 100)) {
-            HAL_UART_Transmit_DMA(&huart1, buffer, bytes);
+        lrcp::Stream stream(encoded, sizeof(encoded));
+        lrcp_frame_encode(&stream, buffer, size);
+
+        if(xSemaphoreTake(lock, 10)) {
+            HAL_UART_Transmit_DMA(&huart1, stream.buffer, stream.wr);
             xSemaphoreGive(lock);
-            ulTaskNotifyTake(pdTRUE, 100);
+            ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         }
+
+        vTaskDelayUntil(&time, 20);
     }
 }
 
 void Communication::receiverTask() {
+    MailboxRegistry &registry = MailboxRegistry::getInstance();
+
     uint8_t payload[1024];
     uint32_t time = 0;
 
@@ -90,13 +99,7 @@ void Communication::receiverTask() {
         if(size > 0) {
             xTimerReset(timer, portMAX_DELAY);
 
-            if(size == 1) {
-                HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin,
-                                  payload[0] ? GPIO_PIN_SET : GPIO_PIN_RESET);
-                Servos_SetLed(payload[0], payload[0], payload[0], payload[0]);
-            } else {
-                xMessageBufferSend(internals::comRxQueue(), payload, size, 10);
-            }
+            registry.send(payload, size);
         }
 
         vTaskDelayUntil(&time, 1);

@@ -1,7 +1,7 @@
 #include <cmp/cmp.h>
 #include <cstring>
 
-#include "cmp.hpp"
+#include "utils/cmp.hpp"
 
 namespace cmp {
 
@@ -11,6 +11,9 @@ MessagePack MessagePack::createEmpty(void *buffer, const uint32_t capacity) {
     mpack.capacity = capacity;
     mpack.size = 0;
     mpack.position = 0;
+
+    cmp_init(&mpack.ctx, &mpack, MessagePack::reader, NULL, MessagePack::writer);
+
     return mpack;
 }
 
@@ -20,11 +23,14 @@ MessagePack MessagePack::createFromData(const void *buffer, const uint32_t size)
     mpack.capacity = size;
     mpack.size = size;
     mpack.position = 0;
+
+    cmp_init(&mpack.ctx, &mpack, MessagePack::reader, NULL, MessagePack::writer);
+
     return mpack;
 }
 
-size_t writer(cmp_ctx_t *ctx, const void *data, size_t count) {
-    MessagePack *buf = reinterpret_cast<MessagePack *>(ctx->buf);
+size_t MessagePack::writer(cmp_ctx_t *ctx, const void *data, size_t count) {
+    MessagePack *buf = static_cast<MessagePack *>(ctx->buf);
 
     if((buf->position + count) > buf->capacity) {
         return 0;
@@ -36,8 +42,8 @@ size_t writer(cmp_ctx_t *ctx, const void *data, size_t count) {
     return count;
 }
 
-bool reader(cmp_ctx_t *ctx, void *data, size_t count) {
-    MessagePack *buf = reinterpret_cast<MessagePack *>(ctx->buf);
+bool MessagePack::reader(cmp_ctx_t *ctx, void *data, size_t count) {
+    MessagePack *buf = static_cast<MessagePack *>(ctx->buf);
 
     if((buf->position + count) > buf->size) {
         return false;

@@ -1,15 +1,16 @@
 #include <cmath>
 #include <cstring>
 
-#include "Internals.hpp"
 #include "actuate/Motors.hpp"
 #include "actuate/Servos.hpp"
-#include "com/cmp.hpp"
+#include "com/Mailbox.hpp"
 #include "freertos/Mutex.hpp"
 #include "freertos/Task.hpp"
 #include "freertos/Timer.hpp"
+#include "utils/cmp.hpp"
 
 class Control {
+    Mailbox<10 * 1024> mailbox;
     freertos::TaskMember<Control, 1024> receiver;
     freertos::TaskMember<Control, 1024> controller;
     freertos::TimerMember<Control> timer;
@@ -30,8 +31,9 @@ public:
 Control control;
 
 Control::Control()
-    : receiver{"ctrl recv", this, &Control::receiverTask, 1},
-      controller{"ctrl control", this, &Control::controllerTask, 1},
+    : mailbox{2},
+      receiver{"ctrl recv", this, &Control::receiverTask, 10},
+      controller{"ctrl control", this, &Control::controllerTask, 10},
       timer{"ctrl recv timeout", this, &Control::shutdown, 1000, pdTRUE} {
 }
 
@@ -40,20 +42,18 @@ void Control::receiverTask() {
 
     while(true) {
         const uint32_t size =
-            xMessageBufferReceive(internals::comRxQueue(), data, sizeof(data), portMAX_DELAY);
+            xMessageBufferReceive(mailbox.getBuffer(), data, sizeof(data), portMAX_DELAY);
 
-        if(size > 0) {
-            float cfg[6];
-            if(deserializeRefCfg(data, size, cfg)) {
-                xTimerReset(timer, portMAX_DELAY);
+        float cfg[6];
+        if(deserializeRefCfg(data, size, cfg)) {
+            xTimerReset(timer, portMAX_DELAY);
 
-                if(xSemaphoreTake(lock, 100)) {
-                    memcpy(ref_cfg, cfg, sizeof(cfg));
-                    xSemaphoreGive(lock);
-                }
-            } else if(deserializeStop(data, size)) {
-                shutdown();
+            if(xSemaphoreTake(lock, 100)) {
+                memcpy(ref_cfg, cfg, sizeof(cfg));
+                xSemaphoreGive(lock);
             }
+        } else if(deserializeStop(data, size)) {
+            shutdown();
         }
     }
 }
@@ -68,8 +68,8 @@ void Control::controllerTask() {
             xSemaphoreGive(lock);
         }
 
-        Motors_SetVelocity(cfg[2], cfg[5]);
-        Servos_SetGoal(cfg[0], cfg[1], cfg[3], cfg[4]);
+        motor::setVelocity(cfg[2], cfg[5]);
+        servo::setGoal(cfg[0], cfg[1], cfg[3], cfg[4]);
 
         vTaskDelayUntil(&time, 10);
     }
@@ -85,11 +85,8 @@ void Control::shutdown() {
 bool Control::deserializeRefCfg(const uint8_t *data, const uint32_t data_size, float *cfg) {
     cmp::MessagePack mpack = cmp::MessagePack::createFromData(data, data_size);
 
-    cmp_ctx_t cmp;
-    cmp_init(&cmp, &mpack, cmp::reader, NULL, NULL);
-
     uint32_t map_size = 0;
-    if(!cmp_read_map(&cmp, &map_size)) {
+    if(!cmp_read_map(&mpack.ctx, &map_size)) {
         return false;
     }
     if(map_size != 2) {
@@ -98,7 +95,7 @@ bool Control::deserializeRefCfg(const uint8_t *data, const uint32_t data_size, f
 
     char key[32] = {0};
     uint32_t key_size = sizeof(key);
-    if(!cmp_read_str(&cmp, key, &key_size)) {
+    if(!cmp_read_str(&mpack.ctx, key, &key_size)) {
         return false;
     }
     if(strncmp(key, "command", key_size) != 0) {
@@ -107,7 +104,7 @@ bool Control::deserializeRefCfg(const uint8_t *data, const uint32_t data_size, f
 
     char command[32] = {0};
     uint32_t command_size = sizeof(command);
-    if(!cmp_read_str(&cmp, command, &command_size)) {
+    if(!cmp_read_str(&mpack.ctx, command, &command_size)) {
         return false;
     }
     if(strncmp(command, "manual", command_size) != 0) {
@@ -115,7 +112,7 @@ bool Control::deserializeRefCfg(const uint8_t *data, const uint32_t data_size, f
     }
 
     key_size = sizeof(key);
-    if(!cmp_read_str(&cmp, key, &key_size)) {
+    if(!cmp_read_str(&mpack.ctx, key, &key_size)) {
         return false;
     }
     if(strncmp(key, "ref_cfg", key_size) != 0) {
@@ -123,7 +120,7 @@ bool Control::deserializeRefCfg(const uint8_t *data, const uint32_t data_size, f
     }
 
     uint32_t array_size = 0;
-    if(!cmp_read_array(&cmp, &array_size)) {
+    if(!cmp_read_array(&mpack.ctx, &array_size)) {
         return false;
     }
     if(array_size != 6) {
@@ -131,7 +128,7 @@ bool Control::deserializeRefCfg(const uint8_t *data, const uint32_t data_size, f
     }
 
     for(uint8_t i = 0; i < 6; i++) {
-        if(!cmp_read_float(&cmp, &cfg[i])) {
+        if(!cmp_read_float(&mpack.ctx, &cfg[i])) {
             return false;
         }
     }
@@ -142,11 +139,8 @@ bool Control::deserializeRefCfg(const uint8_t *data, const uint32_t data_size, f
 bool Control::deserializeStop(const uint8_t *data, const uint32_t data_size) {
     cmp::MessagePack mpack = cmp::MessagePack::createFromData(data, data_size);
 
-    cmp_ctx_t cmp;
-    cmp_init(&cmp, &mpack, cmp::reader, NULL, NULL);
-
     uint32_t map_size = 0;
-    if(!cmp_read_map(&cmp, &map_size)) {
+    if(!cmp_read_map(&mpack.ctx, &map_size)) {
         return false;
     }
     if(map_size != 1) {
@@ -155,7 +149,7 @@ bool Control::deserializeStop(const uint8_t *data, const uint32_t data_size) {
 
     char key[32] = {0};
     uint32_t key_size = sizeof(key);
-    if(!cmp_read_str(&cmp, key, &key_size)) {
+    if(!cmp_read_str(&mpack.ctx, key, &key_size)) {
         return false;
     }
     if(strncmp(key, "command", key_size) != 0) {
@@ -164,7 +158,7 @@ bool Control::deserializeStop(const uint8_t *data, const uint32_t data_size) {
 
     char command[32] = {0};
     uint32_t command_size = sizeof(command);
-    if(!cmp_read_str(&cmp, command, &command_size)) {
+    if(!cmp_read_str(&mpack.ctx, command, &command_size)) {
         return false;
     }
     if(strncmp(command, "stop", command_size) != 0) {

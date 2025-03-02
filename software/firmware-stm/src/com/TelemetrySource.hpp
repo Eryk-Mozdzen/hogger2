@@ -2,10 +2,10 @@
 
 #include <cmp/cmp.h>
 
-class TelemetryRegistry;
+class TelemetrySerializer;
 
 class TelemetrySource {
-    friend class TelemetryRegistry;
+    friend class TelemetrySerializer;
 
     TelemetrySource *next = nullptr;
 
@@ -14,7 +14,4 @@ class TelemetrySource {
 
 protected:
     TelemetrySource();
-
-public:
-    virtual ~TelemetrySource() = default;
 };

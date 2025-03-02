@@ -6,7 +6,9 @@
 
 extern UART_HandleTypeDef huart4;
 
-class Servos : public freertos::TaskClass<1024> {
+class Servos : freertos::TaskClass<1024> {
+    void task();
+
 public:
     DynamixelBus bus;
     DynamixelServo servo1x;
@@ -15,7 +17,6 @@ public:
     DynamixelServo servo2y;
 
     Servos();
-    void task();
 };
 
 Servos servos;
@@ -47,16 +48,20 @@ void Servos::task() {
     }
 }
 
-void Servos_SetGoal(const float x1, const float y1, const float x2, const float y2) {
+namespace servo {
+
+void setGoal(const float x1, const float y1, const float x2, const float y2) {
     servos.servo1x.setGoal(x1);
     servos.servo1y.setGoal(y1);
     servos.servo2x.setGoal(x2);
     servos.servo2y.setGoal(y2);
 }
 
-void Servos_SetLed(const bool x1, const bool y1, const bool x2, const bool y2) {
+void setLed(const bool x1, const bool y1, const bool x2, const bool y2) {
     servos.servo1x.setLed(x1);
     servos.servo1y.setLed(y1);
     servos.servo2x.setLed(x2);
     servos.servo2y.setLed(y2);
+}
+
 }
