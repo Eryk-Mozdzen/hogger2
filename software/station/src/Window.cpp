@@ -8,10 +8,6 @@
 #include "Network.h"
 #include "Window.h"
 
-double lerp(const double in, const double in_min, const double in_max, const double out_min, const double out_max) {
-    return (out_max - out_min)*(in - in_min)/(in_max - in_min) + out_min;
-}
-
 Window::Window(QWidget *parent) : QWidget(parent) {
     QGridLayout *grid = new QGridLayout(this);
 
@@ -103,36 +99,25 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         QTimer *timer = new QTimer();
 
         connect(timer, &QTimer::timeout, [this]() {
-            const int offsets[4] = {
-                +sliders[0]->value() - sliders[1]->value(),
-                +sliders[2]->value(),
-                +sliders[0]->value() + sliders[1]->value(),
-                +sliders[3]->value(),
-            };
-
             constexpr double L = 0.13;  // m
             constexpr double R = 0.05;  // m
             constexpr double W = 500;   // rad/s
-            constexpr double h = 0.07;  // m
-
-            const double dx = h*feedback["sensors"][2]["data"][0].toDouble();
-            const double dtheta = feedback["sensors"][1]["data"][2].toDouble();
 
             const double dx_ref = -0.3*joystick.get(JoystickWidget::Analog::LY);
-            const double dtheta_ref = -3.14*joystick.get(JoystickWidget::Analog::LX);
+            const double dtheta_ref = -joystick.get(JoystickWidget::Analog::LX);
 
-            const double v1 = -15*(dx - dx_ref) + L*3*(dtheta - dtheta_ref);
-            const double v2 = -15*(dx - dx_ref) - L*3*(dtheta - dtheta_ref);
+            const double v1 = dx_ref + L*dtheta_ref;
+            const double v2 = dx_ref - L*dtheta_ref;
 
             const double a1 = std::asin(std::clamp(v1/(+W*R), -1., 1.));
             const double a2 = std::asin(std::clamp(v2/(-W*R), -1., 1.));
 
             const QJsonArray referenceConfiguration = {
-                offsets[0] + lerp(a1, -M_PI, M_PI, 1000, 2000),
-                offsets[1] + 1500,
+                a1,
+                0,
                 joystick.get(JoystickWidget::Analog::LT)>0.5 ? W : 0,
-                offsets[2] + lerp(-a2, -M_PI, M_PI, 1000, 2000),
-                offsets[3] + 1500,
+                -a2,
+                0,
                 joystick.get(JoystickWidget::Analog::LT)>0.5 ? W : 0,
             };
 

@@ -4,7 +4,7 @@ set(CMAKE_TOOLCHAIN_FILE "toolchain.cmake")
 
 project(firmware-stm)
 
-enable_language(ASM C)
+enable_language(ASM C CXX)
 
 set(TARGET ${CMAKE_PROJECT_NAME}.elf)
 
@@ -101,16 +101,36 @@ add_executable(${TARGET}
     "cubemx/Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_wwdg.c"
     "cubemx/Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_xspi.c"
 
-	"src/main.c"
-    "src/motor.c"
-    "src/servo.c"
-    "src/serial.c"
-    "src/serialize.c"
-    "src/imu.c"
-    "src/flow.c"
-    "../common/lrcp/stream.c"
-    "../common/lrcp/frame.c"
+    "FreeRTOS-Kernel/croutine.c"
+    "FreeRTOS-Kernel/event_groups.c"
+    "FreeRTOS-Kernel/list.c"
+    "FreeRTOS-Kernel/queue.c"
+    "FreeRTOS-Kernel/stream_buffer.c"
+    "FreeRTOS-Kernel/tasks.c"
+	"FreeRTOS-Kernel/timers.c"
+    "FreeRTOS-Kernel/portable/GCC/ARM_CM33_NTZ/non_secure/port.c"
+    "FreeRTOS-Kernel/portable/GCC/ARM_CM33_NTZ/non_secure/portasm.c"
+    "FreeRTOS-Kernel/portable/GCC/ARM_CM33_NTZ/non_secure/mpu_wrappers_v2_asm.c"
+
     "../common/cmp/cmp.c"
+    "../common/lrcp/frame.c"
+    "../common/lrcp/stream.c"
+
+	"src/main.c"
+    "src/Battery.cpp"
+    "src/Internals.cpp"
+    "src/com/TelemetrySource.cpp"
+    "src/com/TelemetryRegistry.cpp"
+    "src/com/Telemetry.cpp"
+    "src/com/Communication.cpp"
+    "src/com/cmp.cpp"
+    "src/com/lrcp.cpp"
+    "src/actuate/DynamixelServo.cpp"
+    "src/actuate/DynamixelBus.cpp"
+    "src/actuate/Servos.cpp"
+    "src/actuate/BLDC.cpp"
+    "src/actuate/Motors.cpp"
+    "src/control/Control.cpp"
 )
 
 target_include_directories(${TARGET} PRIVATE
@@ -119,9 +139,12 @@ target_include_directories(${TARGET} PRIVATE
     "cubemx/Drivers/CMSIS/Device/ST/STM32U5xx/Include"
     "cubemx/Drivers/STM32U5xx_HAL_Driver/Inc"
 
-    "."
-	"include"
+    "FreeRTOS-Kernel/include"
+    "FreeRTOS-Kernel/portable/GCC/ARM_CM33_NTZ/non_secure"
+
     "../common"
+
+	"src"
 )
 
 target_compile_definitions(${TARGET} PRIVATE
@@ -131,7 +154,7 @@ target_compile_definitions(${TARGET} PRIVATE
 
 target_compile_options(${TARGET} PRIVATE
 	$<$<COMPILE_LANGUAGE:ASM>:
-		-Os
+		-O2
 
         -x assembler-with-cpp
 
@@ -142,7 +165,7 @@ target_compile_options(${TARGET} PRIVATE
 	>
 
 	$<$<COMPILE_LANGUAGE:C>:
-		-Os -g
+		-O2 -g
 		-std=c17
 		-Wall
         -Wextra
@@ -158,6 +181,28 @@ target_compile_options(${TARGET} PRIVATE
         -mfpu=fpv4-sp-d16
         -mfloat-abi=hard
 	>
+
+    $<$<COMPILE_LANGUAGE:CXX>:
+		-O2 -g
+		-std=c++17
+
+		-Wall
+		-Wextra
+		-Wpedantic
+		-Wdouble-promotion
+
+		-ffunction-sections
+		-fdata-sections
+		-fno-threadsafe-statics
+		-fno-common
+		-fno-exceptions
+		-fno-rtti
+
+		-mthumb
+		-mcpu=cortex-m33
+        -mfpu=fpv4-sp-d16
+        -mfloat-abi=hard
+	>
 )
 
 target_link_options(${TARGET} PRIVATE
@@ -165,7 +210,7 @@ target_link_options(${TARGET} PRIVATE
 	-Wl,-Map=${CMAKE_PROJECT_NAME}.map
 	-Wl,--gc-sections
 	-Wl,-cref
-    -Wl,--start-group -lc -lm -Wl,--end-group
+    -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 
     -u _printf_float
     --specs=nano.specs
