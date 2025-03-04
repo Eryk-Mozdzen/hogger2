@@ -101,10 +101,10 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         connect(timer, &QTimer::timeout, [this]() {
             constexpr double L = 0.13;  // m
             constexpr double R = 0.05;  // m
-            constexpr double W = 500;   // rad/s
+            constexpr double W = 300;   // rad/s
 
-            const double dx_ref = -0.3*joystick.get(JoystickWidget::Analog::LY);
-            const double dtheta_ref = -joystick.get(JoystickWidget::Analog::LX);
+            const double dx_ref = -1*(joystick.get(JoystickWidget::Analog::LY) + 0.1*sliders[0]->value());
+            const double dtheta_ref = 2*(joystick.get(JoystickWidget::Analog::LX) + 0.1*sliders[1]->value());
 
             const double v1 = dx_ref + L*dtheta_ref;
             const double v2 = dx_ref - L*dtheta_ref;
@@ -116,8 +116,8 @@ Window::Window(QWidget *parent) : QWidget(parent) {
                 a1,
                 0,
                 joystick.get(JoystickWidget::Analog::LT)>0.5 ? W : 0,
-                -a2,
                 0,
+                a2,
                 joystick.get(JoystickWidget::Analog::LT)>0.5 ? W : 0,
             };
 

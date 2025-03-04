@@ -13,14 +13,14 @@ class DynamixelServo : TelemetrySource {
 
     freertos::Mutex lock;
 
-    float goal;
-    bool led;
+    float goal = 0;
+    bool led = false;
 
-    float position;
-    float velocity;
-    float load;
-    float temperature;
-    uint32_t timestamp;
+    float position = 0;
+    float velocity = 0;
+    float load = 0;
+    float temperature = 0;
+    uint32_t timestamp = 0;
 
     DynamixelServo *next = nullptr;
 
