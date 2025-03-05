@@ -1,5 +1,5 @@
-#ifndef MPU6050_REGS_H
-#define MPU6050_REGS_H
+#ifndef MPU6050_H
+#define MPU6050_H
 
 #define MPU6050_ADDR					0x68
 

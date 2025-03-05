@@ -57,7 +57,6 @@ typedef struct {
 
 void motor_init(motor_t *motor);
 void motor_tick(motor_t *motor);
-void motor_set_vel(motor_t *motor, const float vel);
 
 void motor_commutation_callback(motor_t *motor, const TIM_HandleTypeDef *htim);
 void motor_sample_callback(motor_t *motor, const TIM_HandleTypeDef *htim);

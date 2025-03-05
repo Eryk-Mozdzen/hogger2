@@ -1,5 +1,5 @@
-#ifndef PMW3901_REGS_H
-#define PMW3901_REGS_H
+#ifndef PMW3901_H
+#define PMW3901_H
 
 #define PMW3901_REG_PRODUCT_ID          0x00
 #define PMW3901_REG_REVISION_ID         0x01

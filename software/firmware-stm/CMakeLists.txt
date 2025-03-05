@@ -102,12 +102,18 @@ add_executable(${TARGET}
     "cubemx/Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_xspi.c"
 
 	"src/main.c"
-    "src/motor.c"
-    "src/servo.c"
-    "src/serial.c"
-    "src/serialize.c"
-    "src/imu.c"
-    "src/flow.c"
+    "src/utils/tasks.c"
+    "src/utils/mpack.c"
+    "src/com/telemetry.c"
+    "src/com/stream.c"
+    "src/actuate/motor.c"
+    "src/actuate/motors.c"
+    "src/actuate/dynamixel.c"
+    "src/actuate/servos.c"
+    "src/measure/imu.c"
+    "src/measure/flow.c"
+    "src/control/controller.c"
+
     "../common/lrcp/stream.c"
     "../common/lrcp/frame.c"
     "../common/cmp/cmp.c"
@@ -119,8 +125,7 @@ target_include_directories(${TARGET} PRIVATE
     "cubemx/Drivers/CMSIS/Device/ST/STM32U5xx/Include"
     "cubemx/Drivers/STM32U5xx_HAL_Driver/Inc"
 
-    "."
-	"include"
+	"src"
     "../common"
 )
 
