@@ -406,14 +406,29 @@ static void blink_task(void *params) {
     gpio_set_direction(10, GPIO_MODE_OUTPUT);
     gpio_set_level(10, 0);
 
-    uint8_t led = false;
+    bool led = false;
 
     ESP_LOGI("app", "blink task started");
 
     while(1) {
         led = !led;
 
-        lrcp_frame_encode(&serial.base, &led, sizeof(led));
+        uint8_t buf[128];
+
+        buffer_t buffer = {
+            .buffer = buf,
+            .capacity = sizeof(buf),
+            .size = 0,
+            .position = 0,
+        };
+        cmp_ctx_t cmp;
+        cmp_init(&cmp, &buffer, NULL, NULL, buffer_writer);
+
+        cmp_write_map(&cmp, 1);
+        cmp_write_str(&cmp, "blink", 5);
+        cmp_write_bool(&cmp, led);
+
+        lrcp_frame_encode(&serial.base, buffer.buffer, buffer.size);
 
         gpio_set_level(10, led);
         vTaskDelay(pdMS_TO_TICKS(led ? 100 : 900));
@@ -446,8 +461,8 @@ static void station_timeout(TimerHandle_t timer) {
     cmp_init(&cmp, &buffer, NULL, NULL, buffer_writer);
 
     cmp_write_map(&cmp, 1);
-    cmp_write_str(&cmp, "command", 7);
     cmp_write_str(&cmp, "stop", 4);
+    cmp_write_nil(&cmp);
 
     lrcp_frame_encode(&serial.base, buffer.buffer, buffer.size);
 

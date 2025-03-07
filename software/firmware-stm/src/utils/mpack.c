@@ -5,7 +5,7 @@
 
 #include "utils/mpack.h"
 
-size_t mpack_writer(cmp_ctx_t *ctx, const void *data, size_t count) {
+static size_t writer(cmp_ctx_t *ctx, const void *data, size_t count) {
     mpack_t *mpack = (mpack_t *) ctx->buf;
 
     if((mpack->position + count) > mpack->capacity) {
@@ -18,7 +18,7 @@ size_t mpack_writer(cmp_ctx_t *ctx, const void *data, size_t count) {
     return count;
 }
 
-bool mpack_reader(cmp_ctx_t *ctx, void *data, size_t count) {
+static bool reader(cmp_ctx_t *ctx, void *data, size_t count) {
     mpack_t *mpack = (mpack_t *) ctx->buf;
 
     if((mpack->position + count) > mpack->size) {
@@ -30,26 +30,47 @@ bool mpack_reader(cmp_ctx_t *ctx, void *data, size_t count) {
     return true;
 }
 
-bool mpack_read_map(mpack_t *mpack, const uint32_t size) {
+bool mpack_create_from(mpack_t *mpack, char *type, uint8_t *buffer, const uint32_t size) {
+    mpack->buffer = buffer,
+    mpack->capacity = size,
+    mpack->size = size,
+    mpack->position = 0,
+
+    cmp_init(&mpack->cmp, &mpack, reader, NULL, writer);
+
     uint32_t map_size = 0;
     if(!cmp_read_map(&mpack->cmp, &map_size)) {
         return false;
     }
-    if(map_size != size) {
+    if(map_size != 1) {
         return false;
     }
+
+    char type_buffer[32] = {0};
+    uint32_t type_buffer_size = sizeof(type_buffer);
+    if(!cmp_read_str(&mpack->cmp, type_buffer, &type_buffer_size)) {
+        return false;
+    }
+
+    strncpy(type, type_buffer, type_buffer_size);
+
     return true;
 }
 
-bool mpack_read_str(mpack_t *mpack, char *str) {
-    char buffer[32] = {0};
-    uint32_t buffer_size = sizeof(buffer);
-    if(!cmp_read_str(&mpack->cmp, buffer, &buffer_size)) {
-        return false;
-    }
-    const bool match = (strncmp(buffer, str, buffer_size) == 0);
-    strncpy(str, buffer, buffer_size);
-    return match;
+void mpack_create_empty(mpack_t *mpack, const char *type, uint8_t *buffer, const uint32_t capacity) {
+    mpack->buffer = buffer,
+    mpack->capacity = capacity,
+    mpack->size = 0,
+    mpack->position = 0,
+
+    cmp_init(&mpack->cmp, &mpack, reader, NULL, writer);
+
+    cmp_write_map(&mpack->cmp, 1);
+    cmp_write_str(&mpack->cmp, type, strlen(type));
+}
+
+bool mpack_read_bool(mpack_t *mpack, bool *value) {
+    return cmp_read_bool(&mpack->cmp, value);
 }
 
 bool mpack_read_array(mpack_t *mpack, float *values, const uint32_t number) {

@@ -27,30 +27,24 @@ void telemetry_register(const char *name, const telemetry_serialize_t serialize,
 }
 
 static void loop() {
-    static uint8_t buffer[2048];
-
     const uint32_t timestamp = HAL_GetTick();
 
-    mpack_t mpack = {
-        .buffer = buffer,
-        .capacity = sizeof(buffer),
-        .size = 0,
-        .position = 0,
-    };
-    cmp_init(&mpack.cmp, &mpack, mpack_reader, NULL, mpack_writer);
+    static uint8_t buffer[2048];
+    mpack_t mpack;
+    mpack_create_empty(&mpack, "telemetry", buffer, sizeof(buffer));
 
     cmp_write_map(&mpack.cmp, count + 1);
-
     cmp_write_str(&mpack.cmp, "timestamp", 9);
     cmp_write_u32(&mpack.cmp, timestamp);
 
     for(uint32_t i = 0; i < count; i++) {
         cmp_write_str(&mpack.cmp, registered[i].name, strlen(registered[i].name));
-
-        registered[i].serialize(&mpack.cmp, registered[i].context);
+        if(registered[i].serialize) {
+            registered[i].serialize(&mpack.cmp, registered[i].context);
+        }
     }
 
-    stream_transmit("telemetry", &mpack);
+    stream_transmit(&mpack);
 }
 
 TASKS_REGISTER(NULL, loop, 20)

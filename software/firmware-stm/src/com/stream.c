@@ -123,23 +123,8 @@ void stream_register(const char *type, const stream_receiver_t receiver) {
     count++;
 }
 
-void stream_transmit(const char *type, const mpack_t *content) {
-    static uint8_t buffer[2028];
-
-    mpack_t mpack = {
-        .buffer = buffer,
-        .capacity = sizeof(buffer),
-    };
-    cmp_init(&mpack.cmp, &mpack, mpack_reader, NULL, mpack_writer);
-
-    cmp_write_map(&mpack.cmp, 2);
-    cmp_write_str(&mpack.cmp, "type", 4);
-    cmp_write_str(&mpack.cmp, type, strlen(type));
-    cmp_write_str(&mpack.cmp, "content", 7);
-
-    memcpy(&mpack.buffer[mpack.size], content->buffer, content->size);
-
-    lrcp_stream_write(&serial.base, mpack.buffer, mpack.size);
+void stream_transmit(const mpack_t *mpack) {
+    lrcp_stream_write(&serial.base, mpack->buffer, mpack->size);
 }
 
 static void init() {
@@ -165,36 +150,14 @@ static void loop() {
     static uint8_t decoded[2048];
     const uint32_t size = lrcp_frame_decode(&serial.base, &decoder, decoded, sizeof(decoded));
 
-    if(!size) {
-        return;
-    }
-
-    mpack_t mpack = {
-        .buffer = decoded,
-        .capacity = sizeof(decoded),
-        .size = sizeof(decoded),
-    };
-    cmp_init(&mpack.cmp, &mpack, mpack_reader, NULL, mpack_writer);
-
-    if(!mpack_read_map(&mpack, 2)) {
-        return;
-    }
-
-    if(!mpack_read_str(&mpack, "type")) {
-        return;
-    }
-
     char type[32];
-    mpack_read_str(&mpack, type);
-
-    if(!mpack_read_str(&mpack, "content")) {
-        return;
-    }
-
-    for(uint32_t i = 0; i < count; i++) {
-        if((strcmp(type, registered[i].type) == 0) && registered[i].receiver) {
-            mpack_t copy = mpack;
-            registered[i].receiver(&copy);
+    mpack_t mpack;
+    if(mpack_create_from(&mpack, type, decoded, size)) {
+        for(uint32_t i = 0; i < count; i++) {
+            if((strcmp(type, registered[i].type) == 0) && registered[i].receiver) {
+                mpack_t copy = mpack;
+                registered[i].receiver(&copy);
+            }
         }
     }
 }

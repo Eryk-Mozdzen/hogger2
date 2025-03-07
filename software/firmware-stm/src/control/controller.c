@@ -1,43 +1,37 @@
 #include <stm32u5xx_hal.h>
 
 #include "actuate/motors.h"
+#include "actuate/servos.h"
 #include "com/stream.h"
 #include "utils/tasks.h"
-// servos
 
 static uint32_t last = 0;
 
 static void receiver(mpack_t *mpack) {
-    if(!mpack_read_map(mpack, 1)) {
-        return;
-    }
-
-    if(!mpack_read_str(mpack, "ref_cfg")) {
-        return;
-    }
-
     float reference[6];
     if(mpack_read_array(mpack, reference, 6)) {
         last = HAL_GetTick();
 
         motors_set_velocity(reference[2], reference[5]);
-        // servos
+        servos_set_position(reference[0], reference[1], reference[3], reference[4]);
     }
 }
 
-static void shutdown() {
+static void shutdown(mpack_t *mpack) {
+    (void) mpack;
+
     last = HAL_GetTick();
 
     motors_set_velocity(0, 0);
-    // servos
+    servos_set_position(0, 0, 0, 0);
 }
 
 static void watchdog() {
     const uint32_t time = HAL_GetTick();
 
-    if((time - last)>=1000) {
+    if((time - last) >= 1000) {
         last = time;
-        shutdown();
+        shutdown(NULL);
     }
 }
 

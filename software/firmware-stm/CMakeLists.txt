@@ -112,7 +112,9 @@ add_executable(${TARGET}
     "src/actuate/servos.c"
     "src/measure/imu.c"
     "src/measure/flow.c"
+    "src/measure/battery.c"
     "src/control/controller.c"
+    "src/control/blink.c"
 
     "../common/lrcp/stream.c"
     "../common/lrcp/frame.c"

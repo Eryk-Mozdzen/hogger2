@@ -16,6 +16,6 @@
 typedef void (*stream_receiver_t)(mpack_t *);
 
 void stream_register(const char *type, const stream_receiver_t receiver);
-void stream_transmit(const char *type, const mpack_t *content);
+void stream_transmit(const mpack_t *mpack);
 
 #endif

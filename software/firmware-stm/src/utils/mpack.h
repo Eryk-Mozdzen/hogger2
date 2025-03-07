@@ -13,11 +13,10 @@ typedef struct {
     size_t size;
 } mpack_t;
 
-size_t mpack_writer(cmp_ctx_t *ctx, const void *data, size_t count);
-bool mpack_reader(cmp_ctx_t *ctx, void *data, size_t count);
+bool mpack_create_from(mpack_t *mpack, char *type, uint8_t *buffer, const uint32_t size);
+void mpack_create_empty(mpack_t *mpack, const char *type, uint8_t *buffer, const uint32_t capacity);
 
-bool mpack_read_map(mpack_t *mpack, const uint32_t size);
-bool mpack_read_str(mpack_t *mpack, char *str);
+bool mpack_read_bool(mpack_t *mpack, bool *value);
 bool mpack_read_array(mpack_t *mpack, float *values, const uint32_t number);
 
 #endif
