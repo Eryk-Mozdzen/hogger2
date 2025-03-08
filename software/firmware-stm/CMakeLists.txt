@@ -105,6 +105,7 @@ add_executable(${TARGET}
     "src/utils/tasks.c"
     "src/utils/mpack.c"
     "src/com/telemetry.c"
+    "src/com/config.c"
     "src/com/stream.c"
     "src/actuate/motor.c"
     "src/actuate/motors.c"

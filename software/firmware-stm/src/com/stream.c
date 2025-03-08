@@ -155,7 +155,8 @@ static void loop() {
     if(mpack_create_from(&mpack, type, decoded, size)) {
         for(uint32_t i = 0; i < count; i++) {
             if((strcmp(type, registered[i].type) == 0) && registered[i].receiver) {
-                mpack_t copy = mpack;
+                mpack_t copy;
+                mpack_copy(&copy, &mpack);
                 registered[i].receiver(&copy);
             }
         }

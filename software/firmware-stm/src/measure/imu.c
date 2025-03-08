@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stm32u5xx_hal.h>
 
+#include "com/config.h"
 #include "com/telemetry.h"
 #include "measure/mpu6050.h"
 #include "utils/tasks.h"
@@ -21,6 +22,9 @@ static imu_t imu = {
     .i2c = &hi2c1,
     .interrupt = IMU_INT_Pin,
 };
+
+static float calib_accel[12] = {0};
+static float calib_gyro[3] = {0};
 
 static void mpu6050_write(imu_t *imu, uint8_t address, uint8_t value) {
     HAL_I2C_Mem_Write(imu->i2c, MPU6050_ADDR << 1, address, 1, &value, 1, 100);
@@ -122,3 +126,5 @@ static void serialize(cmp_ctx_t *cmp, void *context) {
 
 TASKS_REGISTER(init, loop, 0);
 TELEMETRY_REGISTER("imu", serialize, NULL)
+CONFIG_REGISTER("accel", &calib_accel, 12);
+CONFIG_REGISTER("gyro", &calib_gyro, 3);
