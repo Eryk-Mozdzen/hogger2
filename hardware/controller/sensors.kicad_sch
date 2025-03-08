@@ -6,7 +6,7 @@
 	(paper "A4")
 	(title_block
 		(title "Hogger2 Controller")
-		(date "2025-02-22")
+		(date "2025-03-08")
 		(rev "V1.1")
 		(comment 4 "Author: Eryk Możdżeń")
 	)
@@ -1570,10 +1570,10 @@
 		(uuid "3ed857d8-eb1a-46d1-adca-579ae6a0956d")
 	)
 	(junction
-		(at 172.72 58.42)
+		(at 173.99 58.42)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "4832d045-4b91-452e-9412-bc63a8917162")
+		(uuid "4777625d-3ed9-4c94-ac07-d6056f8e6ecd")
 	)
 	(junction
 		(at 67.31 66.04)
@@ -1681,7 +1681,7 @@
 	)
 	(wire
 		(pts
-			(xy 158.75 58.42) (xy 172.72 58.42)
+			(xy 158.75 58.42) (xy 173.99 58.42)
 		)
 		(stroke
 			(width 0)
@@ -1771,6 +1771,16 @@
 	)
 	(wire
 		(pts
+			(xy 173.99 58.42) (xy 199.39 58.42)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2bba44da-a88c-4730-a5c1-7c9faa65b4ca")
+	)
+	(wire
+		(pts
 			(xy 120.65 152.4) (xy 104.14 152.4)
 		)
 		(stroke
@@ -1788,16 +1798,6 @@
 			(type default)
 		)
 		(uuid "32728a87-9b77-4cc5-bdf5-b4b64f8fba5e")
-	)
-	(wire
-		(pts
-			(xy 172.72 58.42) (xy 199.39 58.42)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "35e91840-9d10-4a74-aa47-56944b67b9ef")
 	)
 	(wire
 		(pts
@@ -2051,7 +2051,7 @@
 	)
 	(wire
 		(pts
-			(xy 172.72 58.42) (xy 172.72 59.69)
+			(xy 173.99 58.42) (xy 173.99 59.69)
 		)
 		(stroke
 			(width 0)
@@ -3310,7 +3310,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10u"
+		(property "Value" "10u/50V"
 			(at 162.56 64.7699 0)
 			(effects
 				(font
@@ -3319,7 +3319,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
+		(property "Footprint" "Capacitor_SMD:C_1206_3216Metric"
 			(at 159.7152 67.31 0)
 			(effects
 				(font
@@ -3770,7 +3770,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 172.72 67.31 0)
+		(at 173.99 67.31 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -3779,7 +3779,7 @@
 		(fields_autoplaced yes)
 		(uuid "725130b9-36f4-417d-a934-8e7e8249f1b7")
 		(property "Reference" "#PWR072"
-			(at 172.72 73.66 0)
+			(at 173.99 73.66 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3788,7 +3788,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 172.72 72.39 0)
+			(at 173.99 72.39 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3796,7 +3796,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 172.72 67.31 0)
+			(at 173.99 67.31 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3805,7 +3805,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 172.72 67.31 0)
+			(at 173.99 67.31 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3814,7 +3814,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 172.72 67.31 0)
+			(at 173.99 67.31 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3972,7 +3972,7 @@
 	)
 	(symbol
 		(lib_id "Device:C")
-		(at 172.72 63.5 0)
+		(at 173.99 63.5 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -3980,7 +3980,7 @@
 		(dnp no)
 		(uuid "79369542-1414-433c-af40-fa94a6621555")
 		(property "Reference" "C33"
-			(at 176.53 62.2299 0)
+			(at 177.8 62.2299 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3989,7 +3989,7 @@
 			)
 		)
 		(property "Value" "100n"
-			(at 176.53 64.7699 0)
+			(at 177.8 64.7699 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3998,7 +3998,7 @@
 			)
 		)
 		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
-			(at 173.6852 67.31 0)
+			(at 174.9552 67.31 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4007,7 +4007,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 172.72 63.5 0)
+			(at 173.99 63.5 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4016,7 +4016,7 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor"
-			(at 172.72 63.5 0)
+			(at 173.99 63.5 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4257,7 +4257,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "2n2"
+		(property "Value" "2.2n"
 			(at 138.43 88.8999 0)
 			(effects
 				(font

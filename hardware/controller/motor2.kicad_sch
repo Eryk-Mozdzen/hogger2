@@ -6,7 +6,7 @@
 	(paper "A4")
 	(title_block
 		(title "Hogger2 Controller")
-		(date "2025-02-22")
+		(date "2025-03-08")
 		(rev "V1.1")
 		(comment 4 "Author: Eryk Możdżeń")
 	)
@@ -5426,7 +5426,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "AOD66406"
+		(property "Value" "IPD90N04S4L04"
 			(at 100.33 48.26 0)
 			(effects
 				(font
@@ -5837,7 +5837,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "AOD66406"
+		(property "Value" "IPD90N04S4L04"
 			(at 100.33 168.91 0)
 			(effects
 				(font
@@ -6872,7 +6872,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "AOD66406"
+		(property "Value" "IPD90N04S4L04"
 			(at 100.33 152.4 0)
 			(effects
 				(font
@@ -7528,7 +7528,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "AOD66406"
+		(property "Value" "IPD90N04S4L04"
 			(at 100.33 64.77 0)
 			(effects
 				(font
@@ -9134,7 +9134,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "AOD66406"
+		(property "Value" "IPD90N04S4L04"
 			(at 100.33 116.84 0)
 			(effects
 				(font
@@ -10069,7 +10069,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "AOD66406"
+		(property "Value" "IPD90N04S4L04"
 			(at 100.33 100.33 0)
 			(effects
 				(font

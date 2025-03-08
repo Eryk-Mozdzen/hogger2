@@ -6,7 +6,7 @@
 	(paper "A4")
 	(title_block
 		(title "Hogger2 Controller")
-		(date "2025-02-22")
+		(date "2025-03-08")
 		(rev "V1.1")
 		(comment 4 "Author: Eryk Możdżeń")
 	)
@@ -2992,17 +2992,6 @@
 		)
 		(uuid "884bc768-67fd-4b67-803a-a4ce8c7196f3")
 	)
-	(text "Vds = 40V\nVgs = 20V\nId = 40A"
-		(exclude_from_sim no)
-		(at 73.406 35.306 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "92f09dd0-88a6-43ee-8fcf-4ffe8c6557ba")
-	)
 	(text "power input"
 		(exclude_from_sim no)
 		(at 22.606 24.384 0)
@@ -3836,7 +3825,7 @@
 				)
 			)
 		)
-		(property "Value" "AOD4189"
+		(property "Value" "DMPH4013SK3"
 			(at 77.47 43.18 90)
 			(effects
 				(font
@@ -5676,7 +5665,7 @@
 				)
 			)
 		)
-		(property "Value" "100n/16V"
+		(property "Value" "100n/50V"
 			(at 71.12 113.03 90)
 			(effects
 				(font
