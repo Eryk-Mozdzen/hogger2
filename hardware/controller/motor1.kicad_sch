@@ -4710,7 +4710,7 @@
 	)
 	(global_label "MOTOR1_PWM_VH"
 		(shape input)
-		(at 161.29 172.72 180)
+		(at 161.29 177.8 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4720,7 +4720,7 @@
 		)
 		(uuid "1a60ffbf-1351-4011-9531-781f01b696a3")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 142.2182 172.72 0)
+			(at 142.2182 177.8 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4754,7 +4754,7 @@
 	)
 	(global_label "MOTOR1_PWM_WL"
 		(shape input)
-		(at 161.29 180.34 180)
+		(at 161.29 187.96 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4764,7 +4764,7 @@
 		)
 		(uuid "5d7e27fd-1611-487a-8cf9-44bbdb97afb4")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 142.1578 180.34 0)
+			(at 142.1578 187.96 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4776,7 +4776,7 @@
 	)
 	(global_label "MOTOR1_BEMF_V"
 		(shape input)
-		(at 161.29 185.42 180)
+		(at 161.29 175.26 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4786,7 +4786,7 @@
 		)
 		(uuid "5e571839-eb77-430d-87fc-835d09645f6b")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 142.7625 185.42 0)
+			(at 142.7625 175.26 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4864,7 +4864,7 @@
 	)
 	(global_label "MOTOR1_PWM_UL"
 		(shape input)
-		(at 161.29 170.18 180)
+		(at 161.29 172.72 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4874,7 +4874,7 @@
 		)
 		(uuid "8332bf34-c5ce-4012-822b-2b4b9070272e")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 142.2787 170.18 0)
+			(at 142.2787 172.72 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4908,7 +4908,7 @@
 	)
 	(global_label "MOTOR1_PWM_WH"
 		(shape input)
-		(at 161.29 177.8 180)
+		(at 161.29 185.42 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4918,7 +4918,7 @@
 		)
 		(uuid "9d33c067-9b5e-45fe-8d54-dc7a80d24841")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 141.8554 177.8 0)
+			(at 141.8554 185.42 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4930,7 +4930,7 @@
 	)
 	(global_label "MOTOR1_BEMF_W"
 		(shape input)
-		(at 161.29 187.96 180)
+		(at 161.29 182.88 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4940,7 +4940,7 @@
 		)
 		(uuid "a23eb866-285a-43ec-b259-ead0ab1c66f2")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 142.3997 187.96 0)
+			(at 142.3997 182.88 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4952,7 +4952,7 @@
 	)
 	(global_label "MOTOR1_PWM_UH"
 		(shape input)
-		(at 161.29 167.64 180)
+		(at 161.29 170.18 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4962,7 +4962,7 @@
 		)
 		(uuid "ab41ff40-2ada-4f9c-a66b-f04d424c483e")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 141.9763 167.64 0)
+			(at 141.9763 170.18 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4974,7 +4974,7 @@
 	)
 	(global_label "MOTOR1_BEMF_U"
 		(shape input)
-		(at 161.29 182.88 180)
+		(at 161.29 167.64 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4984,7 +4984,7 @@
 		)
 		(uuid "bc8f8de1-9ce7-41e0-8a52-4332a9c1b7cd")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 142.5206 182.88 0)
+			(at 142.5206 167.64 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5040,7 +5040,7 @@
 	)
 	(global_label "MOTOR1_PWM_VL"
 		(shape input)
-		(at 161.29 175.26 180)
+		(at 161.29 180.34 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -5050,7 +5050,7 @@
 		)
 		(uuid "eff4c081-aea5-4a5e-9dad-ba3a957957c9")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 142.5206 175.26 0)
+			(at 142.5206 180.34 0)
 			(effects
 				(font
 					(size 1.27 1.27)
