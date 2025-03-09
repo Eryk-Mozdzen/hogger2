@@ -3,42 +3,59 @@
 
 #include "utils/task.h"
 
-#define MAX 16
+#define MAX 32
 
 typedef struct {
     task_t task;
-    task_type_t type;
-    uint32_t period;
-    uint32_t next;
+    task_trigger_t *trigger;
 } registered_t;
 
 static registered_t registered[MAX] = {0};
 static uint32_t count = 0;
 
-void task_register(const task_t task, const task_type_t type, const uint32_t period) {
+void task_register(const task_t task, task_trigger_t *trigger) {
     registered[count].task = task;
-    registered[count].type = type;
-    registered[count].period = period;
-    registered[count].next = 0;
+    registered[count].trigger = trigger;
     count++;
 }
 
 void task_call_init() {
     for(uint32_t i = 0; i < count; i++) {
-        if((registered[i].type == TASK_INIT) && registered[i].task) {
+        if(!registered[i].trigger) {
             registered[i].task();
         }
     }
 }
 
-void task_call_periodic() {
-    const uint32_t time = HAL_GetTick();
-
+void task_call() {
     for(uint32_t i = 0; i < count; i++) {
-        if((registered[i].type == TASK_PERIODIC) && (registered[i].next < time) &&
-           registered[i].task) {
-            registered[i].task();
-            registered[i].next += registered[i].period;
+        if(registered[i].trigger) {
+            if(registered[i].trigger->logic(registered[i].trigger->context)) {
+                registered[i].task();
+            }
         }
     }
+}
+
+uint32_t _task_trigger_logic_nonstop(void *context) {
+    (void)context;
+    return 1;
+}
+
+uint32_t _task_trigger_logic_periodic(void *context) {
+    task_trigger_periodic_t *trigger = context;
+    if(uwTick > trigger->next) {
+        trigger->next += trigger->period;
+        return 1;
+    }
+    return 0;
+}
+
+uint32_t _task_trigger_logic_interrupt(void *context) {
+    task_trigger_interrupt_t *trigger = context;
+    if(*trigger->flag) {
+        *trigger->flag = 0;
+        return 1;
+    }
+    return 0;
 }

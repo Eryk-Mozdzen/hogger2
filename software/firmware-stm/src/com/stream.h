@@ -5,11 +5,11 @@
 
 #include "utils/mpack.h"
 
-#define STREAM_CONCAT_IMPL(a, b) a##b
-#define STREAM_CONCAT(a, b)      STREAM_CONCAT_IMPL(a, b)
+#define _STREAM_REGISTER_IMPL(a, b) a##b
+#define _STREAM_REGISTER(a, b)      _STREAM_REGISTER_IMPL(a, b)
 
 #define STREAM_REGISTER(type, receiver)                                                            \
-    __attribute__((constructor)) static void STREAM_CONCAT(stream_reg_, __LINE__)() {              \
+    __attribute__((constructor)) static void _STREAM_REGISTER(stream_reg_, __LINE__)() {           \
         stream_register((type), (receiver));                                                       \
     }
 

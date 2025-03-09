@@ -33,10 +33,10 @@ int main() {
     MX_ADC1_Init();
     MX_SPI2_Init();
 
-    task_call_init();
+    void task_call_init();
 
     while(1) {
-        task_call_periodic();
+        task_call();
     }
 
     return 0;

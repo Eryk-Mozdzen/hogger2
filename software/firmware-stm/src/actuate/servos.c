@@ -69,7 +69,7 @@ static void serialize(cmp_ctx_t *cmp, void *context) {
 }
 
 TASK_REGISTER_INIT(init)
-TASK_REGISTER_PERIODIC(loop, 0)
+TASK_REGISTER_NONSTOP(loop)
 TELEMETRY_REGISTER("servo_1_x", serialize, servo_1_x)
 TELEMETRY_REGISTER("servo_1_y", serialize, servo_1_y)
 TELEMETRY_REGISTER("servo_2_x", serialize, servo_2_x)

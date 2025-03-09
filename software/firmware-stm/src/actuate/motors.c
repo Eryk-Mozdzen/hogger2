@@ -83,6 +83,6 @@ static void serialize(cmp_ctx_t *cmp, void *context) {
 }
 
 TASK_REGISTER_INIT(init)
-TASK_REGISTER_PERIODIC(loop, 0)
+TASK_REGISTER_NONSTOP(loop)
 TELEMETRY_REGISTER("motor_1", serialize, &motor1)
 TELEMETRY_REGISTER("motor_2", serialize, &motor2)

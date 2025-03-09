@@ -79,6 +79,11 @@ static void receiver(mpack_t *mpack) {
     nvm_store(mpack->buffer, mpack->size);
 
     nvm_load();
+
+    mpack_t config;
+    if(mpack_create_from(&config, NULL, (void *)PAGE_BEGIN, PAGE_SIZE)) {
+        stream_transmit(&config);
+    }
 }
 
 TASK_REGISTER_INIT(nvm_load)
