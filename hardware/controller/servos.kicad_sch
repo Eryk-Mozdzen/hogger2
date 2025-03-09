@@ -6,7 +6,7 @@
 	(paper "A4")
 	(title_block
 		(title "Hogger2 Controller")
-		(date "2025-03-08")
+		(date "2025-03-09")
 		(rev "V1.1")
 		(comment 4 "Author: Eryk Możdżeń")
 	)
