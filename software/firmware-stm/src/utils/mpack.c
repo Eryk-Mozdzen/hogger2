@@ -6,7 +6,7 @@
 #include "utils/mpack.h"
 
 static size_t writer(cmp_ctx_t *ctx, const void *data, size_t count) {
-    mpack_t *mpack = (mpack_t *) ctx->buf;
+    mpack_t *mpack = (mpack_t *)ctx->buf;
 
     if((mpack->position + count) > mpack->capacity) {
         return 0;
@@ -19,7 +19,7 @@ static size_t writer(cmp_ctx_t *ctx, const void *data, size_t count) {
 }
 
 static bool reader(cmp_ctx_t *ctx, void *data, size_t count) {
-    mpack_t *mpack = (mpack_t *) ctx->buf;
+    mpack_t *mpack = (mpack_t *)ctx->buf;
 
     if((mpack->position + count) > mpack->size) {
         return false;

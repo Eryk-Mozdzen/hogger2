@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "com/stream.h"
-#include "utils/tasks.h"
+#include "utils/task.h"
 
 #define REGISTERED_MAX 8
 #define PAGE_BEGIN     0x0807E000
@@ -26,7 +26,7 @@ void config_register(const char *name, float *vector, const uint32_t dim) {
 
 static void nvm_store(const void *src, const uint32_t len) {
     uint8_t page[PAGE_SIZE];
-    memcpy(page, (void *) PAGE_BEGIN, PAGE_SIZE);
+    memcpy(page, (void *)PAGE_BEGIN, PAGE_SIZE);
     memcpy(page, src, len);
 
     HAL_FLASH_Unlock();
@@ -42,7 +42,7 @@ static void nvm_store(const void *src, const uint32_t len) {
     HAL_FLASHEx_Erase(&erase, &error);
 
     for(uint32_t i = 0; i < PAGE_SIZE; i += 16) {
-        HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, PAGE_BEGIN + i, (uint32_t) (page) + i);
+        HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, PAGE_BEGIN + i, (uint32_t)page + i);
     }
 
     HAL_FLASH_Lock();
@@ -50,7 +50,7 @@ static void nvm_store(const void *src, const uint32_t len) {
 
 static void nvm_load() {
     mpack_t config;
-    if(!mpack_create_from(&config, NULL, (void *) PAGE_BEGIN, PAGE_SIZE)) {
+    if(!mpack_create_from(&config, NULL, (void *)PAGE_BEGIN, PAGE_SIZE)) {
         return;
     }
 
@@ -81,5 +81,5 @@ static void receiver(mpack_t *mpack) {
     nvm_load();
 }
 
-TASKS_REGISTER(nvm_load, NULL, 0)
+TASK_REGISTER_INIT(nvm_load)
 STREAM_REGISTER("config", receiver)

@@ -147,10 +147,9 @@ void dynamixel_tick(dynamixel_t *dynamixel) {
                 if((length == 10) && dynamixel->pending->context) {
                     dynamixel_servo_t *servo = dynamixel->pending->context;
 
-                    const float position = (uint16_t) ((((uint16_t) params[1]) << 8) | params[0]);
-                    const uint16_t velocity =
-                        (uint16_t) ((((uint16_t) params[3]) << 8) | params[2]);
-                    const uint16_t load = (uint16_t) ((((uint16_t) params[5]) << 8) | params[4]);
+                    const float position = (uint16_t)((((uint16_t)params[1]) << 8) | params[0]);
+                    const uint16_t velocity = (uint16_t)((((uint16_t)params[3]) << 8) | params[2]);
+                    const uint16_t load = (uint16_t)((((uint16_t)params[5]) << 8) | params[4]);
 
                     servo->position = (PI / 614.4f) * (position - 512.f);
                     servo->velocity = (2.f * PI * 0.111f / 60.f) * (velocity & 0x400 ? -1.f : 1.f) *
@@ -178,8 +177,8 @@ void dynamixel_tick(dynamixel_t *dynamixel) {
         if(dynamixel->pending) {
             dynamixel->start = time;
             HAL_HalfDuplex_EnableTransmitter(dynamixel->uart);
-            HAL_UART_Transmit_IT(dynamixel->uart, (uint8_t *) dynamixel->pending->buffer,
-                                 (uint16_t) dynamixel->pending->size);
+            HAL_UART_Transmit_IT(dynamixel->uart, (uint8_t *)dynamixel->pending->buffer,
+                                 (uint16_t)dynamixel->pending->size);
         }
     }
 }

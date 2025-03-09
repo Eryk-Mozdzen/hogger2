@@ -4,7 +4,7 @@
 
 #include "com/telemetry.h"
 #include "measure/pmw3901.h"
-#include "utils/tasks.h"
+#include "utils/task.h"
 
 extern SPI_HandleTypeDef hspi2;
 
@@ -38,7 +38,7 @@ static void pmw3901_write(flow_t *flow, const uint8_t address, const uint8_t val
 }
 
 static void isr_transmit(SPI_HandleTypeDef *hspi) {
-    (void) hspi;
+    (void)hspi;
 
     flow.ready = 1;
 }
@@ -148,8 +148,8 @@ static void poll() {
             motion[i] = flow.buffer_rx[2 * i + 1];
         }
 
-        const int16_t delta_x = (((int16_t) motion[2]) << 8) | motion[1];
-        const int16_t delta_y = (((int16_t) motion[4]) << 8) | motion[3];
+        const int16_t delta_x = (((int16_t)motion[2]) << 8) | motion[1];
+        const int16_t delta_y = (((int16_t)motion[4]) << 8) | motion[3];
 
         const float tmp[2] = {
             -delta_y / (0.02f * PMW3901_FOCAL_LENGTH),
@@ -166,5 +166,6 @@ static void poll() {
     }
 }
 
-TASKS_REGISTER(init, transmit, 20);
-TASKS_REGISTER(NULL, poll, 0);
+TASK_REGISTER_INIT(init)
+TASK_REGISTER_PERIODIC(transmit, 20)
+TASK_REGISTER_PERIODIC(poll, 0)

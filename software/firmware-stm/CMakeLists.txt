@@ -102,7 +102,7 @@ add_executable(${TARGET}
     "cubemx/Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_xspi.c"
 
 	"src/main.c"
-    "src/utils/tasks.c"
+    "src/utils/task.c"
     "src/utils/mpack.c"
     "src/com/telemetry.c"
     "src/com/config.c"
@@ -139,7 +139,7 @@ target_compile_definitions(${TARGET} PRIVATE
 
 target_compile_options(${TARGET} PRIVATE
 	$<$<COMPILE_LANGUAGE:ASM>:
-		-Os
+		-O2
 
         -x assembler-with-cpp
 
@@ -150,8 +150,8 @@ target_compile_options(${TARGET} PRIVATE
 	>
 
 	$<$<COMPILE_LANGUAGE:C>:
-		-Os -g
-		-std=c17
+		-O2 -g
+		-std=c23
 		-Wall
         -Wextra
         -Wpedantic

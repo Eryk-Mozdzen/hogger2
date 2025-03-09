@@ -13,7 +13,7 @@ AllowAllParametersOfDeclarationOnNextLine: false
 BinPackParameters: false
 NamespaceIndentation: None
 FixNamespaceComments: false
-SpaceAfterCStyleCast: true
+SpaceAfterCStyleCast: false
 Standard: C++11
 IncludeBlocks: Preserve
 SpacesBeforeTrailingComments: 1

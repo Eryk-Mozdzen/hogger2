@@ -3,7 +3,7 @@
 
 #include "actuate/motor.h"
 #include "com/telemetry.h"
-#include "utils/tasks.h"
+#include "utils/task.h"
 
 extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim2;
@@ -82,6 +82,7 @@ static void serialize(cmp_ctx_t *cmp, void *context) {
     cmp_write_float(cmp, motor->pulse);
 }
 
-TASKS_REGISTER(init, loop, 0)
+TASK_REGISTER_INIT(init)
+TASK_REGISTER_PERIODIC(loop, 0)
 TELEMETRY_REGISTER("motor_1", serialize, &motor1)
 TELEMETRY_REGISTER("motor_2", serialize, &motor2)

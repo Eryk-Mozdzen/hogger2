@@ -6,7 +6,7 @@
 #include "com/stream.h"
 #include "com/telemetry.h"
 #include "utils/mpack.h"
-#include "utils/tasks.h"
+#include "utils/task.h"
 
 #define MAX 16
 
@@ -47,4 +47,4 @@ static void loop() {
     stream_transmit(&mpack);
 }
 
-TASKS_REGISTER(NULL, loop, 20)
+TASK_REGISTER_PERIODIC(loop, 20)

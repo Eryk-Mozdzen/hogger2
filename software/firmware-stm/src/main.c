@@ -1,6 +1,6 @@
 #include <stm32u5xx_hal.h>
 
-#include "utils/tasks.h"
+#include "utils/task.h"
 
 extern void SystemClock_Config();
 extern void MX_GPIO_Init();
@@ -33,10 +33,10 @@ int main() {
     MX_ADC1_Init();
     MX_SPI2_Init();
 
-    tasks_init();
+    task_call_init();
 
     while(1) {
-        tasks_loop();
+        task_call_periodic();
     }
 
     return 0;

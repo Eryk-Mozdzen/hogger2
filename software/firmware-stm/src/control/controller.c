@@ -3,7 +3,7 @@
 #include "actuate/motors.h"
 #include "actuate/servos.h"
 #include "com/stream.h"
-#include "utils/tasks.h"
+#include "utils/task.h"
 
 static uint32_t last = 0;
 
@@ -37,4 +37,4 @@ static void watchdog() {
 
 STREAM_REGISTER("reference", receiver)
 STREAM_REGISTER("stop", shutdown)
-TASKS_REGISTER(NULL, watchdog, 1);
+TASK_REGISTER_PERIODIC(watchdog, 1)

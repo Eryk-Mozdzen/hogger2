@@ -5,7 +5,7 @@
 
 #include "com/stream.h"
 #include "utils/mpack.h"
-#include "utils/tasks.h"
+#include "utils/task.h"
 
 #define MAX_REGISTERED   4
 #define RX_TIME_WATCHDOG 1000
@@ -51,7 +51,7 @@ static uint32_t reader(void *context, void *data, const uint32_t data_capacity) 
     uint32_t i;
 
     for(i = 0; fifo_pending(&serial->fifo_rx) && i < data_capacity; i++) {
-        ((uint8_t *) data)[i] = serial->fifo_rx.buffer[serial->fifo_rx.read];
+        ((uint8_t *)data)[i] = serial->fifo_rx.buffer[serial->fifo_rx.read];
         serial->fifo_rx.read++;
         serial->fifo_rx.read %= sizeof(serial->fifo_rx.buffer);
     }
@@ -63,7 +63,7 @@ static uint32_t writer(void *context, const void *data, const uint32_t data_size
     serial_t *serial = context;
 
     for(uint32_t i = 0; i < data_size; i++) {
-        serial->fifo_tx.buffer[serial->fifo_tx.write] = ((const uint8_t *) data)[i];
+        serial->fifo_tx.buffer[serial->fifo_tx.write] = ((const uint8_t *)data)[i];
         serial->fifo_tx.write++;
         serial->fifo_tx.write %= sizeof(serial->fifo_tx.buffer);
     }
@@ -101,7 +101,7 @@ static void tick() {
 }
 
 static void isr_transmit(UART_HandleTypeDef *huart) {
-    (void) huart;
+    (void)huart;
 
     serial.transmission = 0;
 
@@ -163,4 +163,5 @@ static void loop() {
     }
 }
 
-TASKS_REGISTER(init, loop, 0)
+TASK_REGISTER_INIT(init)
+TASK_REGISTER_PERIODIC(loop, 0)

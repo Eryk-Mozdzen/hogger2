@@ -1,6 +1,6 @@
 #include "actuate/dynamixel.h"
 #include "com/telemetry.h"
-#include "utils/tasks.h"
+#include "utils/task.h"
 
 extern UART_HandleTypeDef huart4;
 
@@ -68,8 +68,9 @@ static void serialize(cmp_ctx_t *cmp, void *context) {
     cmp_write_float(cmp, valid ? servo->temperature : NAN);
 }
 
-TASKS_REGISTER(init, loop, 0);
-TELEMETRY_REGISTER("servo_1_x", serialize, servo_1_x);
-TELEMETRY_REGISTER("servo_1_y", serialize, servo_1_y);
-TELEMETRY_REGISTER("servo_2_x", serialize, servo_2_x);
-TELEMETRY_REGISTER("servo_2_y", serialize, servo_2_y);
+TASK_REGISTER_INIT(init)
+TASK_REGISTER_PERIODIC(loop, 0)
+TELEMETRY_REGISTER("servo_1_x", serialize, servo_1_x)
+TELEMETRY_REGISTER("servo_1_y", serialize, servo_1_y)
+TELEMETRY_REGISTER("servo_2_x", serialize, servo_2_x)
+TELEMETRY_REGISTER("servo_2_y", serialize, servo_2_y)
