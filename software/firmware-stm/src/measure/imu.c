@@ -98,16 +98,18 @@ static void read() {
     }
 }
 
-static void serialize(cmp_ctx_t *cmp, void *context) {
+static void serialize_accel(cmp_ctx_t *cmp, void *context) {
     (void)context;
 
-    cmp_write_map(cmp, 2);
-    cmp_write_str(cmp, "accelerometer", 13);
     cmp_write_array(cmp, 3);
     cmp_write_float(cmp, accel[0]);
     cmp_write_float(cmp, accel[1]);
     cmp_write_float(cmp, accel[2]);
-    cmp_write_str(cmp, "gyroscope", 9);
+}
+
+static void serialize_gyro(cmp_ctx_t *cmp, void *context) {
+    (void)context;
+
     cmp_write_array(cmp, 3);
     cmp_write_float(cmp, gyro[0]);
     cmp_write_float(cmp, gyro[1]);
@@ -116,6 +118,7 @@ static void serialize(cmp_ctx_t *cmp, void *context) {
 
 TASK_REGISTER_INIT(init)
 TASK_REGISTER_INTERRUPT(read, &ready)
-TELEMETRY_REGISTER("imu", serialize, NULL)
+TELEMETRY_REGISTER("accelerometer", serialize_accel, NULL)
+TELEMETRY_REGISTER("gyroscope", serialize_gyro, NULL)
 CONFIG_REGISTER("accel", calib_accel, 12)
 CONFIG_REGISTER("gyro", calib_gyro, 3)

@@ -5,56 +5,50 @@
 
 #define MAX 32
 
-typedef struct {
-    task_t task;
-    task_trigger_t *trigger;
-} registered_t;
-
-static registered_t registered[MAX] = {0};
+static task_t registered[MAX] = {0};
 static uint32_t count = 0;
 
-void task_register(const task_t task, task_trigger_t *trigger) {
-    registered[count].task = task;
-    registered[count].trigger = trigger;
+void _task_register(const task_t task) {
+    registered[count] = task;
     count++;
 }
 
 void task_call_init() {
     for(uint32_t i = 0; i < count; i++) {
-        if(!registered[i].trigger) {
-            registered[i].task();
+        if(!registered[i].logic) {
+            registered[i].func();
         }
     }
 }
 
 void task_call() {
     for(uint32_t i = 0; i < count; i++) {
-        if(registered[i].trigger) {
-            if(registered[i].trigger->logic(registered[i].trigger->context)) {
-                registered[i].task();
+        if(registered[i].logic) {
+            if(registered[i].logic(registered[i].context)) {
+                registered[i].func();
             }
         }
     }
 }
 
-uint32_t _task_trigger_logic_nonstop(void *context) {
+uint32_t _task_logic_nonstop(void *context) {
     (void)context;
     return 1;
 }
 
-uint32_t _task_trigger_logic_periodic(void *context) {
-    task_trigger_periodic_t *trigger = context;
-    if(uwTick > trigger->next) {
-        trigger->next += trigger->period;
+uint32_t _task_logic_periodic(void *context) {
+    task_periodic_t *task = context;
+    if(uwTick > task->next) {
+        task->next += task->period;
         return 1;
     }
     return 0;
 }
 
-uint32_t _task_trigger_logic_interrupt(void *context) {
-    task_trigger_interrupt_t *trigger = context;
-    if(*trigger->flag) {
-        *trigger->flag = 0;
+uint32_t _task_logic_interrupt(void *context) {
+    task_interrupt_t *task = context;
+    if(*task->flag) {
+        *task->flag = 0;
         return 1;
     }
     return 0;

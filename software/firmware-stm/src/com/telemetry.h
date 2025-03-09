@@ -4,11 +4,11 @@
 #include <cmp/cmp.h>
 #include <stdint.h>
 
-#define _TELEMETRY_REGISTER_IMPL(a, b) a##b
-#define _TELEMETRY_REGISTER(a, b)      _TELEMETRY_REGISTER_IMPL(a, b)
+#define _TELEMETRY_REGISTER1(a, b) a##b
+#define _TELEMETRY_REGISTER2(a, b) _TELEMETRY_REGISTER1(a, b)
 
 #define TELEMETRY_REGISTER(name, serialize, context)                                               \
-    __attribute__((constructor)) static void _TELEMETRY_REGISTER(telemetry_reg_, __LINE__)() {     \
+    __attribute__((constructor)) static void _TELEMETRY_REGISTER2(telemetry_reg_, __LINE__)() {    \
         telemetry_register((name), (serialize), (context));                                        \
     }
 
