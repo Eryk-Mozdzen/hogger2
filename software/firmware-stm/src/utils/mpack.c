@@ -88,13 +88,16 @@ bool mpack_read_array(mpack_t *mpack, float *values, const uint32_t number) {
     if(!cmp_read_array(&mpack->cmp, &array_size)) {
         return false;
     }
-    if(array_size != number) {
-        return false;
-    }
 
-    for(uint8_t i = 0; i < number; i++) {
-        if(!cmp_read_float(&mpack->cmp, &values[i])) {
+    memset(values, 0, number * sizeof(float));
+
+    for(uint8_t i = 0; i < array_size; i++) {
+        float val = 0;
+        if(!cmp_read_float(&mpack->cmp, &val)) {
             return false;
+        }
+        if(i < number) {
+            values[i] = val;
         }
     }
 
