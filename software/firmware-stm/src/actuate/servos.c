@@ -35,21 +35,6 @@ static void isr_receive(UART_HandleTypeDef *huart, uint16_t size) {
     dynamixel_receive_callback(&dynamixel, huart, size);
 }
 
-static void init() {
-    HAL_UART_RegisterCallback(&huart4, HAL_UART_TX_COMPLETE_CB_ID, isr_transmit);
-    HAL_UART_RegisterRxEventCallback(&huart4, isr_receive);
-
-    dynamixel_init(&dynamixel);
-    servo_1_x = dynamixel_register(&dynamixel, 0);
-    servo_1_y = dynamixel_register(&dynamixel, 1);
-    servo_2_y = dynamixel_register(&dynamixel, 2);
-    servo_2_x = dynamixel_register(&dynamixel, 3);
-}
-
-static void loop() {
-    dynamixel_tick(&dynamixel);
-}
-
 static void serialize(cmp_ctx_t *cmp, void *context) {
     const dynamixel_servo_t *servo = context;
 
@@ -68,9 +53,25 @@ static void serialize(cmp_ctx_t *cmp, void *context) {
     cmp_write_float(cmp, valid ? servo->temperature : NAN);
 }
 
+static void init() {
+    HAL_UART_RegisterCallback(&huart4, HAL_UART_TX_COMPLETE_CB_ID, isr_transmit);
+    HAL_UART_RegisterRxEventCallback(&huart4, isr_receive);
+
+    dynamixel_init(&dynamixel);
+    servo_1_x = dynamixel_register(&dynamixel, 0);
+    servo_1_y = dynamixel_register(&dynamixel, 1);
+    servo_2_y = dynamixel_register(&dynamixel, 2);
+    servo_2_x = dynamixel_register(&dynamixel, 3);
+
+    telemetry_register("servo_1_x", serialize, servo_1_x);
+    telemetry_register("servo_1_y", serialize, servo_1_y);
+    telemetry_register("servo_2_x", serialize, servo_2_x);
+    telemetry_register("servo_2_y", serialize, servo_2_y);
+}
+
+static void loop() {
+    dynamixel_tick(&dynamixel);
+}
+
 TASK_REGISTER_INIT(init)
 TASK_REGISTER_NONSTOP(loop)
-TELEMETRY_REGISTER("servo_1_x", serialize, servo_1_x)
-TELEMETRY_REGISTER("servo_1_y", serialize, servo_1_y)
-TELEMETRY_REGISTER("servo_2_x", serialize, servo_2_x)
-TELEMETRY_REGISTER("servo_2_y", serialize, servo_2_y)

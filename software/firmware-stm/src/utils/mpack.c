@@ -31,9 +31,12 @@ static bool reader(cmp_ctx_t *ctx, void *data, size_t count) {
 }
 
 bool mpack_create_from(mpack_t *mpack, char *type, uint8_t *buffer, const uint32_t size) {
-    mpack->buffer = buffer, mpack->capacity = size, mpack->size = size, mpack->position = 0,
+    mpack->buffer = buffer;
+    mpack->capacity = size;
+    mpack->size = size;
+    mpack->position = 0,
 
-    cmp_init(&mpack->cmp, &mpack, reader, NULL, writer);
+    cmp_init(&mpack->cmp, mpack, reader, NULL, writer);
 
     uint32_t map_size = 0;
     if(!cmp_read_map(&mpack->cmp, &map_size)) {
@@ -60,9 +63,12 @@ void mpack_create_empty(mpack_t *mpack,
                         const char *type,
                         uint8_t *buffer,
                         const uint32_t capacity) {
-    mpack->buffer = buffer, mpack->capacity = capacity, mpack->size = 0, mpack->position = 0,
+    mpack->buffer = buffer;
+    mpack->capacity = capacity;
+    mpack->size = 0;
+    mpack->position = 0;
 
-    cmp_init(&mpack->cmp, &mpack, reader, NULL, writer);
+    cmp_init(&mpack->cmp, mpack, reader, NULL, writer);
 
     cmp_write_map(&mpack->cmp, 1);
     cmp_write_str(&mpack->cmp, type, strlen(type));

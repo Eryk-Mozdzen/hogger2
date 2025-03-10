@@ -116,7 +116,7 @@ void stream_register(const char *type, const stream_receiver_t receiver) {
 }
 
 void stream_transmit(const mpack_t *mpack) {
-    lrcp_stream_write(&stream, mpack->buffer, mpack->size);
+    lrcp_frame_encode(&stream, mpack->buffer, mpack->size);
 }
 
 static void init() {
@@ -142,7 +142,7 @@ static void loop() {
     static uint8_t decoded[2048];
     const uint32_t size = lrcp_frame_decode(&stream, &decoder, decoded, sizeof(decoded));
 
-    char type[32];
+    char type[32] = {0};
     mpack_t mpack;
     if(mpack_create_from(&mpack, type, decoded, size)) {
         for(uint32_t i = 0; i < count; i++) {

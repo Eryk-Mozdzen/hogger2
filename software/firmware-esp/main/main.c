@@ -327,7 +327,7 @@ static void udp_broadcast_task(void *params) {
             }
         } else {
             json = cJSON_CreateObject();
-            cJSON_AddItemToObject(json, "error", cJSON_CreateString("host timeout"));
+            cJSON_AddItemToObject(json, "error", cJSON_CreateString("host_timeout"));
         }
 
         xSemaphoreGive(state_lock);
