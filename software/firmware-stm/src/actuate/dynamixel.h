@@ -31,7 +31,6 @@ typedef struct {
 typedef struct {
     UART_HandleTypeDef *uart;
     uint8_t status_buffer[DYNAMIXEL_RX_MAX];
-    volatile uint8_t status_bytes;
 
     dynamixel_servo_t registered[DYNAMIXEL_REGISTER_MAX];
     dynamixel_instruction_t queue[DYNAMIXEL_QUEUE_MAX];
@@ -47,8 +46,5 @@ dynamixel_servo_t *dynamixel_register(dynamixel_t *dynamixel, const uint8_t id);
 void dynamixel_tick(dynamixel_t *dynamixel);
 
 void dynamixel_transmit_callback(dynamixel_t *dynamixel, const UART_HandleTypeDef *huart);
-void dynamixel_receive_callback(dynamixel_t *dynamixel,
-                                const UART_HandleTypeDef *huart,
-                                const uint16_t size);
 
 #endif

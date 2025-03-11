@@ -76,7 +76,6 @@ void dynamixel_init(dynamixel_t *dynamixel) {
         dynamixel->registered[i].id = UNREGISTRED;
     }
 
-    dynamixel->status_bytes = 0;
     dynamixel->queue_r = 0;
     dynamixel->queue_w = 0;
     dynamixel->pending = NULL;
@@ -124,7 +123,7 @@ void dynamixel_tick(dynamixel_t *dynamixel) {
         }
     }
 
-    if(dynamixel->pending && dynamixel->status_bytes) {
+    if(dynamixel->pending && ((time - dynamixel->start) >= 1)) {
         const uint8_t header1 = dynamixel->status_buffer[0];
         const uint8_t header2 = dynamixel->status_buffer[1];
         const uint8_t id = dynamixel->status_buffer[2];
@@ -164,21 +163,18 @@ void dynamixel_tick(dynamixel_t *dynamixel) {
         }
 
         dynamixel->pending = NULL;
-        dynamixel->status_bytes = 0;
-    }
-
-    if(dynamixel->pending && ((time - dynamixel->start) >= 1)) {
-        dynamixel->pending = NULL;
     }
 
     if(!dynamixel->pending) {
         dynamixel->pending = pop_instruction_packet(dynamixel);
 
         if(dynamixel->pending) {
+            memset(dynamixel->status_buffer, 0, sizeof(dynamixel->status_buffer));
             dynamixel->start = time;
+            HAL_UART_DMAStop(dynamixel->uart);
             HAL_HalfDuplex_EnableTransmitter(dynamixel->uart);
-            HAL_UART_Transmit_IT(dynamixel->uart, (uint8_t *)dynamixel->pending->buffer,
-                                 (uint16_t)dynamixel->pending->size);
+            HAL_UART_Transmit_DMA(dynamixel->uart, (uint8_t *)dynamixel->pending->buffer,
+                                  (uint16_t)dynamixel->pending->size);
         }
     }
 }
@@ -186,15 +182,7 @@ void dynamixel_tick(dynamixel_t *dynamixel) {
 void dynamixel_transmit_callback(dynamixel_t *dynamixel, const UART_HandleTypeDef *huart) {
     if(dynamixel->uart == huart) {
         HAL_HalfDuplex_EnableReceiver(dynamixel->uart);
-        HAL_UARTEx_ReceiveToIdle_IT(dynamixel->uart, dynamixel->status_buffer,
-                                    sizeof(dynamixel->status_buffer));
-    }
-}
-
-void dynamixel_receive_callback(dynamixel_t *dynamixel,
-                                const UART_HandleTypeDef *huart,
-                                const uint16_t size) {
-    if(dynamixel->uart == huart) {
-        dynamixel->status_bytes = size;
+        HAL_UART_Receive_DMA(dynamixel->uart, dynamixel->status_buffer,
+                             sizeof(dynamixel->status_buffer));
     }
 }
