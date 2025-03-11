@@ -31,7 +31,7 @@ static void isr_transmit(SPI_HandleTypeDef *hspi) {
 }
 
 static void init() {
-    HAL_SPI_RegisterCallback(&hspi2, HAL_SPI_TX_COMPLETE_CB_ID, isr_transmit);
+    HAL_SPI_RegisterCallback(&hspi2, HAL_SPI_TX_RX_COMPLETE_CB_ID, isr_transmit);
 
     pmw3901_write(0x3A, 0x5A);
 
