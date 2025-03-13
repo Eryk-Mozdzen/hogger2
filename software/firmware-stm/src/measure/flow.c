@@ -158,6 +158,6 @@ static void serialize(cmp_ctx_t *cmp, void *context) {
 }
 
 TASK_REGISTER_INIT(init)
-TASK_REGISTER_PERIODIC(transmit, 20)
+TASK_REGISTER_PERIODIC(transmit, 20000)
 TASK_REGISTER_INTERRUPT(read, &ready)
 TELEMETRY_REGISTER("optical_flow", serialize, NULL)

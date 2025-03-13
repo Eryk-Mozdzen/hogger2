@@ -1,12 +1,16 @@
 #include <stdint.h>
 #include <stm32u5xx_hal.h>
 
+#include "com/telemetry.h"
 #include "utils/task.h"
 
 #define MAX 32
 
+extern TIM_HandleTypeDef htim4;
+
 static task_t registered[MAX] = {0};
 static uint32_t count = 0;
+static uint32_t computation = 0;
 
 void _task_register(const task_t task) {
     registered[count] = task;
@@ -19,26 +23,25 @@ void task_call_init() {
             registered[i].func();
         }
     }
+
+    HAL_TIM_Base_Start(&htim4);
 }
 
 void task_call() {
     for(uint32_t i = 0; i < count; i++) {
         if(registered[i].logic) {
             if(registered[i].logic(registered[i].context)) {
+                const uint32_t start = __HAL_TIM_GET_COUNTER(&htim4);
                 registered[i].func();
+                computation += (__HAL_TIM_GET_COUNTER(&htim4) - start);
             }
         }
     }
 }
 
-uint32_t _task_logic_nonstop(void *context) {
-    (void)context;
-    return 1;
-}
-
 uint32_t _task_logic_periodic(void *context) {
     task_periodic_t *task = context;
-    if(uwTick > task->next) {
+    if(__HAL_TIM_GET_COUNTER(&htim4) > task->next) {
         task->next += task->period;
         return 1;
     }
@@ -53,3 +56,15 @@ uint32_t _task_logic_interrupt(void *context) {
     }
     return 0;
 }
+
+static void serialize(cmp_ctx_t *cmp, void *context) {
+    (void)context;
+
+    const float load = (100.f * computation) / 20000;
+
+    computation = 0;
+
+    cmp_write_u8(cmp, load);
+}
+
+TELEMETRY_REGISTER("core_load", serialize, NULL)

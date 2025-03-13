@@ -21,5 +21,5 @@ static void serialize(cmp_ctx_t *cmp, void *context) {
     cmp_write_float(cmp, voltage);
 }
 
-TASK_REGISTER_PERIODIC(sample, 50)
+TASK_REGISTER_PERIODIC(sample, 50000)
 TELEMETRY_REGISTER("battery", serialize, NULL)

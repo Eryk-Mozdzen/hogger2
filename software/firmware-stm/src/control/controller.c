@@ -37,4 +37,4 @@ static void watchdog() {
 
 STREAM_REGISTER("reference", receiver)
 STREAM_REGISTER("stop", shutdown)
-TASK_REGISTER_PERIODIC(watchdog, 1)
+TASK_REGISTER_PERIODIC(watchdog, 1000)

@@ -156,4 +156,4 @@ static void loop() {
 }
 
 TASK_REGISTER_INIT(init)
-TASK_REGISTER_NONSTOP(loop)
+TASK_REGISTER_PERIODIC(loop, 1000)

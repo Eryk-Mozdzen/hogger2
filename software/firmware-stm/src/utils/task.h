@@ -14,16 +14,6 @@
         _task_register(task);                                                                      \
     }
 
-#define TASK_REGISTER_NONSTOP(func_)                                                               \
-    __attribute__((constructor)) static void _TASK_REGISTER2(_task_register_, __LINE__)() {        \
-        static task_nonstop_t task = {                                                             \
-            .base.func = (func_),                                                                  \
-            .base.logic = _task_logic_nonstop,                                                     \
-            .base.context = NULL,                                                                  \
-        };                                                                                         \
-        _task_register(task.base);                                                                 \
-    }
-
 #define TASK_REGISTER_PERIODIC(func_, period_)                                                     \
     __attribute__((constructor)) static void _TASK_REGISTER2(_task_register_, __LINE__)() {        \
         static task_periodic_t task = {                                                            \
@@ -55,10 +45,6 @@ typedef struct {
 
 typedef struct {
     task_t base;
-} task_nonstop_t;
-
-typedef struct {
-    task_t base;
     const uint32_t period;
     uint32_t next;
 } task_periodic_t;
@@ -72,7 +58,6 @@ void task_call_init();
 void task_call();
 
 void _task_register(const task_t task);
-uint32_t _task_logic_nonstop(void *context);
 uint32_t _task_logic_periodic(void *context);
 uint32_t _task_logic_interrupt(void *context);
 
