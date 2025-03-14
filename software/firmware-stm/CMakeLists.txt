@@ -101,6 +101,25 @@ add_executable(${TARGET}
     "cubemx/Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_wwdg.c"
     "cubemx/Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_xspi.c"
 
+    "CMSIS-DSP/Source/InterpolationFunctions/InterpolationFunctions.c"
+    "CMSIS-DSP/Source/BayesFunctions/BayesFunctions.c"
+    "CMSIS-DSP/Source/CommonTables/CommonTables.c"
+    "CMSIS-DSP/Source/QuaternionMathFunctions/QuaternionMathFunctions.c"
+    "CMSIS-DSP/Source/ComplexMathFunctions/ComplexMathFunctions.c"
+    "CMSIS-DSP/Source/WindowFunctions/WindowFunctions.c"
+    "CMSIS-DSP/Source/SVMFunctions/SVMFunctions.c"
+    "CMSIS-DSP/Source/TransformFunctions/TransformFunctions.c"
+    "CMSIS-DSP/Source/ControllerFunctions/ControllerFunctions.c"
+    "CMSIS-DSP/Source/BasicMathFunctions/BasicMathFunctions.c"
+    "CMSIS-DSP/Source/FilteringFunctions/FilteringFunctions.c"
+    "CMSIS-DSP/Source/MatrixFunctions/MatrixFunctions.c"
+    "CMSIS-DSP/Source/DistanceFunctions/DistanceFunctions.c"
+    "CMSIS-DSP/Source/StatisticsFunctions/StatisticsFunctions.c"
+    "CMSIS-DSP/Source/SupportFunctions/SupportFunctions.c"
+    "CMSIS-DSP/Source/FastMathFunctions/FastMathFunctions.c"
+
+    "estimator/estimator.c"
+
 	"src/main.c"
     "src/utils/task.c"
     "src/utils/mpack.c"
@@ -127,7 +146,9 @@ target_include_directories(${TARGET} PRIVATE
     "cubemx/Drivers/CMSIS/Include"
     "cubemx/Drivers/CMSIS/Device/ST/STM32U5xx/Include"
     "cubemx/Drivers/STM32U5xx_HAL_Driver/Inc"
-
+    "CMSIS-DSP/Include"
+    "CMSIS-DSP/PrivateInclude"
+    "c_ekf_gen/include"
 	"src"
     "../common"
 )
@@ -135,6 +156,7 @@ target_include_directories(${TARGET} PRIVATE
 target_compile_definitions(${TARGET} PRIVATE
     USE_HAL_DRIVER
     STM32U535xx
+    ARM_MATH_CM33
 )
 
 target_compile_options(${TARGET} PRIVATE

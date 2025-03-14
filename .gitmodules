@@ -1,3 +1,9 @@
 [submodule "software/common/cmp"]
 	path = software/common/cmp
 	url = git@github.com:camgunz/cmp.git
+[submodule "software/firmware-stm/CMSIS-DSP"]
+	path = software/firmware-stm/CMSIS-DSP
+	url = git@github.com:ARM-software/CMSIS-DSP.git
+[submodule "software/firmware-stm/c_ekf_gen"]
+	path = software/firmware-stm/c_ekf_gen
+	url = git@github.com:Eryk-Mozdzen/c_ekf_gen.git
