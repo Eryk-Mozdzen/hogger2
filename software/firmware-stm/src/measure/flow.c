@@ -3,6 +3,7 @@
 #include <stm32u5xx_hal.h>
 
 #include "com/telemetry.h"
+#include "generated/estimator.h"
 #include "measure/pmw3901.h"
 #include "utils/task.h"
 
@@ -143,6 +144,8 @@ static void read() {
     if((fabs(tmp[0]) < 7.4f) && (fabs(tmp[1]) < 7.4f)) {
         velocity[0] = tmp[0];
         velocity[1] = tmp[1];
+
+        ESTIMATOR_CORRECT_FLOW(velocity);
     } else {
         velocity[0] = NAN;
         velocity[1] = NAN;

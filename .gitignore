@@ -17,5 +17,5 @@ gerbers.zip
 sdkconfig.old
 
 software/firmware-stm/cubemx/*
-software/firmware-stm/estimator
+software/firmware-stm/generated
 !software/firmware-stm/cubemx/cubemx.ioc

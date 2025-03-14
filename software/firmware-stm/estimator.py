@@ -78,5 +78,5 @@ estimator = ekf.EKF(
     ],
 )
 
-estimator.generate_src('estimator')
-estimator.generate_docs('estimator')
+estimator.generate_src('generated')
+estimator.generate_docs('generated')

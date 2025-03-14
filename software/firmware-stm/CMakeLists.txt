@@ -118,7 +118,7 @@ add_executable(${TARGET}
     "CMSIS-DSP/Source/SupportFunctions/SupportFunctions.c"
     "CMSIS-DSP/Source/FastMathFunctions/FastMathFunctions.c"
 
-    "estimator/estimator.c"
+    "generated/estimator.c"
 
 	"src/main.c"
     "src/utils/task.c"
@@ -133,6 +133,7 @@ add_executable(${TARGET}
     "src/measure/imu.c"
     "src/measure/flow.c"
     "src/measure/battery.c"
+    "src/measure/estimator.c"
     "src/control/controller.c"
     "src/control/blink.c"
 
@@ -149,6 +150,7 @@ target_include_directories(${TARGET} PRIVATE
     "CMSIS-DSP/Include"
     "CMSIS-DSP/PrivateInclude"
     "c_ekf_gen/include"
+    "."
 	"src"
     "../common"
 )

@@ -4,6 +4,7 @@
 
 #include "com/config.h"
 #include "com/telemetry.h"
+#include "generated/estimator.h"
 #include "measure/mpu6050.h"
 #include "utils/task.h"
 
@@ -96,6 +97,13 @@ static void read() {
         accel[1] = -raw_y * g_to_ms2 / gain;
         accel[2] = +raw_z * g_to_ms2 / gain;
     }
+
+    const float u[3] = {
+        accel[0],
+        accel[1],
+        gyro[2],
+    };
+    ESTIMATOR_PREDICT(u);
 }
 
 static void serialize_accel(cmp_ctx_t *cmp, void *context) {
