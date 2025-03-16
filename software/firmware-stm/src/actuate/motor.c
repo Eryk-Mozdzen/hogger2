@@ -339,12 +339,13 @@ void motor_sample_callback(motor_t *motor, const TIM_HandleTypeDef *htim) {
     motor->zc_filter <<= 1;
     motor->zc_filter |= (state ^ feedback_dir_lookup[motor->step]);
 
-    if(filter_lookup[motor->zc_filter] >= 4) {
+    const uint8_t ones = 4;
+    if(filter_lookup[motor->zc_filter] >= ones) {
         motor->zc_occur = 1;
         motor->zc_count++;
 
         if(motor->state == MOTOR_STATE_RUNNING) {
-            uint32_t period = 0.2f * 2 * counter + 0.8f * autoreload;
+            uint32_t period = 0.05f * 2 * (counter - ((ones / 2) * 20)) + 0.95f * autoreload;
 
             if(motor->switch_over < 1.f) {
                 const uint32_t time = HAL_GetTick() - motor->state_start_time + OPEN_LOOP_RAMP_TIME;

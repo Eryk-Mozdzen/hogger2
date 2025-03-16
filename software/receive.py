@@ -1,12 +1,20 @@
-import socket
+import zmq
 
-IP = '0.0.0.0'
-PORT = 4444
+context = zmq.Context()
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.bind((IP, PORT))
+socket = context.socket(zmq.SUB)
 
-while True:
-    data, _ = sock.recvfrom(1024)
+socket.connect("tcp://localhost:6000")
 
-    print(data.decode())
+socket.setsockopt(zmq.SUBSCRIBE, b'')
+
+try:
+    while True:
+        message = socket.recv()
+        print(message.decode())
+
+except KeyboardInterrupt:
+    print("\nInterrupt received, stopping...")
+finally:
+    socket.close()
+    context.term()

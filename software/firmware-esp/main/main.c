@@ -71,7 +71,7 @@ static void serial_init() {
     lrcp_stream_init(&serial.base, NULL, serial_reader, serial_writer);
 
     const uart_config_t config = {
-        .baud_rate = 230400,
+        .baud_rate = 2000000,
         .data_bits = UART_DATA_8_BITS,
         .stop_bits = UART_STOP_BITS_1,
         .parity = UART_PARITY_DISABLE,
