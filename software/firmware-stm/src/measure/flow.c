@@ -7,6 +7,9 @@
 #include "measure/pmw3901.h"
 #include "utils/task.h"
 
+#define MIN_(x, y) (((x) < (y)) ? (x) : (y))
+#define MAX_(x, y) (((x) > (y)) ? (x) : (y))
+
 extern SPI_HandleTypeDef hspi2;
 
 static volatile uint32_t ready;
@@ -25,6 +28,20 @@ static void pmw3901_write(const uint8_t address, const uint8_t value) {
     HAL_Delay(1);
 }
 
+static uint8_t pmw3901_read(const uint8_t address) {
+    uint8_t tx[] = {address & ~0x80, 0x00};
+    uint8_t rx[] = {0x00, 0x00};
+
+    HAL_GPIO_WritePin(FLOW_CS_GPIO_Port, FLOW_CS_Pin, GPIO_PIN_RESET);
+    HAL_Delay(1);
+    HAL_SPI_TransmitReceive(&hspi2, tx, rx, sizeof(tx), HAL_MAX_DELAY);
+    HAL_Delay(1);
+    HAL_GPIO_WritePin(FLOW_CS_GPIO_Port, FLOW_CS_Pin, GPIO_PIN_SET);
+    HAL_Delay(1);
+
+    return rx[1];
+}
+
 static void isr_transmit(SPI_HandleTypeDef *hspi) {
     (void)hspi;
 
@@ -37,6 +54,42 @@ static void init() {
     pmw3901_write(0x3A, 0x5A);
 
     HAL_Delay(5);
+
+    // https://github.com/pimoroni/pmw3901-python/blob/main/pmw3901/__init__.py
+
+    pmw3901_write(0x7F, 0x00);
+    pmw3901_write(0x55, 0x01);
+    pmw3901_write(0x50, 0x07);
+    pmw3901_write(0x7F, 0x0E);
+    pmw3901_write(0x43, 0x10);
+    if(pmw3901_read(0x67) & 0b10000000) {
+        pmw3901_write(0x48, 0x04);
+    } else {
+        pmw3901_write(0x48, 0x02);
+    }
+    pmw3901_write(0x7F, 0x00);
+    pmw3901_write(0x51, 0x7B);
+    pmw3901_write(0x50, 0x00);
+    pmw3901_write(0x55, 0x00);
+    pmw3901_write(0x7F, 0x0E);
+    if(pmw3901_read(0x73) == 0x00) {
+        uint8_t c1 = pmw3901_read(0x70);
+        uint8_t c2 = pmw3901_read(0x71);
+        if(c1 <= 28) {
+            c1 += 14;
+        }
+        if(c1 > 28) {
+            c1 += 11;
+        }
+        c1 = MAX_(0, MIN_(0x3F, c1));
+        c2 = (c2 * 45);
+        pmw3901_write(0x7F, 0x00);
+        pmw3901_write(0x61, 0xAD);
+        pmw3901_write(0x51, 0x70);
+        pmw3901_write(0x7F, 0x0E);
+        pmw3901_write(0x70, c1);
+        pmw3901_write(0x71, c2);
+    }
 
     pmw3901_write(0x7F, 0x00);
     pmw3901_write(0x61, 0xAD);
@@ -71,7 +124,7 @@ static void init() {
     pmw3901_write(0x7F, 0x00);
     pmw3901_write(0x4D, 0x11);
     pmw3901_write(0x55, 0x80);
-    pmw3901_write(0x74, 0x1F);
+    pmw3901_write(0x74, 0x21);
     pmw3901_write(0x75, 0x1F);
     pmw3901_write(0x4A, 0x78);
     pmw3901_write(0x4B, 0x78);
@@ -80,11 +133,11 @@ static void init() {
     pmw3901_write(0x64, 0xFF);
     pmw3901_write(0x65, 0x1F);
     pmw3901_write(0x7F, 0x14);
-    pmw3901_write(0x65, 0x60);
+    pmw3901_write(0x65, 0x67);
     pmw3901_write(0x66, 0x08);
-    pmw3901_write(0x63, 0x78);
+    pmw3901_write(0x63, 0x70);
     pmw3901_write(0x7F, 0x15);
-    pmw3901_write(0x48, 0x58);
+    pmw3901_write(0x48, 0x48);
     pmw3901_write(0x7F, 0x07);
     pmw3901_write(0x41, 0x0D);
     pmw3901_write(0x43, 0x14);
@@ -104,19 +157,28 @@ static void init() {
     pmw3901_write(0x7F, 0x07);
     pmw3901_write(0x40, 0x40);
     pmw3901_write(0x7F, 0x06);
-    pmw3901_write(0x62, 0xf0);
+    pmw3901_write(0x62, 0xF0);
     pmw3901_write(0x63, 0x00);
     pmw3901_write(0x7F, 0x0D);
     pmw3901_write(0x48, 0xC0);
-    pmw3901_write(0x6F, 0xd5);
+    pmw3901_write(0x6F, 0xD5);
     pmw3901_write(0x7F, 0x00);
-    pmw3901_write(0x5B, 0xa0);
+    pmw3901_write(0x5B, 0xA0);
     pmw3901_write(0x4E, 0xA8);
     pmw3901_write(0x5A, 0x50);
     pmw3901_write(0x40, 0x80);
+
+    HAL_Delay(200);
+
+    pmw3901_write(0x7F, 0x14);
+    pmw3901_write(0x6F, 0x1C);
+    pmw3901_write(0x7F, 0x00);
 }
 
 static void transmit() {
+    memset(buffer_tx, 0, sizeof(buffer_tx));
+    memset(buffer_rx, 0, sizeof(buffer_rx));
+
     for(uint8_t i = 0; i < 5; i++) {
         buffer_tx[2 * i] = (PMW3901_REG_MOTION + i) & ~0x80;
     }
@@ -141,7 +203,7 @@ static void read() {
         -delta_x / (0.02f * PMW3901_FOCAL_LENGTH),
     };
 
-    if((fabs(tmp[0]) < 7.4f) && (fabs(tmp[1]) < 7.4f)) {
+    if((fabs(tmp[0]) < 100.f) && (fabs(tmp[1]) < 100.f)) {
         velocity[0] = tmp[0];
         velocity[1] = tmp[1];
 

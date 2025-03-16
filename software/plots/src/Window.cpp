@@ -21,36 +21,22 @@
 
 #include "LiveChart.h"
 #include "Subscriber.h"
-#include "Visualizer.h"
 #include "Window.h"
-
-#define RAD2DEG (180. / M_PI)
 
 Window::Window(QWidget *parent) : QWidget(parent) {
     QGridLayout *layout = new QGridLayout(this);
 
-    Visualizer *visualizer = new Visualizer();
     Subscriber *subscriber = new Subscriber();
-
-    QThread *visualizerThread = new QThread(this);
     QThread *subscriberThread = new QThread(this);
 
-    visualizer->moveToThread(visualizerThread);
     subscriber->moveToThread(subscriberThread);
-
-    connect(visualizerThread, &QThread::started, visualizer, &Visualizer::start);
-    connect(visualizerThread, &QThread::finished, visualizer, &Visualizer::deleteLater);
-    connect(visualizerThread, &QThread::finished, visualizerThread, &QThread::deleteLater);
-    connect(this, &QObject::destroyed, visualizerThread, &QThread::quit);
 
     connect(subscriberThread, &QThread::started, subscriber, &Subscriber::start);
     connect(subscriberThread, &QThread::finished, subscriber, &Subscriber::deleteLater);
     connect(subscriberThread, &QThread::finished, subscriberThread, &QThread::deleteLater);
     connect(subscriber, &Subscriber::messageReceived, this, &Window::receive);
-    connect(subscriber, &Subscriber::messageReceived, visualizer, &Visualizer::receive);
     connect(this, &QObject::destroyed, subscriberThread, &QThread::quit);
 
-    visualizerThread->start();
     subscriberThread->start();
 
     {
@@ -91,10 +77,10 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         LiveChart::Config config;
         config.title = "optical flow";
         config.yLabel = "[m/s]";
-        config.yMin = -2;
-        config.yMax = 2;
-        config.yPrecision = 1;
-        config.yTick = 0.4;
+        config.yMin = -1;
+        config.yMax = 1;
+        config.yPrecision = 2;
+        config.yTick = 0.25;
 
         optical = new LiveChart(config, this);
         optical->addSeries("x", QPen(Qt::red, 1, Qt::SolidLine));
@@ -126,9 +112,12 @@ void Window::receive(const QJsonDocument &json) {
     motor2->append("vel_ref", time, motor2_["vel_ref"].toDouble());
     motor2->append("load", time, motor2_["load"].toDouble() * 600);
 
+    constexpr double fh = 0.065;
     const QJsonArray optical_ = telemetry["optical_flow"].toArray();
-    optical->append("x", time, optical_[0].toDouble());
-    optical->append("y", time, optical_[1].toDouble());
+    if(!optical_[0].isNull() && !optical_[1].isNull()) {
+        optical->append("x", time, optical_[0].toDouble()*fh);
+        optical->append("y", time, optical_[1].toDouble()*fh);
+    }
 
     LiveChart::synchronize(time);
 }

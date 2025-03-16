@@ -1,20 +1,17 @@
 import zmq
 
 context = zmq.Context()
-
-socket = context.socket(zmq.SUB)
-
-socket.connect("tcp://localhost:6000")
-
-socket.setsockopt(zmq.SUBSCRIBE, b'')
+subscriber = context.socket(zmq.SUB)
+subscriber.connect("tcp://localhost:6000")
+subscriber.setsockopt(zmq.SUBSCRIBE, b'')
 
 try:
     while True:
-        message = socket.recv()
-        print(message.decode())
+        message = subscriber.recv().decode()
+        print(message)
 
 except KeyboardInterrupt:
     print("\nInterrupt received, stopping...")
 finally:
-    socket.close()
+    subscriber.close()
     context.term()

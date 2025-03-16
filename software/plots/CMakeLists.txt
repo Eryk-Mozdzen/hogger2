@@ -17,7 +17,6 @@ add_executable(${PROJECT_NAME}
 	"src/main.cpp"
 	"src/Window.cpp"
 	"src/LiveChart.cpp"
-	"src/Visualizer.cpp"
 	"src/Subscriber.cpp"
 )
 
