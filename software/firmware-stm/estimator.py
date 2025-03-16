@@ -5,6 +5,7 @@ from c_ekf_gen import ekf
 dt = sp.Symbol('T')
 fh = sp.Symbol('f_h')
 fl = sp.Symbol('f_l')
+theta0 = sp.symbols('theta0')
 
 px, py, theta = sp.symbols('px py theta')
 vx, vy, vtheta = sp.symbols('vx vy vtheta')
@@ -44,7 +45,7 @@ f = sp.Matrix([
     m0,
 ])
 
-h_mag = rot3d(theta)*sp.Matrix([0, sp.cos(m0), sp.sin(m0)])
+h_mag = rot3d(theta + theta0)*sp.Matrix([0, sp.cos(m0), sp.sin(m0)])
 h_flow = rot2d(theta)*sp.Matrix([vx/fh, (vy - vtheta*fl)/fh])
 
 estimator = ekf.EKF(
@@ -77,6 +78,7 @@ estimator = ekf.EKF(
         (dt, 0.001),
         (fh, 0.065),
         (fl, 0.095),
+        (theta0, 0),
     ],
 )
 

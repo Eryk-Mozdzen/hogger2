@@ -10,6 +10,8 @@ context = zmq.Context()
 subscriber = context.socket(zmq.SUB)
 subscriber.connect("tcp://localhost:6000")
 subscriber.setsockopt(zmq.SUBSCRIBE, b'')
+publisher = context.socket(zmq.PUB)
+publisher.connect("tcp://localhost:7000")
 
 fig = plt.figure()
 grid = gridspec.GridSpec(16, 3)
@@ -22,7 +24,9 @@ timer = fig.canvas.new_timer(interval=20)
 timer.add_callback(periodic)
 
 def reset_ekf(event):
-    pass
+    data = {'reset': None}
+    print(data)
+    publisher.send_json(data)
 
 def start_tracking(event):
     timer.start()
@@ -88,4 +92,5 @@ anim = animation.FuncAnimation(fig, update, interval=20, blit=True)
 plt.show()
 
 subscriber.close()
+publisher.close()
 context.term()

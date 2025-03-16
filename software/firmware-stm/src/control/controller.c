@@ -7,18 +7,18 @@
 
 static uint32_t last = 0;
 
-static void receiver(mpack_t *mpack) {
-    float reference[6];
-    if(mpack_read_array(mpack, reference, 6)) {
+static void manual(mpack_t *mpack) {
+    float manual[6];
+    if(mpack_read_array(mpack, manual, 6)) {
         last = HAL_GetTick();
 
-        motors_set_velocity(reference[2], reference[5]);
-        servos_set_position(reference[0], reference[1], reference[3], reference[4]);
+        motors_set_velocity(manual[2], manual[5]);
+        servos_set_position(manual[0], manual[1], manual[3], manual[4]);
     }
 }
 
 static void shutdown(mpack_t *mpack) {
-    (void) mpack;
+    (void)mpack;
 
     last = HAL_GetTick();
 
@@ -35,6 +35,6 @@ static void watchdog() {
     }
 }
 
-STREAM_REGISTER("reference", receiver)
+STREAM_REGISTER("manual", manual)
 STREAM_REGISTER("stop", shutdown)
 TASK_REGISTER_PERIODIC(watchdog, 1000)

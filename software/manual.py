@@ -33,7 +33,7 @@ try:
         a2 = numpy.arcsin(numpy.clip(v2/(-W*R), -1., 1.))
 
         data = {
-            'reference': [
+            'manual': [
                 a1,
                 0,
                 W if joystick.get_axis(2)>0 else 0,

@@ -7,7 +7,7 @@
 #include "utils/mpack.h"
 #include "utils/task.h"
 
-#define MAX_REGISTERED   4
+#define MAX_REGISTERED   8
 #define RX_TIME_WATCHDOG 1000
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
