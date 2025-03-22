@@ -1,37 +1,29 @@
-#include <main.h>
+#include <stm32h5xx_hal.h>
 #include <string.h>
 
 #include "actuate/motor.h"
 #include "com/telemetry.h"
 #include "utils/task.h"
 
+extern ADC_HandleTypeDef hadc1;
+extern ADC_HandleTypeDef hadc2;
 extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim2;
-extern TIM_HandleTypeDef htim3;
+extern TIM_HandleTypeDef htim5;
 extern TIM_HandleTypeDef htim8;
 
 static motor_t motor1 = {
-    .control_timer = &htim1,
+    .control_timer = &htim8,
     .control_timer_itr = TIM_TS_ITR1,
     .commut_timer = &htim2,
-    .bemf[MOTOR_PHASE_U].pin = MOTOR1_BEMF_U_Pin,
-    .bemf[MOTOR_PHASE_U].port = MOTOR1_BEMF_U_GPIO_Port,
-    .bemf[MOTOR_PHASE_V].pin = MOTOR1_BEMF_V_Pin,
-    .bemf[MOTOR_PHASE_V].port = MOTOR1_BEMF_V_GPIO_Port,
-    .bemf[MOTOR_PHASE_W].pin = MOTOR1_BEMF_W_Pin,
-    .bemf[MOTOR_PHASE_W].port = MOTOR1_BEMF_W_GPIO_Port,
+    .bemf_adc = &hadc1,
 };
 
 static motor_t motor2 = {
-    .control_timer = &htim8,
+    .control_timer = &htim1,
     .control_timer_itr = TIM_TS_ITR2,
-    .commut_timer = &htim3,
-    .bemf[MOTOR_PHASE_U].pin = MOTOR2_BEMF_U_Pin,
-    .bemf[MOTOR_PHASE_U].port = MOTOR2_BEMF_U_GPIO_Port,
-    .bemf[MOTOR_PHASE_V].pin = MOTOR2_BEMF_V_Pin,
-    .bemf[MOTOR_PHASE_V].port = MOTOR2_BEMF_V_GPIO_Port,
-    .bemf[MOTOR_PHASE_W].pin = MOTOR2_BEMF_W_Pin,
-    .bemf[MOTOR_PHASE_W].port = MOTOR2_BEMF_W_GPIO_Port,
+    .commut_timer = &htim5,
+    .bemf_adc = &hadc2,
 };
 
 static void isr_commutation(TIM_HandleTypeDef *htim) {
@@ -39,9 +31,9 @@ static void isr_commutation(TIM_HandleTypeDef *htim) {
     motor_commutation_callback(&motor2, htim);
 }
 
-static void isr_period_elapsed(TIM_HandleTypeDef *htim) {
-    motor_sample_callback(&motor1, htim);
-    motor_sample_callback(&motor2, htim);
+static void isr_conversion(ADC_HandleTypeDef *hadc) {
+    motor_sample_callback(&motor1, hadc);
+    motor_sample_callback(&motor2, hadc);
 }
 
 void motors_set_velocity(const float vel1, const float vel2) {
@@ -52,8 +44,8 @@ void motors_set_velocity(const float vel1, const float vel2) {
 static void init() {
     HAL_TIM_RegisterCallback(&htim1, HAL_TIM_COMMUTATION_CB_ID, isr_commutation);
     HAL_TIM_RegisterCallback(&htim8, HAL_TIM_COMMUTATION_CB_ID, isr_commutation);
-    HAL_TIM_RegisterCallback(&htim1, HAL_TIM_PERIOD_ELAPSED_CB_ID, isr_period_elapsed);
-    HAL_TIM_RegisterCallback(&htim8, HAL_TIM_PERIOD_ELAPSED_CB_ID, isr_period_elapsed);
+    HAL_ADC_RegisterCallback(&hadc1, HAL_ADC_INJ_CONVERSION_COMPLETE_CB_ID, isr_conversion);
+    HAL_ADC_RegisterCallback(&hadc2, HAL_ADC_INJ_CONVERSION_COMPLETE_CB_ID, isr_conversion);
 
     motor_init(&motor1);
     motor_init(&motor2);

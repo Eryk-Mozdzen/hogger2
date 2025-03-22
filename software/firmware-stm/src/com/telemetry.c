@@ -1,6 +1,5 @@
 #include <cmp/cmp.h>
 #include <stdint.h>
-#include <stm32u5xx_hal.h>
 #include <string.h>
 
 #include "com/stream.h"
@@ -27,7 +26,7 @@ void telemetry_register(const char *name, const telemetry_serialize_t serialize,
 }
 
 static void loop() {
-    const uint32_t timestamp = HAL_GetTick();
+    const uint32_t timestamp = task_timebase();
 
     static uint8_t buffer[2048];
     mpack_t mpack;

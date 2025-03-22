@@ -1,12 +1,13 @@
 #include <stdint.h>
-#include <stm32u5xx_hal.h>
+#include <stm32h5xx_hal.h>
 
 #include "com/telemetry.h"
 #include "utils/task.h"
 
 #define MAX 32
 
-extern TIM_HandleTypeDef htim4;
+extern TIM_HandleTypeDef htim12;
+extern TIM_HandleTypeDef htim15;
 
 static task_t registered[MAX] = {0};
 static uint32_t count = 0;
@@ -24,24 +25,31 @@ void task_call_init() {
         }
     }
 
-    HAL_TIM_Base_Start(&htim4);
+    HAL_TIM_Base_Start(&htim12);
+    HAL_TIM_Base_Start(&htim15);
 }
 
 void task_call() {
     for(uint32_t i = 0; i < count; i++) {
         if(registered[i].logic) {
             if(registered[i].logic(registered[i].context)) {
-                const uint32_t start = __HAL_TIM_GET_COUNTER(&htim4);
+                const uint32_t start = task_timebase();
                 registered[i].func();
-                computation += (__HAL_TIM_GET_COUNTER(&htim4) - start);
+                computation += (task_timebase() - start);
             }
         }
     }
 }
 
+uint32_t task_timebase() {
+    const uint32_t slave = __HAL_TIM_GET_COUNTER(&htim15);
+    const uint32_t master = __HAL_TIM_GET_COUNTER(&htim12);
+    return ((slave << 16) | master);
+}
+
 uint32_t _task_logic_periodic(void *context) {
     task_periodic_t *task = context;
-    if(__HAL_TIM_GET_COUNTER(&htim4) > task->next) {
+    if(task_timebase() > task->next) {
         task->next += task->period;
         return 1;
     }

@@ -1,6 +1,6 @@
 #include <lrcp/frame.h>
 #include <lrcp/stream.h>
-#include <stm32u5xx_hal.h>
+#include <stm32h5xx_hal.h>
 #include <string.h>
 
 #include "com/stream.h"
@@ -12,7 +12,7 @@
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
-extern UART_HandleTypeDef huart1;
+extern UART_HandleTypeDef huart2;
 
 typedef struct {
     uint8_t buffer[10 * 1024];
@@ -67,7 +67,7 @@ static uint32_t writer(void *context, const void *data, const uint32_t data_size
 static void tick() {
     const uint32_t time = HAL_GetTick();
     const uint32_t rx_position =
-        (sizeof(fifo_rx.buffer) - __HAL_DMA_GET_COUNTER(huart1.hdmarx)) % sizeof(fifo_rx.buffer);
+        (sizeof(fifo_rx.buffer) - __HAL_DMA_GET_COUNTER(huart2.hdmarx)) % sizeof(fifo_rx.buffer);
 
     if(rx_position != fifo_rx.write) {
         time_last_rx = time;
@@ -77,7 +77,7 @@ static void tick() {
 
     if((time - time_last_rx) >= RX_TIME_WATCHDOG) {
         time_last_rx = time;
-        HAL_UART_Receive_DMA(&huart1, fifo_rx.buffer, sizeof(fifo_rx.buffer));
+        HAL_UART_Receive_DMA(&huart2, fifo_rx.buffer, sizeof(fifo_rx.buffer));
     }
 
     const uint32_t tx_pending = fifo_pending(&fifo_tx);
@@ -86,7 +86,7 @@ static void tick() {
         const uint32_t len = MIN(tx_pending, sizeof(fifo_tx.buffer) - fifo_tx.read);
 
         transmission = 1;
-        HAL_UART_Transmit_DMA(&huart1, &fifo_tx.buffer[fifo_tx.read], len);
+        HAL_UART_Transmit_DMA(&huart2, &fifo_tx.buffer[fifo_tx.read], len);
         fifo_tx.read += len;
         fifo_tx.read %= sizeof(fifo_tx.buffer);
     }
@@ -103,7 +103,7 @@ static void isr_transmit(UART_HandleTypeDef *huart) {
         const uint32_t len = MIN(tx_pending, sizeof(fifo_tx.buffer) - fifo_tx.read);
 
         transmission = 1;
-        HAL_UART_Transmit_DMA(&huart1, &fifo_tx.buffer[fifo_tx.read], len);
+        HAL_UART_Transmit_DMA(&huart2, &fifo_tx.buffer[fifo_tx.read], len);
         fifo_tx.read += len;
         fifo_tx.read %= sizeof(fifo_tx.buffer);
     }
@@ -120,7 +120,7 @@ void stream_transmit(const mpack_t *mpack) {
 }
 
 static void init() {
-    HAL_UART_RegisterCallback(&huart1, HAL_UART_TX_COMPLETE_CB_ID, isr_transmit);
+    HAL_UART_RegisterCallback(&huart2, HAL_UART_TX_COMPLETE_CB_ID, isr_transmit);
 
     lrcp_stream_init(&stream, NULL, reader, writer);
     lrcp_frame_decoder_init(&decoder);
@@ -133,7 +133,7 @@ static void init() {
     fifo_tx.read = 0;
     fifo_tx.write = 0;
 
-    HAL_UART_Receive_DMA(&huart1, fifo_rx.buffer, sizeof(fifo_rx.buffer));
+    HAL_UART_Receive_DMA(&huart2, fifo_rx.buffer, sizeof(fifo_rx.buffer));
 }
 
 static void loop() {

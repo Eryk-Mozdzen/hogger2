@@ -2,7 +2,7 @@
 #define MOTOR_H
 
 #include <stdint.h>
-#include <stm32u5xx_hal.h>
+#include <stm32h5xx_hal.h>
 
 typedef enum {
     MOTOR_STATE_IDLE,
@@ -31,15 +31,10 @@ typedef struct {
 } motor_pid_t;
 
 typedef struct {
-    uint16_t pin;
-    GPIO_TypeDef *port;
-} motor_bemf_t;
-
-typedef struct {
     TIM_HandleTypeDef *control_timer;
     TIM_HandleTypeDef *commut_timer;
     uint32_t control_timer_itr;
-    motor_bemf_t bemf[3];
+    ADC_HandleTypeDef *bemf_adc;
     motor_pid_t pid;
     motor_state_t state;
     uint32_t state_start_time;
@@ -59,6 +54,6 @@ void motor_init(motor_t *motor);
 void motor_tick(motor_t *motor);
 
 void motor_commutation_callback(motor_t *motor, const TIM_HandleTypeDef *htim);
-void motor_sample_callback(motor_t *motor, const TIM_HandleTypeDef *htim);
+void motor_sample_callback(motor_t *motor, const ADC_HandleTypeDef *hadc);
 
 #endif

@@ -56,6 +56,7 @@ typedef struct {
 
 void task_call_init();
 void task_call();
+uint32_t task_timebase();
 
 void _task_register(const task_t task);
 uint32_t _task_logic_periodic(void *context);
