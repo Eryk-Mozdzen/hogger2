@@ -1,4 +1,4 @@
-#include <stm32u5xx_hal.h>
+/*#include <stm32u5xx_hal.h>
 
 #include "actuate/motors.h"
 #include "actuate/servos.h"
@@ -38,3 +38,18 @@ static void watchdog() {
 STREAM_REGISTER("manual", manual)
 STREAM_REGISTER("stop", shutdown)
 TASK_REGISTER_PERIODIC(watchdog, 1000)
+*/
+
+#include <stm32h5xx_hal.h>
+#include <main.h>
+
+#include "actuate/motors.h"
+#include "utils/task.h"
+
+static void test() {
+    if(HAL_GPIO_ReadPin(BUTTON_GPIO_Port, BUTTON_Pin)) {
+        motors_set_velocity(1000, 0);
+    }
+}
+
+TASK_REGISTER_PERIODIC(test, 1000)

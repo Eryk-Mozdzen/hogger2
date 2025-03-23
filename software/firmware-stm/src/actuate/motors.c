@@ -21,7 +21,7 @@ static motor_t motor1 = {
 
 static motor_t motor2 = {
     .control_timer = &htim1,
-    .control_timer_itr = TIM_TS_ITR2,
+    .control_timer_itr = TIM_TS_ITR4,
     .commut_timer = &htim5,
     .bemf_adc = &hadc2,
 };

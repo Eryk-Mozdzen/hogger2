@@ -130,7 +130,7 @@ add_executable(${TARGET}
     #"src/measure/flow.c"
     #"src/measure/battery.c"
     #"src/measure/estimator.c"
-    #"src/control/controller.c"
+    "src/control/controller.c"
     "src/control/blink.c"
 
     "../common/lrcp/stream.c"
