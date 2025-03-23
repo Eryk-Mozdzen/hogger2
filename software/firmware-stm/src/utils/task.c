@@ -25,8 +25,8 @@ void task_call_init() {
         }
     }
 
-    HAL_TIM_Base_Start(&htim12);
     HAL_TIM_Base_Start(&htim15);
+    HAL_TIM_Base_Start(&htim12);
 }
 
 void task_call() {
@@ -35,16 +35,24 @@ void task_call() {
             if(registered[i].logic(registered[i].context)) {
                 const uint32_t start = task_timebase();
                 registered[i].func();
-                computation += (task_timebase() - start);
+                const uint32_t end = task_timebase();
+                computation += (end - start);
             }
         }
     }
 }
 
 uint32_t task_timebase() {
-    const uint32_t slave = __HAL_TIM_GET_COUNTER(&htim15);
-    const uint32_t master = __HAL_TIM_GET_COUNTER(&htim12);
-    return ((slave << 16) | master);
+    const uint32_t slave1 = __HAL_TIM_GET_COUNTER(&htim12);
+    const uint32_t master1 = __HAL_TIM_GET_COUNTER(&htim15);
+    const uint32_t slave2 = __HAL_TIM_GET_COUNTER(&htim12);
+    const uint32_t master2 = __HAL_TIM_GET_COUNTER(&htim15);
+
+    if(slave1 != slave2) {
+        return ((slave2 << 16) | master2);
+    }
+
+    return ((slave1 << 16) | master1);
 }
 
 uint32_t _task_logic_periodic(void *context) {
