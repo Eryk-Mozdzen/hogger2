@@ -3,7 +3,6 @@
 
 #define MPU6050_ADDR					0x68
 
-// registers
 #define MPU6050_REG_SELF_TEST_X			0x0D
 #define MPU6050_REG_SELF_TEST_Y			0x0E
 #define MPU6050_REG_SELF_TEST_Z			0x0F
@@ -94,7 +93,6 @@
 #define MPU6050_REG_FIFO_R_W			0x74
 #define MPU6050_REG_WHO_AM_I			0x75
 
-// bits
 #define MPU6050_CONFIG_EXT_SYNC_DISABLED			(0x00<<3)
 #define MPU6050_CONFIG_EXT_SYNC_TEMP_OUT_L			(0x01<<3)
 #define MPU6050_CONFIG_EXT_SYNC_GYRO_XOUT_L			(0x02<<3)

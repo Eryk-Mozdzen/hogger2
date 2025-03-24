@@ -5,6 +5,7 @@
 extern void SystemClock_Config();
 extern void MX_GPIO_Init();
 extern void MX_GPDMA1_Init();
+extern void MX_GPDMA2_Init();
 extern void MX_TIM1_Init();
 extern void MX_TIM2_Init();
 extern void MX_TIM5_Init();
@@ -13,10 +14,12 @@ extern void MX_TIM12_Init();
 extern void MX_TIM15_Init();
 extern void MX_ADC1_Init();
 extern void MX_ADC2_Init();
+extern void MX_USART1_UART_Init();
 extern void MX_USART2_UART_Init();
-// extern void MX_UART4_Init();
-// extern void MX_I2C1_Init();
-// extern void MX_SPI2_Init();
+extern void MX_UART4_Init();
+extern void MX_I2C1_Init();
+extern void MX_I2C2_Init();
+extern void MX_SPI3_Init();
 extern void MX_ICACHE_Init();
 
 int main() {
@@ -27,6 +30,7 @@ int main() {
 
     MX_GPIO_Init();
     MX_GPDMA1_Init();
+    MX_GPDMA2_Init();
     MX_TIM1_Init();
     MX_TIM2_Init();
     MX_TIM5_Init();
@@ -35,10 +39,12 @@ int main() {
     MX_TIM15_Init();
     MX_ADC1_Init();
     MX_ADC2_Init();
+    MX_USART1_UART_Init();
     MX_USART2_UART_Init();
-    // MX_UART4_Init();
-    // MX_I2C1_Init();
-    // MX_SPI2_Init();
+    MX_UART4_Init();
+    MX_I2C1_Init();
+    MX_I2C2_Init();
+    MX_SPI3_Init();
     MX_ICACHE_Init();
 
     task_call_init();

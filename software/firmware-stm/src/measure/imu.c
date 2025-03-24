@@ -1,14 +1,15 @@
 #include <main.h>
 #include <stdint.h>
-#include <stm32u5xx_hal.h>
+#include <stm32h5xx_hal.h>
 
 #include "com/config.h"
 #include "com/telemetry.h"
 #include "generated/estimator.h"
 #include "measure/mpu6050.h"
+#include "utils/interrupt.h"
 #include "utils/task.h"
 
-extern I2C_HandleTypeDef hi2c1;
+extern I2C_HandleTypeDef hi2c2;
 
 static volatile uint32_t ready;
 static uint8_t buffer[14];
@@ -20,24 +21,23 @@ static float calib_accel[12] = {0};
 static float calib_gyro[3] = {0};
 
 static void mpu6050_write(uint8_t address, uint8_t value) {
-    HAL_I2C_Mem_Write(&hi2c1, MPU6050_ADDR << 1, address, 1, &value, 1, 100);
+    HAL_I2C_Mem_Write(&hi2c2, MPU6050_ADDR << 1, address, 1, &value, 1, 100);
 }
 
-void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin) {
-    if(GPIO_Pin == IMU_INT_Pin) {
-        HAL_I2C_Mem_Read_DMA(&hi2c1, MPU6050_ADDR << 1, MPU6050_REG_ACCEL_XOUT_H, 1, buffer,
-                             sizeof(buffer));
-    }
+static void isr_data_ready() {
+    HAL_I2C_Mem_Read_DMA(&hi2c2, MPU6050_ADDR << 1, MPU6050_REG_ACCEL_XOUT_H, 1, buffer,
+                         sizeof(buffer));
 }
 
-static void isr_memory_received(I2C_HandleTypeDef *hi2c) {
+static void isr_data_received(I2C_HandleTypeDef *hi2c) {
     (void)hi2c;
 
     ready = 1;
 }
 
 static void init() {
-    HAL_I2C_RegisterCallback(&hi2c1, HAL_I2C_MEM_RX_COMPLETE_CB_ID, isr_memory_received);
+    interrupt_register(isr_data_ready, IMU_INT_Pin);
+    HAL_I2C_RegisterCallback(&hi2c2, HAL_I2C_MEM_RX_COMPLETE_CB_ID, isr_data_received);
 
     mpu6050_write(MPU6050_REG_PWR_MGMT_1, MPU6050_PWR_MGMT_1_DEVICE_RESET);
 

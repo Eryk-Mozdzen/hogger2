@@ -2,9 +2,14 @@
 #include "com/telemetry.h"
 #include "utils/task.h"
 
+extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart4;
 
-static dynamixel_t dynamixel = {
+static dynamixel_t dynamixel1 = {
+    .uart = &huart1,
+};
+
+static dynamixel_t dynamixel2 = {
     .uart = &huart4,
 };
 
@@ -28,7 +33,8 @@ void servos_set_led(const bool x1, const bool y1, const bool x2, const bool y2) 
 }
 
 static void isr_transmit(UART_HandleTypeDef *huart) {
-    dynamixel_transmit_callback(&dynamixel, huart);
+    dynamixel_transmit_callback(&dynamixel1, huart);
+    dynamixel_transmit_callback(&dynamixel2, huart);
 }
 
 static void serialize(cmp_ctx_t *cmp, void *context) {
@@ -50,13 +56,15 @@ static void serialize(cmp_ctx_t *cmp, void *context) {
 }
 
 static void init() {
+    HAL_UART_RegisterCallback(&huart1, HAL_UART_TX_COMPLETE_CB_ID, isr_transmit);
     HAL_UART_RegisterCallback(&huart4, HAL_UART_TX_COMPLETE_CB_ID, isr_transmit);
 
-    dynamixel_init(&dynamixel);
-    servo_1_x = dynamixel_register(&dynamixel, 0);
-    servo_1_y = dynamixel_register(&dynamixel, 1);
-    servo_2_x = dynamixel_register(&dynamixel, 2);
-    servo_2_y = dynamixel_register(&dynamixel, 3);
+    dynamixel_init(&dynamixel1);
+    dynamixel_init(&dynamixel2);
+    servo_1_x = dynamixel_register(&dynamixel1, 0);
+    servo_1_y = dynamixel_register(&dynamixel1, 1);
+    servo_2_x = dynamixel_register(&dynamixel2, 2);
+    servo_2_y = dynamixel_register(&dynamixel2, 3);
 
     telemetry_register("servo_1_x", serialize, servo_1_x);
     telemetry_register("servo_1_y", serialize, servo_1_y);
@@ -65,7 +73,8 @@ static void init() {
 }
 
 static void loop() {
-    dynamixel_tick(&dynamixel);
+    dynamixel_tick(&dynamixel1);
+    dynamixel_tick(&dynamixel2);
 }
 
 TASK_REGISTER_INIT(init)

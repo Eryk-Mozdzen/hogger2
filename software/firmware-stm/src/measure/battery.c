@@ -1,4 +1,4 @@
-#include <stm32u5xx_hal.h>
+#include <stm32h5xx_hal.h>
 
 #include "com/telemetry.h"
 #include "utils/task.h"
