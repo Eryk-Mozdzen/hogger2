@@ -60,7 +60,7 @@ static void read() {
     mag[1] = -raw_y * gain;
     mag[2] = -raw_z * gain;
 
-    ESTIMATOR_CORRECT_FLOW(mag);
+    ESTIMATOR_CORRECT_MAGNETOMETER(mag);
 }
 
 static void serialize(cmp_ctx_t *cmp, void *context) {
