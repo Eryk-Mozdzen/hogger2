@@ -27,7 +27,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
     QGridLayout *layout = new QGridLayout(this);
 
     Subscriber *subscriber = new Subscriber();
-    QThread *subscriberThread = new QThread(this);
+    QThread *subscriberThread = new QThread();
 
     subscriber->moveToThread(subscriberThread);
 
