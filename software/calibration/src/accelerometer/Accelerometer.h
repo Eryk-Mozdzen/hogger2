@@ -21,6 +21,6 @@ public:
     Accelerometer(QWidget *parent = nullptr);
 
     Interface *create() const;
-    void receive(const QJsonDocument &sensor);
-    void update(QJsonDocument &calibration) const;
+    void receive(const QJsonObject &sensor);
+    void update(QJsonObject &calibration) const;
 };

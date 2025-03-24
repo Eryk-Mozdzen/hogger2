@@ -83,16 +83,16 @@ Interface *Accelerometer::create() const {
     return new Accelerometer();
 }
 
-void Accelerometer::receive(const QJsonDocument &sensor) {
-    if(sensor.object().contains("accelerometer")) {
-        const QJsonArray accel = sensor.object()["accelerometer"].toArray();
+void Accelerometer::receive(const QJsonObject &sensor) {
+    if(sensor.contains("accelerometer")) {
+        const QJsonArray accel = sensor["accelerometer"].toArray();
 
         current = Eigen::Vector3d(accel[0].toDouble(), accel[1].toDouble(), accel[2].toDouble());
     }
 }
 
-void Accelerometer::update(QJsonDocument &calibration) const {
-    calibration.object()["accelerometer"] = QJsonArray({
+void Accelerometer::update(QJsonObject &calibration) const {
+    calibration["accelerometer"] = QJsonArray({
         scale(0, 0),
         scale(0, 1),
         scale(0, 2),

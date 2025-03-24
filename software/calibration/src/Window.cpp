@@ -15,6 +15,8 @@
 #include "Window.h"
 
 Window::Window(QWidget *parent) : QWidget{parent}, current{nullptr} {
+    calibration = QJsonDocument(QJsonObject());
+
     interfaces.push_back(new Magnetometer());
     interfaces.push_back(new Accelerometer());
     interfaces.push_back(new Gyroscope());
@@ -88,7 +90,9 @@ Window::Window(QWidget *parent) : QWidget{parent}, current{nullptr} {
 
         connect(button_update, &QPushButton::clicked, [&]() {
             if(current) {
-                current->update(calibration);
+                QJsonObject object = calibration.object();
+                current->update(object);
+                calibration.setObject(object);
 
                 calibration_text->setText(calibration.toJson(QJsonDocument::Indented));
             } else {
@@ -135,20 +139,24 @@ void Window::receive(const QJsonDocument &json) {
     }
 
     if(json.object().contains("telemetry")) {
-        const QJsonDocument telemetry = QJsonDocument(json.object()["telemetry"].toObject());
+        if(json.object()["telemetry"].isObject()) {
+            const QJsonObject telemetry = json.object()["telemetry"].toObject();
 
-        current->receive(telemetry);
+            current->receive(telemetry);
 
-        update();
+            update();
 
-        return;
+            return;
+        }
     }
 
     if(json.object().contains("calibration")) {
-        calibration = QJsonDocument(json.object()["calibration"].toObject());
+        if(json.object()["calibration"].isObject()) {
+            calibration = QJsonDocument(json.object()["calibration"].toObject());
 
-        calibration_text->setText(calibration.toJson(QJsonDocument::Indented));
+            calibration_text->setText(calibration.toJson(QJsonDocument::Indented));
 
-        return;
+            return;
+        }
     }
 }

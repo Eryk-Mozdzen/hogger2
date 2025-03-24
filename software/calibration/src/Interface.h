@@ -17,6 +17,6 @@ public:
     }
 
     virtual Interface *create() const = 0;
-    virtual void receive(const QJsonDocument &sensor) = 0;
-    virtual void update(QJsonDocument &calibration) const = 0;
+    virtual void receive(const QJsonObject &sensor) = 0;
+    virtual void update(QJsonObject &calibration) const = 0;
 };

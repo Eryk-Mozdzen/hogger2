@@ -34,9 +34,9 @@ Interface *Gyroscope::create() const {
     return new Gyroscope();
 }
 
-void Gyroscope::receive(const QJsonDocument &sensor) {
-    if(sensor.object().contains("gyroscope")) {
-        const QJsonArray gyro = sensor.object()["gyroscope"].toArray();
+void Gyroscope::receive(const QJsonObject &sensor) {
+    if(sensor.contains("gyroscope")) {
+        const QJsonArray gyro = sensor["gyroscope"].toArray();
 
         const double w1 = static_cast<double>(n) / static_cast<double>(n + 1);
         const double w2 = 1. / static_cast<double>(n + 1);
@@ -53,6 +53,6 @@ void Gyroscope::receive(const QJsonDocument &sensor) {
     }
 }
 
-void Gyroscope::update(QJsonDocument &calibration) const {
-    calibration.object()["gyroscope"] = QJsonArray({-mean[0], -mean[1], -mean[2]});
+void Gyroscope::update(QJsonObject &calibration) const {
+    calibration["gyroscope"] = QJsonArray({-mean[0], -mean[1], -mean[2]});
 }
