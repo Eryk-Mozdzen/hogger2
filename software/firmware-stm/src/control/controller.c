@@ -1,7 +1,7 @@
-/*#include <stm32u5xx_hal.h>
+#include <stm32h5xx_hal.h>
 
 #include "actuate/motors.h"
-#include "actuate/servos.h"
+//#include "actuate/servos.h"
 #include "com/stream.h"
 #include "utils/task.h"
 
@@ -13,7 +13,7 @@ static void manual(mpack_t *mpack) {
         last = HAL_GetTick();
 
         motors_set_velocity(manual[2], manual[5]);
-        servos_set_position(manual[0], manual[1], manual[3], manual[4]);
+        //servos_set_position(manual[0], manual[1], manual[3], manual[4]);
     }
 }
 
@@ -23,7 +23,7 @@ static void shutdown(mpack_t *mpack) {
     last = HAL_GetTick();
 
     motors_set_velocity(0, 0);
-    servos_set_position(0, 0, 0, 0);
+    //servos_set_position(0, 0, 0, 0);
 }
 
 static void watchdog() {
@@ -38,18 +38,3 @@ static void watchdog() {
 STREAM_REGISTER("manual", manual)
 STREAM_REGISTER("stop", shutdown)
 TASK_REGISTER_PERIODIC(watchdog, 1000)
-*/
-
-#include <stm32h5xx_hal.h>
-#include <main.h>
-
-#include "actuate/motors.h"
-#include "utils/task.h"
-
-static void test() {
-    if(HAL_GPIO_ReadPin(BUTTON_GPIO_Port, BUTTON_Pin)) {
-        motors_set_velocity(1000, 0);
-    }
-}
-
-TASK_REGISTER_PERIODIC(test, 1000)
