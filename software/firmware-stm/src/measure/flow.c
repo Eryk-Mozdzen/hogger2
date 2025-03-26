@@ -187,7 +187,7 @@ static void transmit() {
     HAL_SPI_TransmitReceive_IT(&hspi3, buffer_tx, buffer_rx, 10);
 }
 
-static void read() {
+static void process() {
     HAL_GPIO_WritePin(FLOW_CS_GPIO_Port, FLOW_CS_Pin, GPIO_PIN_SET);
 
     uint8_t motion[5];
@@ -224,5 +224,5 @@ static void serialize(cmp_ctx_t *cmp, void *context) {
 
 TASK_REGISTER_INIT(init)
 TASK_REGISTER_PERIODIC(transmit, 20000)
-TASK_REGISTER_INTERRUPT(read, &ready)
+TASK_REGISTER_INTERRUPT(process, &ready)
 TELEMETRY_REGISTER("optical_flow", serialize, NULL)

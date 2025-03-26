@@ -61,10 +61,10 @@ static void init() {
 
     dynamixel_init(&dynamixel1);
     dynamixel_init(&dynamixel2);
-    servo_1_x = dynamixel_register(&dynamixel1, 0);
-    servo_1_y = dynamixel_register(&dynamixel1, 1);
-    servo_2_x = dynamixel_register(&dynamixel2, 2);
-    servo_2_y = dynamixel_register(&dynamixel2, 3);
+    servo_1_x = dynamixel_register(&dynamixel1, 0x00);
+    servo_1_y = dynamixel_register(&dynamixel1, 0x01);
+    servo_2_x = dynamixel_register(&dynamixel2, 0x03);
+    servo_2_y = dynamixel_register(&dynamixel2, 0x02);
 
     telemetry_register("servo_1_x", serialize, servo_1_x);
     telemetry_register("servo_1_y", serialize, servo_1_y);
