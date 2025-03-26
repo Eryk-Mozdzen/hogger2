@@ -1,6 +1,6 @@
 #include <stdbool.h>
 #include <stdint.h>
-#include <stm32u5xx_hal.h>
+#include <stm32h5xx_hal.h>
 
 #include "motor.h"
 
@@ -95,6 +95,7 @@ static void config_oc(const motor_t *motor, const uint32_t channel, const uint32
 static void shutdown(const motor_t *motor) {
     HAL_TIM_Base_Stop(motor->commut_timer);
     HAL_TIM_Base_Stop_IT(motor->control_timer);
+    HAL_ADCEx_InjectedStop_IT(motor->bemf_adc);
 
     HAL_TIM_OC_Stop(motor->control_timer, TIM_CHANNEL_1);
     HAL_TIM_OC_Stop(motor->control_timer, TIM_CHANNEL_2);
@@ -188,6 +189,7 @@ void motor_tick(motor_t *motor) {
                 HAL_TIM_Base_Start_IT(motor->control_timer);
                 HAL_TIMEx_ConfigCommutEvent_IT(motor->control_timer, motor->control_timer_itr,
                                                TIM_COMMUTATION_TRGI);
+                HAL_ADCEx_InjectedStart_IT(motor->bemf_adc);
             }
         } break;
         case MOTOR_STATE_STARTUP_ALIGN1: {
@@ -325,27 +327,36 @@ void motor_commutation_callback(motor_t *motor, const TIM_HandleTypeDef *htim) {
     motor->zc_occur = 0;
 }
 
-void motor_sample_callback(motor_t *motor, const TIM_HandleTypeDef *htim) {
+void motor_sample_callback(motor_t *motor, const ADC_HandleTypeDef *hadc) {
     const uint32_t counter = __HAL_TIM_GET_COUNTER(motor->commut_timer);
     const uint32_t autoreload = __HAL_TIM_GET_AUTORELOAD(motor->commut_timer);
 
-    if((htim != motor->control_timer) || motor->zc_occur) {
+    if((hadc != motor->bemf_adc) || motor->zc_occur) {
         return;
     }
 
-    const motor_bemf_t *bemf = &motor->bemf[feedback_src_lookup[motor->step]];
-    const uint8_t state = HAL_GPIO_ReadPin(bemf->port, bemf->pin);
+    const uint32_t bemf[3] = {
+        HAL_ADCEx_InjectedGetValue(motor->bemf_adc, ADC_INJECTED_RANK_1),
+        HAL_ADCEx_InjectedGetValue(motor->bemf_adc, ADC_INJECTED_RANK_2),
+        HAL_ADCEx_InjectedGetValue(motor->bemf_adc, ADC_INJECTED_RANK_3),
+    };
+
+    const uint32_t neutral = (bemf[MOTOR_PHASE_U] + bemf[MOTOR_PHASE_V] + bemf[MOTOR_PHASE_W]) / 3;
+
+    const uint8_t state = (bemf[feedback_src_lookup[motor->step]] > neutral);
 
     motor->zc_filter <<= 1;
     motor->zc_filter |= (state ^ feedback_dir_lookup[motor->step]);
 
-    const uint8_t ones = 4;
+    const float alpha = 0.2f;
+    const uint8_t ones = 2;
     if(filter_lookup[motor->zc_filter] >= ones) {
         motor->zc_occur = 1;
         motor->zc_count++;
 
         if(motor->state == MOTOR_STATE_RUNNING) {
-            uint32_t period = 0.05f * 2 * (counter - ((ones / 2) * 20)) + 0.95f * autoreload;
+            uint32_t period =
+                alpha * 2 * (counter - ((ones / 2) * 20)) + (1.f - alpha) * autoreload;
 
             if(motor->switch_over < 1.f) {
                 const uint32_t time = HAL_GetTick() - motor->state_start_time + OPEN_LOOP_RAMP_TIME;

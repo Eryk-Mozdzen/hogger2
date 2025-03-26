@@ -17,6 +17,8 @@ gerbers.zip
 
 sdkconfig.old
 
+a.out
+
 software/prefs
 software/firmware-stm/cubemx/*
 software/firmware-stm/generated

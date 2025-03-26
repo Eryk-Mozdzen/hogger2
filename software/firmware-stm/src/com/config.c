@@ -1,12 +1,12 @@
-#include <stm32u5xx_hal.h>
+#include <stm32h5xx_hal.h>
 #include <string.h>
 
 #include "com/stream.h"
 #include "utils/task.h"
 
 #define REGISTERED_MAX 8
-#define PAGE_BEGIN     0x0807E000
-#define PAGE_SIZE      0x2000
+#define SECTOR_BEGIN   0x0807E000
+#define SECTOR_SIZE    0x2000
 
 typedef struct {
     const char *name;
@@ -25,24 +25,24 @@ void config_register(const char *name, float *vector, const uint32_t dim) {
 }
 
 static void nvm_store(const void *src, const uint32_t len) {
-    uint8_t page[PAGE_SIZE];
-    memcpy(page, (void *)PAGE_BEGIN, PAGE_SIZE);
+    uint8_t page[SECTOR_SIZE];
+    memcpy(page, (void *)SECTOR_BEGIN, SECTOR_SIZE);
     memcpy(page, src, len);
 
     HAL_FLASH_Unlock();
 
     FLASH_EraseInitTypeDef erase = {
-        .TypeErase = FLASH_TYPEERASE_PAGES,
+        .TypeErase = FLASH_TYPEERASE_SECTORS,
         .Banks = FLASH_BANK_2,
-        .Page = 31,
-        .NbPages = 1,
+        .Sector = 127,
+        .NbSectors = 1,
     };
 
     uint32_t error;
     HAL_FLASHEx_Erase(&erase, &error);
 
-    for(uint32_t i = 0; i < PAGE_SIZE; i += 16) {
-        HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, PAGE_BEGIN + i, (uint32_t)page + i);
+    for(uint32_t i = 0; i < SECTOR_SIZE; i += 16) {
+        HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, SECTOR_BEGIN + i, (uint32_t)page + i);
     }
 
     HAL_FLASH_Lock();
@@ -50,7 +50,7 @@ static void nvm_store(const void *src, const uint32_t len) {
 
 static void nvm_load() {
     mpack_t config;
-    if(!mpack_create_from(&config, NULL, (void *)PAGE_BEGIN, PAGE_SIZE)) {
+    if(!mpack_create_from(&config, NULL, (void *)SECTOR_BEGIN, SECTOR_SIZE)) {
         return;
     }
 
@@ -81,7 +81,7 @@ static void receiver(mpack_t *mpack) {
     nvm_load();
 
     mpack_t config;
-    if(mpack_create_from(&config, NULL, (void *)PAGE_BEGIN, PAGE_SIZE)) {
+    if(mpack_create_from(&config, NULL, (void *)SECTOR_BEGIN, SECTOR_SIZE)) {
         stream_transmit(&config);
     }
 }

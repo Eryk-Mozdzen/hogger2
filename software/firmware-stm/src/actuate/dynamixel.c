@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include <stm32u5xx_hal.h>
+#include <stm32h5xx_hal.h>
 #include <string.h>
 
 #include "actuate/ax12a.h"

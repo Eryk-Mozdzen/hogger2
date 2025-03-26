@@ -402,9 +402,9 @@ void udp_server_task(void *pvParameters) {
 static void blink_task(void *params) {
     (void)params;
 
-    gpio_reset_pin(10);
-    gpio_set_direction(10, GPIO_MODE_OUTPUT);
-    gpio_set_level(10, 0);
+    gpio_reset_pin(0);
+    gpio_set_direction(0, GPIO_MODE_OUTPUT);
+    gpio_set_level(0, 0);
 
     bool led = false;
 
@@ -430,7 +430,7 @@ static void blink_task(void *params) {
 
         lrcp_frame_encode(&serial.base, buffer.buffer, buffer.size);
 
-        gpio_set_level(10, led);
+        gpio_set_level(0, led);
         vTaskDelay(pdMS_TO_TICKS(led ? 100 : 900));
     }
 }

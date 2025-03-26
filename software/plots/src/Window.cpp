@@ -100,7 +100,7 @@ void Window::receive(const QJsonDocument &json) {
     }
 
     const QJsonObject telemetry = json.object()["telemetry"].toObject();
-    const double time = telemetry["timestamp"].toDouble() * 0.001;
+    const double time = telemetry["timestamp"].toDouble() * 0.000001;
 
     const QJsonObject motor1_ = telemetry["motor_1"].toObject();
     motor1->append("vel", time, motor1_["vel"].toDouble());

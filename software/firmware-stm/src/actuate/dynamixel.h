@@ -2,7 +2,7 @@
 #define DYNAMIXEL_H
 
 #include <stdint.h>
-#include <stm32u5xx_hal.h>
+#include <stm32h5xx_hal.h>
 
 #define DYNAMIXEL_REGISTER_MAX 4
 #define DYNAMIXEL_QUEUE_MAX    128

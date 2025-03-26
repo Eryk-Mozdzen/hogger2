@@ -1,5 +1,5 @@
 #include <main.h>
-#include <stm32u5xx_hal.h>
+#include <stm32h5xx_hal.h>
 
 #include "actuate/servos.h"
 #include "com/stream.h"
