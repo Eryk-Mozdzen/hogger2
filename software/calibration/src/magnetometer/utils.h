@@ -29,7 +29,6 @@ struct Params {
 
         const Eigen::Vector3d output = getM() * (input - offset);
 
-        return {static_cast<float>(output(0)), static_cast<float>(output(1)),
-                static_cast<float>(output(2))};
+        return {output(0), output(1), output(2)};
     }
 };

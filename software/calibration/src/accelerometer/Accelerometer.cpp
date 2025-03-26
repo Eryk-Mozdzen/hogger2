@@ -29,7 +29,7 @@ Accelerometer::Accelerometer(QWidget *parent)
         QGridLayout *layout = new QGridLayout(group);
         QTextEdit *line = new QTextEdit(this);
         QPushButton *sample = new QPushButton("sample");
-        QPushButton *clear = new QPushButton("clear");
+        QPushButton *undo = new QPushButton("undo");
 
         line->setReadOnly(true);
         line->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -43,16 +43,23 @@ Accelerometer::Accelerometer(QWidget *parent)
             leastSquares();
         });
 
-        connect(clear, &QPushButton::clicked, [this, orientation, line]() {
-            samples.clear();
+        connect(undo, &QPushButton::clicked, [this, orientation, line]() {
+            const auto it =
+                std::find_if(samples.rbegin(), samples.rend(), [orientation](const auto &pair) {
+                    return pair.second.isApprox(orientation);
+                });
 
-            line->setText("");
+            if(it != samples.rend()) {
+                samples.erase(it.base() - 1);
+            }
+
+            line->undo();
 
             leastSquares();
         });
 
         layout->addWidget(sample, 2, 0);
-        layout->addWidget(clear, 3, 0);
+        layout->addWidget(undo, 3, 0);
         layout->addWidget(line, 0, 1, 6, 1);
         grid->addWidget(group, i % 3, i / 3);
     }

@@ -348,8 +348,8 @@ void motor_sample_callback(motor_t *motor, const ADC_HandleTypeDef *hadc) {
     motor->zc_filter <<= 1;
     motor->zc_filter |= (state ^ feedback_dir_lookup[motor->step]);
 
-    const float alpha = 0.2f;
-    const uint8_t ones = 2;
+    const float alpha = 0.05f;
+    const uint8_t ones = 4;
     if(filter_lookup[motor->zc_filter] >= ones) {
         motor->zc_occur = 1;
         motor->zc_count++;

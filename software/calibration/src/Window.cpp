@@ -11,6 +11,7 @@
 #include "Accelerometer.h"
 #include "Gyroscope.h"
 #include "Magnetometer.h"
+#include "Publisher.h"
 #include "Subscriber.h"
 #include "Window.h"
 
@@ -24,9 +25,13 @@ Window::Window(QWidget *parent) : QWidget{parent}, current{nullptr} {
     QGridLayout *grid = new QGridLayout(this);
 
     Subscriber *subscriber = new Subscriber();
+    Publisher *publisher = new Publisher();
+
     QThread *subscriberThread = new QThread();
+    QThread *publisherThread = new QThread();
 
     subscriber->moveToThread(subscriberThread);
+    publisher->moveToThread(publisherThread);
 
     connect(subscriberThread, &QThread::started, subscriber, &Subscriber::start);
     connect(subscriberThread, &QThread::finished, subscriber, &Subscriber::deleteLater);
@@ -34,7 +39,14 @@ Window::Window(QWidget *parent) : QWidget{parent}, current{nullptr} {
     connect(subscriber, &Subscriber::messageReceived, this, &Window::receive);
     connect(this, &QObject::destroyed, subscriberThread, &QThread::quit);
 
+    connect(publisherThread, &QThread::started, publisher, &Publisher::start);
+    connect(publisherThread, &QThread::finished, publisher, &Publisher::deleteLater);
+    connect(publisherThread, &QThread::finished, publisherThread, &QThread::deleteLater);
+    connect(this, &Window::transmit, publisher, &Publisher::publish);
+    connect(this, &QObject::destroyed, publisherThread, &QThread::quit);
+
     subscriberThread->start();
+    publisherThread->start();
 
     {
         QGroupBox *group = new QGroupBox("applications");
@@ -83,9 +95,9 @@ Window::Window(QWidget *parent) : QWidget{parent}, current{nullptr} {
         connect(button_read, &QPushButton::clicked, [&]() {
             calibration_text->setText("fetching...");
 
-            QJsonDocument json;
-            json.object()["calibration"] = QJsonValue::Null;
-            transmit(json);
+            QJsonObject json;
+            json["config_req"] = QJsonValue::Null;
+            transmit(QJsonDocument(json));
         });
 
         connect(button_update, &QPushButton::clicked, [&]() {
@@ -103,9 +115,9 @@ Window::Window(QWidget *parent) : QWidget{parent}, current{nullptr} {
         connect(button_set, &QPushButton::clicked, [&]() {
             calibration_text->setText("saving...");
 
-            QJsonDocument json;
-            json.object()["calibration"] = calibration.object();
-            transmit(json);
+            QJsonObject json;
+            json["config"] = calibration.object();
+            transmit(QJsonDocument(json));
         });
 
         layout->addWidget(calibration_text);
@@ -142,7 +154,9 @@ void Window::receive(const QJsonDocument &json) {
         if(json.object()["telemetry"].isObject()) {
             const QJsonObject telemetry = json.object()["telemetry"].toObject();
 
-            current->receive(telemetry);
+            if(current) {
+                current->receive(telemetry);
+            }
 
             update();
 
@@ -150,9 +164,9 @@ void Window::receive(const QJsonDocument &json) {
         }
     }
 
-    if(json.object().contains("calibration")) {
-        if(json.object()["calibration"].isObject()) {
-            calibration = QJsonDocument(json.object()["calibration"].toObject());
+    if(json.object().contains("config")) {
+        if(json.object()["config"].isObject()) {
+            calibration = QJsonDocument(json.object()["config"].toObject());
 
             calibration_text->setText(calibration.toJson(QJsonDocument::Indented));
 

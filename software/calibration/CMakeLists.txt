@@ -14,6 +14,7 @@ add_executable(${PROJECT_NAME}
 	"src/main.cpp"
 	"src/Window.cpp"
 	"src/Subscriber.cpp"
+	"src/Publisher.cpp"
 	"src/magnetometer/Magnetometer.cpp"
 	"src/magnetometer/Viewer.cpp"
 	"src/accelerometer/Accelerometer.cpp"

@@ -22,7 +22,7 @@ void Viewer::paintEvent(QPaintEvent *event) {
         max = std::max(max, std::abs((conv.y)));
         max = std::max(max, std::abs((conv.z)));
     }
-    const float window_scale = 0.4f * size / max;
+    const double window_scale = 0.4 * size / max;
 
     QPainter painter(this);
     painter.fillRect(rect(), Qt::transparent);
