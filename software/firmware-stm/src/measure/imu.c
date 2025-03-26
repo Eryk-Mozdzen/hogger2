@@ -14,11 +14,14 @@ extern I2C_HandleTypeDef hi2c2;
 static volatile uint32_t ready;
 static uint8_t buffer[14];
 
-static float accel[3];
-static float gyro[3];
+static float ascale[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
+static float aoffset[3] = {0};
+static float goffset[3] = {0};
 
-static float calib_accel[12] = {0};
-static float calib_gyro[3] = {0};
+static float araw[3] = {0};
+static float aout[3] = {0};
+static float graw[3] = {0};
+static float gout[3] = {0};
 
 static void mpu6050_write(uint8_t address, uint8_t value) {
     HAL_I2C_Mem_Write(&hi2c2, MPU6050_ADDR << 1, address, 1, &value, 1, 100);
@@ -71,37 +74,45 @@ static void init() {
     mpu6050_write(MPU6050_REG_SMPLRT_DIV, 0);
 }
 
-static void read() {
+static void process() {
     {
-        const int16_t raw_x = (((int16_t)buffer[8]) << 8) | buffer[9];
-        const int16_t raw_y = (((int16_t)buffer[10]) << 8) | buffer[11];
-        const int16_t raw_z = (((int16_t)buffer[12]) << 8) | buffer[13];
-
-        const float gain = 65.5f;
-        const float dps_to_rads = 0.017453292519943f;
-
-        gyro[0] = -raw_x * dps_to_rads / gain;
-        gyro[1] = -raw_y * dps_to_rads / gain;
-        gyro[2] = +raw_z * dps_to_rads / gain;
-    }
-
-    {
-        const int16_t raw_x = (((int16_t)buffer[0]) << 8) | buffer[1];
-        const int16_t raw_y = (((int16_t)buffer[2]) << 8) | buffer[3];
-        const int16_t raw_z = (((int16_t)buffer[4]) << 8) | buffer[5];
+        const int16_t x = (((int16_t)buffer[0]) << 8) | buffer[1];
+        const int16_t y = (((int16_t)buffer[2]) << 8) | buffer[3];
+        const int16_t z = (((int16_t)buffer[4]) << 8) | buffer[5];
 
         const float gain = 8192.f;
         const float g_to_ms2 = 9.80665f;
 
-        accel[0] = -raw_x * g_to_ms2 / gain;
-        accel[1] = -raw_y * g_to_ms2 / gain;
-        accel[2] = +raw_z * g_to_ms2 / gain;
+        araw[0] = -x * g_to_ms2 / gain;
+        araw[1] = -y * g_to_ms2 / gain;
+        araw[2] = +z * g_to_ms2 / gain;
+
+        aout[0] = ascale[0] * araw[0] + ascale[1] * araw[1] + ascale[2] * araw[2] + aoffset[0];
+        aout[1] = ascale[3] * araw[0] + ascale[4] * araw[1] + ascale[5] * araw[2] + aoffset[1];
+        aout[2] = ascale[6] * araw[0] + ascale[7] * araw[1] + ascale[8] * araw[2] + aoffset[2];
+    }
+
+    {
+        const int16_t x = (((int16_t)buffer[8]) << 8) | buffer[9];
+        const int16_t y = (((int16_t)buffer[10]) << 8) | buffer[11];
+        const int16_t z = (((int16_t)buffer[12]) << 8) | buffer[13];
+
+        const float gain = 65.5f;
+        const float dps_to_rads = 0.017453292519943f;
+
+        graw[0] = -x * dps_to_rads / gain;
+        graw[1] = -y * dps_to_rads / gain;
+        graw[2] = +z * dps_to_rads / gain;
+
+        gout[0] = graw[0] + goffset[0];
+        gout[1] = graw[0] + goffset[1];
+        gout[2] = graw[0] + goffset[2];
     }
 
     const float u[3] = {
-        accel[0],
-        accel[1],
-        gyro[2],
+        aout[0],
+        aout[1],
+        gout[2],
     };
     ESTIMATOR_PREDICT(u);
 }
@@ -109,24 +120,39 @@ static void read() {
 static void serialize_accel(cmp_ctx_t *cmp, void *context) {
     (void)context;
 
+    cmp_write_map(cmp, 2);
+    cmp_write_str(cmp, "raw", 3);
     cmp_write_array(cmp, 3);
-    cmp_write_float(cmp, accel[0]);
-    cmp_write_float(cmp, accel[1]);
-    cmp_write_float(cmp, accel[2]);
+    cmp_write_float(cmp, araw[0]);
+    cmp_write_float(cmp, araw[1]);
+    cmp_write_float(cmp, araw[2]);
+    cmp_write_str(cmp, "out", 3);
+    cmp_write_array(cmp, 3);
+    cmp_write_float(cmp, aout[0]);
+    cmp_write_float(cmp, aout[1]);
+    cmp_write_float(cmp, aout[2]);
 }
 
 static void serialize_gyro(cmp_ctx_t *cmp, void *context) {
     (void)context;
 
+    cmp_write_map(cmp, 2);
+    cmp_write_str(cmp, "raw", 3);
     cmp_write_array(cmp, 3);
-    cmp_write_float(cmp, gyro[0]);
-    cmp_write_float(cmp, gyro[1]);
-    cmp_write_float(cmp, gyro[2]);
+    cmp_write_float(cmp, graw[0]);
+    cmp_write_float(cmp, graw[1]);
+    cmp_write_float(cmp, graw[2]);
+    cmp_write_str(cmp, "out", 3);
+    cmp_write_array(cmp, 3);
+    cmp_write_float(cmp, gout[0]);
+    cmp_write_float(cmp, gout[1]);
+    cmp_write_float(cmp, gout[2]);
 }
 
 TASK_REGISTER_INIT(init)
-TASK_REGISTER_INTERRUPT(read, &ready)
+TASK_REGISTER_INTERRUPT(process, &ready)
 TELEMETRY_REGISTER("accelerometer", serialize_accel, NULL)
 TELEMETRY_REGISTER("gyroscope", serialize_gyro, NULL)
-CONFIG_REGISTER("accelerometer", calib_accel, 12)
-CONFIG_REGISTER("gyroscope", calib_gyro, 3)
+CONFIG_REGISTER("accelerometer_scale", ascale, 9)
+CONFIG_REGISTER("accelerometer_offset", aoffset, 3)
+CONFIG_REGISTER("gyroscope_offset", goffset, 3)

@@ -14,8 +14,11 @@ extern I2C_HandleTypeDef hi2c1;
 static volatile uint32_t ready;
 static uint8_t buffer[6];
 
-static float mag[3];
-static float calib[12] = {0};
+static float scale[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
+static float offset[3] = {0};
+
+static float raw[3] = {0};
+static float out[3] = {0};
 
 static void hmc5883l_write(uint8_t address, uint8_t value) {
     HAL_I2C_Mem_Write(&hi2c1, QMC5883L_ADDR << 1, address, 1, &value, 1, 100);
@@ -49,30 +52,49 @@ static void init() {
                                                QMC5883L_CONFIG_1_MODE_CONTINOUS);
 }
 
-static void read() {
-    const int16_t raw_x = (((int16_t)buffer[1]) << 8) | buffer[0];
-    const int16_t raw_y = (((int16_t)buffer[3]) << 8) | buffer[2];
-    const int16_t raw_z = (((int16_t)buffer[5]) << 8) | buffer[4];
+static void process() {
+    const int16_t x = (((int16_t)buffer[1]) << 8) | buffer[0];
+    const int16_t y = (((int16_t)buffer[3]) << 8) | buffer[2];
+    const int16_t z = (((int16_t)buffer[5]) << 8) | buffer[4];
 
     const float gain = 1.f / 3000.f;
 
-    mag[0] = +raw_x * gain;
-    mag[1] = -raw_y * gain;
-    mag[2] = -raw_z * gain;
+    raw[0] = +x * gain;
+    raw[1] = -y * gain;
+    raw[2] = -z * gain;
 
-    ESTIMATOR_CORRECT_MAGNETOMETER(mag);
+    out[0] = scale[0] * raw[0] + scale[1] * raw[1] + scale[2] * raw[2] + offset[0];
+    out[1] = scale[3] * raw[0] + scale[4] * raw[1] + scale[5] * raw[2] + offset[1];
+    out[2] = scale[6] * raw[0] + scale[7] * raw[1] + scale[8] * raw[2] + offset[2];
+
+    const float len = sqrtf(out[0] * out[0] + out[1] * out[1] + out[2] * out[2]);
+    const float normalized[3] = {
+        out[0] / len,
+        out[1] / len,
+        out[2] / len,
+    };
+
+    ESTIMATOR_CORRECT_MAGNETOMETER(normalized);
 }
 
 static void serialize(cmp_ctx_t *cmp, void *context) {
     (void)context;
 
+    cmp_write_map(cmp, 2);
+    cmp_write_str(cmp, "raw", 3);
     cmp_write_array(cmp, 3);
-    cmp_write_float(cmp, mag[0]);
-    cmp_write_float(cmp, mag[1]);
-    cmp_write_float(cmp, mag[2]);
+    cmp_write_float(cmp, raw[0]);
+    cmp_write_float(cmp, raw[1]);
+    cmp_write_float(cmp, raw[2]);
+    cmp_write_str(cmp, "out", 3);
+    cmp_write_array(cmp, 3);
+    cmp_write_float(cmp, out[0]);
+    cmp_write_float(cmp, out[1]);
+    cmp_write_float(cmp, out[2]);
 }
 
 TASK_REGISTER_INIT(init)
-TASK_REGISTER_INTERRUPT(read, &ready)
+TASK_REGISTER_INTERRUPT(process, &ready)
 TELEMETRY_REGISTER("magnetometer", serialize, NULL)
-CONFIG_REGISTER("magnetometer", calib, 12)
+CONFIG_REGISTER("magnetometer_scale", scale, 9)
+CONFIG_REGISTER("magnetometer_offset", offset, 3)
