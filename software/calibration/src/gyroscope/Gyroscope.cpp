@@ -36,23 +36,35 @@ Interface *Gyroscope::create() const {
 
 void Gyroscope::receive(const QJsonObject &sensor) {
     if(sensor.contains("gyroscope")) {
-        const QJsonArray gyro = sensor["gyroscope"].toArray();
+        if(sensor["gyroscope"].isObject()) {
+            const QJsonObject gyro = sensor["gyroscope"].toObject();
 
-        const double w1 = static_cast<double>(n) / static_cast<double>(n + 1);
-        const double w2 = 1. / static_cast<double>(n + 1);
+            if(gyro.contains("raw")) {
+                if(gyro["raw"].isArray()) {
+                    const QJsonArray raw = gyro["raw"].toArray();
 
-        mean[0] = w1 * mean[0] + w2 * gyro[0].toDouble();
-        mean[1] = w1 * mean[1] + w2 * gyro[1].toDouble();
-        mean[2] = w1 * mean[2] + w2 * gyro[2].toDouble();
-        n++;
+                    const double w1 = static_cast<double>(n) / static_cast<double>(n + 1);
+                    const double w2 = 1. / static_cast<double>(n + 1);
 
-        line[0]->setText(QString::asprintf("%+7.4f", mean[0]));
-        line[1]->setText(QString::asprintf("%+7.4f", mean[1]));
-        line[2]->setText(QString::asprintf("%+7.4f", mean[2]));
-        line[3]->setText(QString::asprintf("%d", n));
+                    mean[0] = w1 * mean[0] + w2 * raw[0].toDouble();
+                    mean[1] = w1 * mean[1] + w2 * raw[1].toDouble();
+                    mean[2] = w1 * mean[2] + w2 * raw[2].toDouble();
+                    n++;
+
+                    line[0]->setText(QString::asprintf("%+7.4f", mean[0]));
+                    line[1]->setText(QString::asprintf("%+7.4f", mean[1]));
+                    line[2]->setText(QString::asprintf("%+7.4f", mean[2]));
+                    line[3]->setText(QString::asprintf("%d", n));
+                }
+            }
+        }
     }
 }
 
 void Gyroscope::update(QJsonObject &calibration) const {
-    calibration["gyroscope"] = QJsonArray({-mean[0], -mean[1], -mean[2]});
+    calibration["gyroscope_offset"] = QJsonArray({
+        -mean[0],
+        -mean[1],
+        -mean[2],
+    });
 }

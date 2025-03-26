@@ -87,25 +87,37 @@ Params polyToParams3D(const Eigen::VectorXd &vec) {
 }
 
 void Magnetometer::receive(const QJsonObject &sensor) {
-    if(sensor.contains("magnetometer")) {
-        const QJsonArray mag = sensor["magnetometer"].toArray();
+    if(sensor.contains("accelerometer")) {
+        if(sensor["accelerometer"].isObject()) {
+            const QJsonObject accel = sensor["accelerometer"].toObject();
 
-        const Sample s = {mag[0].toDouble(), mag[1].toDouble(), mag[2].toDouble()};
+            if(accel.contains("raw")) {
+                if(accel["raw"].isArray()) {
+                    const QJsonArray raw = accel["raw"].toArray();
 
-        samples.push_back(s);
+                    const Sample s = {
+                        raw[0].toDouble(),
+                        raw[1].toDouble(),
+                        raw[2].toDouble(),
+                    };
 
-        const Eigen::VectorXd poly = bestFitEllipsoid(samples);
-        const Params params = polyToParams3D(poly);
+                    samples.push_back(s);
 
-        offset = -params.getM() * params.offset;
-        scale = params.getM();
+                    const Eigen::VectorXd poly = bestFitEllipsoid(samples);
+                    const Params params = polyToParams3D(poly);
 
-        calibrated.set(params);
+                    offset = -params.getM() * params.offset;
+                    scale = params.getM();
+
+                    calibrated.set(params);
+                }
+            }
+        }
     }
 }
 
 void Magnetometer::update(QJsonObject &calibration) const {
-    calibration["magnetometer"] = QJsonArray({
+    calibration["magnetometer_scale"] = QJsonArray({
         scale(0, 0),
         scale(0, 1),
         scale(0, 2),
@@ -115,6 +127,9 @@ void Magnetometer::update(QJsonObject &calibration) const {
         scale(2, 0),
         scale(2, 1),
         scale(2, 2),
+    });
+
+    calibration["magnetometer_offset"] = QJsonArray({
         offset(0),
         offset(1),
         offset(2),
