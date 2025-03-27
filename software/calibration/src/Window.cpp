@@ -16,7 +16,9 @@
 #include "Window.h"
 
 Window::Window(QWidget *parent) : QWidget{parent}, current{nullptr} {
-    calibration = QJsonDocument(QJsonObject());
+    QJsonObject message;
+    message["config"] = QJsonArray();
+    config = QJsonDocument(message);
 
     interfaces.push_back(new Magnetometer());
     interfaces.push_back(new Accelerometer());
@@ -102,11 +104,13 @@ Window::Window(QWidget *parent) : QWidget{parent}, current{nullptr} {
 
         connect(button_update, &QPushButton::clicked, [&]() {
             if(current) {
-                QJsonObject object = calibration.object();
-                current->update(object);
-                calibration.setObject(object);
+                QJsonObject content = config.object()["config"].toObject();
+                current->update(content);
+                QJsonObject message;
+                message["config"] = content;
+                config.setObject(message);
 
-                calibration_text->setText(calibration.toJson(QJsonDocument::Indented));
+                calibration_text->setText(config.toJson(QJsonDocument::Indented));
             } else {
                 calibration_text->setText("app not selected");
             }
@@ -115,9 +119,7 @@ Window::Window(QWidget *parent) : QWidget{parent}, current{nullptr} {
         connect(button_set, &QPushButton::clicked, [&]() {
             calibration_text->setText("saving...");
 
-            QJsonObject json;
-            json["config"] = calibration.object();
-            transmit(QJsonDocument(json));
+            transmit(config);
         });
 
         layout->addWidget(calibration_text);
@@ -165,12 +167,8 @@ void Window::receive(const QJsonDocument &json) {
     }
 
     if(json.object().contains("config")) {
-        if(json.object()["config"].isObject()) {
-            calibration = QJsonDocument(json.object()["config"].toObject());
+        calibration_text->setText(json.toJson(QJsonDocument::Indented));
 
-            calibration_text->setText(calibration.toJson(QJsonDocument::Indented));
-
-            return;
-        }
+        return;
     }
 }

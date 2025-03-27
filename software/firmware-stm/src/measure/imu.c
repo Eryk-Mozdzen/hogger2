@@ -105,8 +105,8 @@ static void process() {
         graw[2] = +z * dps_to_rads / gain;
 
         gout[0] = graw[0] + goffset[0];
-        gout[1] = graw[0] + goffset[1];
-        gout[2] = graw[0] + goffset[2];
+        gout[1] = graw[1] + goffset[1];
+        gout[2] = graw[2] + goffset[2];
     }
 
     const float u[3] = {

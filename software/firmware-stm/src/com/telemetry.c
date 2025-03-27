@@ -30,8 +30,9 @@ static void loop() {
 
     static uint8_t buffer[2048];
     mpack_t mpack;
-    mpack_create_empty(&mpack, "telemetry", buffer, sizeof(buffer));
+    mpack_create_empty(&mpack, buffer, sizeof(buffer));
 
+    cmp_write_str(&mpack.cmp, "telemetry", 9);
     cmp_write_map(&mpack.cmp, count + 1);
     cmp_write_str(&mpack.cmp, "timestamp", 9);
     cmp_write_u32(&mpack.cmp, timestamp);

@@ -30,7 +30,7 @@ static bool reader(cmp_ctx_t *ctx, void *data, size_t count) {
     return true;
 }
 
-bool mpack_create_from(mpack_t *mpack, char *type, uint8_t *buffer, const uint32_t size) {
+bool mpack_create_from(mpack_t *mpack, const uint8_t *buffer, const uint32_t size) {
     mpack->buffer = buffer;
     mpack->capacity = size;
     mpack->size = size;
@@ -46,23 +46,10 @@ bool mpack_create_from(mpack_t *mpack, char *type, uint8_t *buffer, const uint32
         return false;
     }
 
-    char type_buffer[32] = {0};
-    uint32_t type_buffer_size = sizeof(type_buffer);
-    if(!cmp_read_str(&mpack->cmp, type_buffer, &type_buffer_size)) {
-        return false;
-    }
-
-    if(type) {
-        strncpy(type, type_buffer, type_buffer_size);
-    }
-
     return true;
 }
 
-void mpack_create_empty(mpack_t *mpack,
-                        const char *type,
-                        uint8_t *buffer,
-                        const uint32_t capacity) {
+void mpack_create_empty(mpack_t *mpack, uint8_t *buffer, const uint32_t capacity) {
     mpack->buffer = buffer;
     mpack->capacity = capacity;
     mpack->size = 0;
@@ -71,7 +58,6 @@ void mpack_create_empty(mpack_t *mpack,
     cmp_init(&mpack->cmp, mpack, reader, NULL, writer);
 
     cmp_write_map(&mpack->cmp, 1);
-    cmp_write_str(&mpack->cmp, type, strlen(type));
 }
 
 void mpack_copy(mpack_t *mpack, mpack_t *other) {

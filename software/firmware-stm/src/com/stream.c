@@ -142,11 +142,16 @@ static void loop() {
     static uint8_t decoded[2048];
     const uint32_t size = lrcp_frame_decode(&stream, &decoder, decoded, sizeof(decoded));
 
-    char type[32] = {0};
     mpack_t mpack;
-    if(mpack_create_from(&mpack, type, decoded, size)) {
+    if(mpack_create_from(&mpack, decoded, size)) {
+        char type[32] = {0};
+        uint32_t type_size = sizeof(type);
+        if(!cmp_read_str(&mpack.cmp, type, &type_size)) {
+            return;
+        }
+
         for(uint32_t i = 0; i < count; i++) {
-            if((strncmp(type, registered[i].type, sizeof(type)) == 0) && registered[i].receiver) {
+            if((strncmp(type, registered[i].type, type_size) == 0) && registered[i].receiver) {
                 mpack_t copy;
                 mpack_copy(&copy, &mpack);
                 registered[i].receiver(&copy);

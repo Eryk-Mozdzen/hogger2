@@ -11,7 +11,7 @@
 class Window : public QWidget {
     Q_OBJECT
 
-    QJsonDocument calibration;
+    QJsonDocument config;
     std::vector<Interface *> interfaces;
     Interface *current;
     QTextEdit *calibration_text;
