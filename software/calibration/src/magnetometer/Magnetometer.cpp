@@ -87,13 +87,13 @@ Params polyToParams3D(const Eigen::VectorXd &vec) {
 }
 
 void Magnetometer::receive(const QJsonObject &sensor) {
-    if(sensor.contains("accelerometer")) {
-        if(sensor["accelerometer"].isObject()) {
-            const QJsonObject accel = sensor["accelerometer"].toObject();
+    if(sensor.contains("magnetometer")) {
+        if(sensor["magnetometer"].isObject()) {
+            const QJsonObject mag = sensor["magnetometer"].toObject();
 
-            if(accel.contains("raw")) {
-                if(accel["raw"].isArray()) {
-                    const QJsonArray raw = accel["raw"].toArray();
+            if(mag.contains("raw")) {
+                if(mag["raw"].isArray()) {
+                    const QJsonArray raw = mag["raw"].toArray();
 
                     const Sample s = {
                         raw[0].toDouble(),

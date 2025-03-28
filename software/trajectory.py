@@ -130,7 +130,7 @@ def update(frame):
     if telemetry:
         x = telemetry['estimate']['pos'][0]
         y = telemetry['estimate']['pos'][1]
-        theta = telemetry['estimate']['theta']
+        theta = telemetry['estimate']['pos'][2]
 
         c, s = np.cos(theta), np.sin(theta)
         rotation_matrix = np.array([[c, -s], [s, c]])
