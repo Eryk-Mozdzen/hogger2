@@ -1,3 +1,6 @@
+#include <iomanip>
+#include <iostream>
+
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
@@ -16,9 +19,7 @@
 #include "Window.h"
 
 Window::Window(QWidget *parent) : QWidget{parent}, current{nullptr} {
-    QJsonObject message;
-    message["config"] = QJsonArray();
-    config = QJsonDocument(message);
+    config["config"] = QJsonArray();
 
     interfaces.push_back(new Magnetometer());
     interfaces.push_back(new Accelerometer());
@@ -90,9 +91,20 @@ Window::Window(QWidget *parent) : QWidget{parent}, current{nullptr} {
         calibration_text = new QTextEdit(group);
         calibration_text->setReadOnly(true);
         calibration_text->setFont(font);
+        QPushButton *button_clear = new QPushButton("clear device memory", group);
         QPushButton *button_read = new QPushButton("read from device", group);
         QPushButton *button_update = new QPushButton("update parameters", group);
-        QPushButton *button_set = new QPushButton("write into device", group);
+        QPushButton *button_write = new QPushButton("write into device", group);
+
+        connect(button_clear, &QPushButton::clicked, [&]() {
+            calibration_text->setText("clearing...");
+
+            config["config"] = QJsonArray();
+
+            QJsonObject json;
+            json["config_clr"] = QJsonValue::Null;
+            transmit(QJsonDocument(json));
+        });
 
         connect(button_read, &QPushButton::clicked, [&]() {
             calibration_text->setText("fetching...");
@@ -104,28 +116,27 @@ Window::Window(QWidget *parent) : QWidget{parent}, current{nullptr} {
 
         connect(button_update, &QPushButton::clicked, [&]() {
             if(current) {
-                QJsonObject content = config.object()["config"].toObject();
+                QJsonObject content = config["config"].toObject();
                 current->update(content);
-                QJsonObject message;
-                message["config"] = content;
-                config.setObject(message);
+                config["config"] = content;
 
-                calibration_text->setText(config.toJson(QJsonDocument::Indented));
+                calibration_text->setText(QJsonDocument(config).toJson(QJsonDocument::Indented));
             } else {
-                calibration_text->setText("app not selected");
+                calibration_text->setText("interface not selected");
             }
         });
 
-        connect(button_set, &QPushButton::clicked, [&]() {
+        connect(button_write, &QPushButton::clicked, [&]() {
             calibration_text->setText("saving...");
 
-            transmit(config);
+            transmit(QJsonDocument(config));
         });
 
         layout->addWidget(calibration_text);
+        layout->addWidget(button_clear);
         layout->addWidget(button_read);
         layout->addWidget(button_update);
-        layout->addWidget(button_set);
+        layout->addWidget(button_write);
 
         grid->addWidget(group, 0, 2, 4, 1);
     }
@@ -162,13 +173,58 @@ void Window::receive(const QJsonDocument &json) {
 
             update();
 
+            std::cout << std::setprecision(3) << std::showpos << std::fixed;
+
+            std::cout << "[";
+            std::cout << std::setw(8) << telemetry["accelerometer"]["out"][0].toDouble();
+            std::cout << std::setw(8) << telemetry["accelerometer"]["out"][1].toDouble();
+            std::cout << std::setw(8) << telemetry["accelerometer"]["out"][2].toDouble();
+            std::cout << "]";
+
+            std::cout << "[";
+            std::cout << std::setw(8) << telemetry["gyroscope"]["out"][0].toDouble();
+            std::cout << std::setw(8) << telemetry["gyroscope"]["out"][1].toDouble();
+            std::cout << std::setw(8) << telemetry["gyroscope"]["out"][2].toDouble();
+            std::cout << "]";
+
+            std::cout << "[";
+            std::cout << std::setw(8) << telemetry["magnetometer"]["out"][0].toDouble();
+            std::cout << std::setw(8) << telemetry["magnetometer"]["out"][1].toDouble();
+            std::cout << std::setw(8) << telemetry["magnetometer"]["out"][2].toDouble();
+            std::cout << "]";
+
+            std::cout << " "
+                      << std::sqrt(telemetry["magnetometer"]["out"][0].toDouble() *
+                                       telemetry["magnetometer"]["out"][0].toDouble() +
+                                   telemetry["magnetometer"]["out"][1].toDouble() *
+                                       telemetry["magnetometer"]["out"][1].toDouble() +
+                                   telemetry["magnetometer"]["out"][2].toDouble() *
+                                       telemetry["magnetometer"]["out"][2].toDouble());
+
+            std::cout << std::endl;
+
             return;
         }
     }
 
     if(json.object().contains("config")) {
-        calibration_text->setText(json.toJson(QJsonDocument::Indented));
+        if(json.object()["config"].isObject()) {
+            const QJsonObject cfg = json.object()["config"].toObject();
 
-        return;
+            for(auto it = cfg.constBegin(); it != cfg.constEnd(); ++it) {
+                const QString key = it.key();
+                const QJsonValue value = it.value();
+
+                if(cfg.contains(key)) {
+                    QJsonObject c = config["config"].toObject();
+                    c[key] = cfg[key];
+                    config["config"] = c;
+                }
+            }
+
+            calibration_text->setText(QJsonDocument(config).toJson(QJsonDocument::Indented));
+
+            return;
+        }
     }
 }

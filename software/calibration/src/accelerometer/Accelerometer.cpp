@@ -8,61 +8,87 @@
 
 #include "Accelerometer.h"
 
+static int getDirection(const Eigen::Vector3d vec) {
+    const Eigen::Vector3d absolute = vec.cwiseAbs();
+
+    if((absolute[0] > absolute[1]) && (absolute[0] > absolute[2])) {
+        if(vec[0] > 0) {
+            return 0;
+        } else {
+            return 3;
+        }
+    } else if((absolute[1] > absolute[0]) && (absolute[1] > absolute[2])) {
+        if(vec[1] > 0) {
+            return 1;
+        } else {
+            return 4;
+        }
+    } else {
+        if(vec[2] > 0) {
+            return 2;
+        }
+    }
+
+    return 5;
+}
+
 Accelerometer::Accelerometer(QWidget *parent)
     : Interface{"accelerometer", parent},
       scale{Eigen::Matrix3d::Identity()},
       offset{Eigen::Vector3d::Zero()} {
-    const std::vector<std::pair<QString, Eigen::Vector3d>> predefined = {
+
+    const std::vector<std::pair<QString, Eigen::Vector3d>> directions = {
         std::make_pair("+X", Eigen::Vector3d(g, 0, 0)),
         std::make_pair("+Y", Eigen::Vector3d(0, g, 0)),
         std::make_pair("+Z", Eigen::Vector3d(0, 0, g)),
         std::make_pair("-X", Eigen::Vector3d(-g, 0, 0)),
         std::make_pair("-Y", Eigen::Vector3d(0, -g, 0)),
-        std::make_pair("-Z", Eigen::Vector3d(0, 0, -g))};
+        std::make_pair("-Z", Eigen::Vector3d(0, 0, -g)),
+    };
 
     QGridLayout *grid = new QGridLayout(this);
 
+    QPushButton *button_sample = new QPushButton("sample");
+    QPushButton *button_undo = new QPushButton("undo");
+    QTextEdit *line[6];
+
+    grid->addWidget(button_sample, 1, 0);
+    grid->addWidget(button_undo, 1, 1);
+
     for(int i = 0; i < 6; i++) {
-        const Eigen::Vector3d orientation = predefined[i].second;
-
-        QGroupBox *group = new QGroupBox(predefined[i].first);
+        QGroupBox *group = new QGroupBox(directions[i].first);
         QGridLayout *layout = new QGridLayout(group);
-        QTextEdit *line = new QTextEdit(this);
-        QPushButton *sample = new QPushButton("sample");
-        QPushButton *undo = new QPushButton("undo");
+        line[i] = new QTextEdit(this);
 
-        line->setReadOnly(true);
-        line->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        line[i]->setReadOnly(true);
+        line[i]->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-        connect(sample, &QPushButton::clicked, [this, orientation, line]() {
-            samples.push_back(std::make_pair(orientation, current));
-
-            line->append(
-                QString::asprintf("% 5.4f % 5.4f % 5.4f", current(0), current(1), current(2)));
-
-            leastSquares();
-        });
-
-        connect(undo, &QPushButton::clicked, [this, orientation, line]() {
-            const auto it =
-                std::find_if(samples.rbegin(), samples.rend(), [orientation](const auto &pair) {
-                    return pair.second.isApprox(orientation);
-                });
-
-            if(it != samples.rend()) {
-                samples.erase(it.base() - 1);
-            }
-
-            line->undo();
-
-            leastSquares();
-        });
-
-        layout->addWidget(sample, 2, 0);
-        layout->addWidget(undo, 3, 0);
-        layout->addWidget(line, 0, 1, 6, 1);
-        grid->addWidget(group, i % 3, i / 3);
+        layout->addWidget(line[i], 0, 0);
+        grid->addWidget(group, 2 + (i % 3), i / 3);
     }
+
+    connect(button_sample, &QPushButton::clicked, [this, directions, line]() {
+        const int i = getDirection(current);
+
+        samples.push_back(std::make_pair(directions[i].second, current));
+
+        line[i]->append(
+            QString::asprintf("% 5.4f % 5.4f % 5.4f", current(0), current(1), current(2)));
+
+        leastSquares();
+    });
+
+    connect(button_undo, &QPushButton::clicked, [this, line]() {
+        const auto last = samples.back();
+
+        const int i = getDirection(last.second);
+
+        line[i]->undo();
+
+        samples.pop_back();
+
+        leastSquares();
+    });
 }
 
 void Accelerometer::leastSquares() {

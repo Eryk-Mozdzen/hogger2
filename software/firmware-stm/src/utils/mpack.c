@@ -31,7 +31,7 @@ static bool reader(cmp_ctx_t *ctx, void *data, size_t count) {
 }
 
 bool mpack_create_from(mpack_t *mpack, const uint8_t *buffer, const uint32_t size) {
-    mpack->buffer = buffer;
+    mpack->buffer = (uint8_t *)buffer;
     mpack->capacity = size;
     mpack->size = size;
     mpack->position = 0,

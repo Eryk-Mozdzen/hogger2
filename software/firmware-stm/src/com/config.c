@@ -46,11 +46,12 @@ static uint8_t read(mpack_t *mpack) {
 }
 
 static void write(mpack_t *mpack) {
-    memcpy(sector, (void *)SECTOR_ADDRESS, SECTOR_SIZE);
+    memset(sector, 0xFF, SECTOR_SIZE);
 
     memcpy(&sector[0], &mpack->size, 4);
     memcpy(&sector[4], mpack->buffer, mpack->size);
 
+    HAL_ICACHE_Disable();
     HAL_FLASH_Unlock();
 
     FLASH_EraseInitTypeDef erase = {
@@ -68,6 +69,7 @@ static void write(mpack_t *mpack) {
     }
 
     HAL_FLASH_Lock();
+    HAL_ICACHE_Enable();
 }
 
 static void load() {
@@ -97,9 +99,21 @@ static void load() {
             return;
         }
 
-        for(uint32_t j = 0; j < count; j++) {
-            if(strncmp(registered[j].name, key, key_size) == 0) {
-                mpack_read_array(&config, registered[j].vector, registered[j].dim);
+        uint32_t array_size = 0;
+        if(!cmp_read_array(&config.cmp, &array_size)) {
+            return;
+        }
+
+        for(uint8_t j = 0; j < array_size; j++) {
+            float val = 0;
+            if(!cmp_read_float(&config.cmp, &val)) {
+                return;
+            }
+
+            for(uint32_t k = 0; k < count; k++) {
+                if((strncmp(registered[k].name, key, key_size) == 0) && (j < registered[k].dim)) {
+                    registered[k].vector[j] = val;
+                }
             }
         }
     }
@@ -110,13 +124,17 @@ static void request(mpack_t *mpack) {
 
     mpack_t config;
     if(read(&config)) {
-        stream_transmit(&config);
+        for(uint8_t i = 0; i < 10; i++) {
+            stream_transmit(&config);
+        }
     } else {
         uint8_t buffer[128];
-        mpack_t error;
-        mpack_create_empty(&error, buffer, sizeof(buffer));
-        cmp_write_str(&error.cmp, "config", 6);
-        cmp_write_array(&error.cmp, 0);
+        mpack_t empty;
+        mpack_create_empty(&empty, buffer, sizeof(buffer));
+        cmp_write_str(&empty.cmp, "config", 6);
+        cmp_write_array(&empty.cmp, 0);
+
+        stream_transmit(&empty);
     }
 }
 
@@ -126,6 +144,21 @@ static void store(mpack_t *mpack) {
     request(NULL);
 }
 
+static void clear(mpack_t *mpack) {
+    (void)mpack;
+
+    uint8_t buffer[128];
+    mpack_t empty;
+    mpack_create_empty(&empty, buffer, sizeof(buffer));
+    cmp_write_str(&empty.cmp, "config", 6);
+    cmp_write_array(&empty.cmp, 0);
+
+    write(&empty);
+    load();
+    request(NULL);
+}
+
 TASK_REGISTER_INIT(load)
 STREAM_REGISTER("config_req", request)
+STREAM_REGISTER("config_clr", clear)
 STREAM_REGISTER("config", store)

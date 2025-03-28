@@ -1,7 +1,7 @@
 #pragma once
 
-#include <QWidget>
 #include <QJsonDocument>
+#include <QWidget>
 
 #include "LiveChart.h"
 
@@ -11,6 +11,7 @@ class Window : public QWidget {
     LiveChart *motor1;
     LiveChart *motor2;
     LiveChart *optical;
+    LiveChart *accel;
 
 private slots:
     void receive(const QJsonDocument &json);
