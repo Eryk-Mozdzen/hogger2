@@ -22,68 +22,46 @@ Interface *Magnetometer::create() const {
     return new Magnetometer();
 }
 
-Eigen::VectorXd bestFitEllipsoid(const std::vector<Sample> &samples) {
-    Eigen::MatrixXd x(samples.size(), 1);
-    Eigen::MatrixXd y(samples.size(), 1);
-    Eigen::MatrixXd z(samples.size(), 1);
+void Magnetometer::leastSquares() {
+    Eigen::MatrixXd J(samples.size(), 10);
 
     for(size_t i = 0; i < samples.size(); i++) {
-        x(i, 0) = samples[i].x;
-        y(i, 0) = samples[i].y;
-        z(i, 0) = samples[i].z;
+        J(i, 0) = samples[i](0) * samples[i](0);
+        J(i, 1) = samples[i](1) * samples[i](1);
+        J(i, 2) = samples[i](2) * samples[i](2);
+        J(i, 3) = samples[i](0) * samples[i](1);
+        J(i, 4) = samples[i](1) * samples[i](2);
+        J(i, 5) = samples[i](2) * samples[i](0);
+        J(i, 6) = samples[i](0);
+        J(i, 7) = samples[i](1);
+        J(i, 8) = samples[i](2);
+        J(i, 9) = -1;
     }
 
-    Eigen::MatrixXd J(samples.size(), 9);
-    Eigen::MatrixXd K(samples.size(), 1);
-    K.setOnes();
+    const Eigen::JacobiSVD svd(J, Eigen::ComputeFullV);
+    const Eigen::VectorXd p = svd.matrixV().col(9);
 
-    J << x.array().square(), y.array().square(), z.array().square(), (x.array() * y.array()),
-        (x.array() * z.array()), (y.array() * z.array()), x, y, z;
+    Eigen::Matrix3d M;
+    M << p(0), p(3) / 2.0, p(5) / 2.0, p(3) / 2.0, p(1), p(4) / 2.0, p(5) / 2.0, p(4) / 2.0, p(2);
 
-    const Eigen::MatrixXd JT = J.transpose();
-    const Eigen::MatrixXd JTJ = JT * J;
-    const Eigen::VectorXd ABC = JTJ.inverse() * JT * K;
+    const Eigen::Vector3d v(p(6), p(7), p(8));
 
-    Eigen::VectorXd poly(10);
-    poly.head(9) = ABC;
-    poly(9) = -1;
+    const Eigen::Vector3d b = -M.inverse() * v / 2.0;
 
-    return poly;
-}
+    const double d = b.dot(M * b) - p(9);
+    const Eigen::Matrix3d M_normalized = M / d;
 
-Params polyToParams3D(const Eigen::VectorXd &vec) {
-    Eigen::Matrix4d Amat;
-    Amat << vec(0), vec(3) / 2.0, vec(4) / 2.0, vec(6) / 2.0, vec(3) / 2.0, vec(1), vec(5) / 2.0,
-        vec(7) / 2.0, vec(4) / 2.0, vec(5) / 2.0, vec(2), vec(8) / 2.0, vec(6) / 2.0, vec(7) / 2.0,
-        vec(8) / 2.0, vec(9);
+    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eigensolver(M_normalized);
 
-    const Eigen::Matrix3d A3 = Amat.block<3, 3>(0, 0);
-    const Eigen::Matrix3d A3inv = A3.inverse();
-    const Eigen::Vector3d ofs = vec.segment(6, 3) / 2.0;
-    const Eigen::Vector3d center = -A3inv * ofs;
+    const Eigen::Matrix3d R = eigensolver.eigenvectors();
+    const Eigen::Vector3d D = eigensolver.eigenvalues();
 
-    Eigen::Matrix4d Tofs = Eigen::Matrix4d::Identity();
-    Tofs.block<1, 3>(3, 0) = center.transpose();
-    const Eigen::Matrix4d R = Tofs * Amat * Tofs.transpose();
+    const Eigen::DiagonalMatrix<double, 3> S(D.cwiseSqrt());
 
-    const Eigen::Matrix3d R3 = R.block<3, 3>(0, 0);
-    const double s1 = -R(3, 3);
-    const Eigen::Matrix3d R3S = R3 / s1;
-    const Eigen::EigenSolver<Eigen::Matrix3d> es(R3S);
-    const Eigen::Vector3d el = es.eigenvalues().real();
-    const Eigen::Matrix3d ec = es.eigenvectors().real();
+    const Eigen::Matrix3d A = R * S * R.transpose();
 
-    const Eigen::Vector3d recip = Eigen::Vector3d::Ones().array() / el.array().abs();
-    const Eigen::Vector3d axes = recip.array().sqrt();
-
-    const Eigen::Matrix3d inve = ec.transpose();
-
-    Params params;
-    params.offset = center;
-    params.scale = axes;
-    params.rotation = inve;
-
-    return params;
+    scale = A;
+    offset = -A * b;
 }
 
 void Magnetometer::receive(const QJsonObject &sensor) {
@@ -95,7 +73,7 @@ void Magnetometer::receive(const QJsonObject &sensor) {
                 if(mag["raw"].isArray()) {
                     const QJsonArray raw = mag["raw"].toArray();
 
-                    const Sample s = {
+                    const Eigen::Vector3d s = {
                         raw[0].toDouble(),
                         raw[1].toDouble(),
                         raw[2].toDouble(),
@@ -103,13 +81,11 @@ void Magnetometer::receive(const QJsonObject &sensor) {
 
                     samples.push_back(s);
 
-                    const Eigen::VectorXd poly = bestFitEllipsoid(samples);
-                    const Params params = polyToParams3D(poly);
+                    if(samples.size() > 10) {
+                        leastSquares();
+                    }
 
-                    offset = -params.getM() * params.offset;
-                    scale = params.getM();
-
-                    calibrated.set(params);
+                    calibrated.set(scale, offset);
                 }
             }
         }
