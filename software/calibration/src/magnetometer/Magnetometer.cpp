@@ -1,6 +1,3 @@
-#include <iomanip>
-#include <iostream>
-
 #include <Eigen/Dense>
 #include <QHBoxLayout>
 
@@ -35,33 +32,41 @@ void Magnetometer::leastSquares() {
         J(i, 6) = samples[i](0);
         J(i, 7) = samples[i](1);
         J(i, 8) = samples[i](2);
-        J(i, 9) = -1;
+        J(i, 9) = 1;
     }
 
     const Eigen::JacobiSVD svd(J, Eigen::ComputeFullV);
+
+    if(svd.info() != Eigen::Success) {
+        return;
+    }
+
     const Eigen::VectorXd p = svd.matrixV().col(9);
+    const Eigen::VectorXd pp = p / p(9);
 
-    Eigen::Matrix3d M;
-    M << p(0), p(3) / 2.0, p(5) / 2.0, p(3) / 2.0, p(1), p(4) / 2.0, p(5) / 2.0, p(4) / 2.0, p(2);
+    const Eigen::Matrix3d A{
+        {pp(0),     pp(3) / 2, pp(5) / 2},
+        {pp(3) / 2, pp(1),     pp(4) / 2},
+        {pp(5) / 2, pp(4) / 2, pp(2)    },
+    };
 
-    const Eigen::Vector3d v(p(6), p(7), p(8));
+    const Eigen::Vector3d b{
+        pp(6) / 2,
+        pp(7) / 2,
+        pp(8) / 2,
+    };
 
-    const Eigen::Vector3d b = -M.inverse() * v / 2.0;
+    const Eigen::Vector3d c = -A.inverse() * b;
+    const Eigen::Matrix3d M = A / (c.transpose() * A * c);
 
-    const double d = b.dot(M * b) - p(9);
-    const Eigen::Matrix3d M_normalized = M / d;
+    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver(M);
+    const Eigen::Matrix3d Q = solver.eigenvectors();
+    const Eigen::Vector3d L = solver.eigenvalues();
 
-    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eigensolver(M_normalized);
+    const Eigen::Matrix3d T = Q * L.cwiseSqrt().asDiagonal() * Q.transpose();
 
-    const Eigen::Matrix3d R = eigensolver.eigenvectors();
-    const Eigen::Vector3d D = eigensolver.eigenvalues();
-
-    const Eigen::DiagonalMatrix<double, 3> S(D.cwiseSqrt());
-
-    const Eigen::Matrix3d A = R * S * R.transpose();
-
-    scale = A;
-    offset = -A * b;
+    scale = T;
+    offset = -T * c;
 }
 
 void Magnetometer::receive(const QJsonObject &sensor) {
@@ -81,9 +86,7 @@ void Magnetometer::receive(const QJsonObject &sensor) {
 
                     samples.push_back(s);
 
-                    if(samples.size() > 10) {
-                        leastSquares();
-                    }
+                    leastSquares();
 
                     calibrated.set(scale, offset);
                 }
