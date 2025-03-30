@@ -54,7 +54,7 @@ def periodic():
             traj[0],
             traj[1],
             traj[2],
-            300,
+            -300,
             300,
             traj[3],
             traj[4],
