@@ -36,10 +36,10 @@ try:
             'manual': [
                 a1,
                 0,
-                W if joystick.get_axis(2)>0 else 0,
+                -W if joystick.get_axis(2)>0 else 0,
                 a2,
                 0,
-                W if joystick.get_axis(2)>0 else 0,
+                +W if joystick.get_axis(2)>0 else 0,
             ],
         }
 

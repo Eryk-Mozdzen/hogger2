@@ -14,6 +14,11 @@ typedef enum {
 } motor_state_t;
 
 typedef enum {
+    MOTOR_DIRECTION_CW,
+    MOTOR_DIRECTION_CCW,
+} motor_direction_t;
+
+typedef enum {
     MOTOR_PHASE_U,
     MOTOR_PHASE_V,
     MOTOR_PHASE_W,
@@ -37,6 +42,7 @@ typedef struct {
     ADC_HandleTypeDef *bemf_adc;
     motor_pid_t pid;
     motor_state_t state;
+    motor_direction_t direction;
     uint32_t state_start_time;
     uint32_t ramp_task;
     uint32_t vel_task;
@@ -45,7 +51,7 @@ typedef struct {
     volatile uint8_t step;
     volatile uint8_t zc_filter;
     volatile uint8_t zc_occur;
-    volatile uint32_t zc_count;
+    volatile int32_t zc_count;
     float vel;
     float vel_setpoint;
 } motor_t;

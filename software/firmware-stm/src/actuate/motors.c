@@ -1,9 +1,13 @@
+#include <math.h>
 #include <stm32h5xx_hal.h>
 #include <string.h>
 
 #include "actuate/motor.h"
 #include "com/telemetry.h"
 #include "utils/task.h"
+
+#define VEL_MIN -1000.f
+#define VEL_MAX 1000.f
 
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc2;
@@ -36,9 +40,29 @@ static void isr_conversion(ADC_HandleTypeDef *hadc) {
     motor_sample_callback(&motor2, hadc);
 }
 
-void motors_set_velocity(const float vel1, const float vel2) {
-    motor1.vel_setpoint = vel1;
-    motor2.vel_setpoint = vel2;
+static float validate(const float velocity) {
+    if(isnan(velocity)) {
+        return 0;
+    }
+
+    if(isinf(velocity)) {
+        return 0;
+    }
+
+    if(velocity > VEL_MAX) {
+        return VEL_MAX;
+    }
+
+    if(velocity < VEL_MIN) {
+        return VEL_MIN;
+    }
+
+    return velocity;
+}
+
+void motors_set_velocity(const float psi1_dot, const float psi2_dot) {
+    motor1.vel_setpoint = validate(psi1_dot);
+    motor2.vel_setpoint = validate(psi2_dot);
 }
 
 static void init() {

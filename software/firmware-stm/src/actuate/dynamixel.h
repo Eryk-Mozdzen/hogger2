@@ -9,8 +9,14 @@
 #define DYNAMIXEL_TX_MAX       64
 #define DYNAMIXEL_RX_MAX       64
 
+typedef enum {
+    DYNAMIXEL_DIRECTION_NORMAL,
+    DYNAMIXEL_DIRECTION_REVERSE,
+} dynamixel_direction_t;
+
 typedef struct {
     uint8_t id;
+    dynamixel_direction_t direction;
     uint8_t led;
     float goal;
     float position;
@@ -42,7 +48,8 @@ typedef struct {
 } dynamixel_t;
 
 void dynamixel_init(dynamixel_t *dynamixel);
-dynamixel_servo_t *dynamixel_register(dynamixel_t *dynamixel, const uint8_t id);
+dynamixel_servo_t *
+dynamixel_register(dynamixel_t *dynamixel, const uint8_t id, const dynamixel_direction_t direction);
 void dynamixel_tick(dynamixel_t *dynamixel);
 
 void dynamixel_transmit_callback(dynamixel_t *dynamixel, const UART_HandleTypeDef *huart);

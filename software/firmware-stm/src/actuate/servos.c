@@ -1,6 +1,11 @@
 #include "actuate/dynamixel.h"
+#include "com/stream.h"
 #include "com/telemetry.h"
 #include "utils/task.h"
+
+#define DEG2RAD 0.017453293f
+#define MAX_DEG 10.f
+#define MIN_DEG -10.f
 
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart4;
@@ -18,18 +23,34 @@ static dynamixel_servo_t *servo_1_y = NULL;
 static dynamixel_servo_t *servo_2_x = NULL;
 static dynamixel_servo_t *servo_2_y = NULL;
 
-void servos_set_position(const float x1, const float y1, const float x2, const float y2) {
-    servo_1_x->goal = x1;
-    servo_1_y->goal = y1;
-    servo_2_x->goal = x2;
-    servo_2_y->goal = y2;
+static float validate(const float position) {
+    if(isnan(position)) {
+        return 0;
+    }
+
+    if(isinf(position)) {
+        return 0;
+    }
+
+    if(position > (MAX_DEG * DEG2RAD)) {
+        return (MAX_DEG * DEG2RAD);
+    }
+
+    if(position < (MIN_DEG * DEG2RAD)) {
+        return (MIN_DEG * DEG2RAD);
+    }
+
+    return position;
 }
 
-void servos_set_led(const bool x1, const bool y1, const bool x2, const bool y2) {
-    servo_1_x->led = x1;
-    servo_1_y->led = y1;
-    servo_2_x->led = x2;
-    servo_2_y->led = y2;
+void servos_set_position(const float phi_1,
+                         const float theta_1,
+                         const float phi_2,
+                         const float theta_2) {
+    servo_1_x->goal = validate(phi_1);
+    servo_1_y->goal = validate(theta_1);
+    servo_2_x->goal = validate(phi_2);
+    servo_2_y->goal = validate(theta_2);
 }
 
 static void isr_transmit(UART_HandleTypeDef *huart) {
@@ -61,10 +82,10 @@ static void init() {
 
     dynamixel_init(&dynamixel1);
     dynamixel_init(&dynamixel2);
-    servo_1_x = dynamixel_register(&dynamixel1, 0x00);
-    servo_1_y = dynamixel_register(&dynamixel1, 0x01);
-    servo_2_x = dynamixel_register(&dynamixel2, 0x03);
-    servo_2_y = dynamixel_register(&dynamixel2, 0x02);
+    servo_1_x = dynamixel_register(&dynamixel1, 0x00, DYNAMIXEL_DIRECTION_NORMAL);
+    servo_1_y = dynamixel_register(&dynamixel1, 0x01, DYNAMIXEL_DIRECTION_NORMAL);
+    servo_2_x = dynamixel_register(&dynamixel2, 0x03, DYNAMIXEL_DIRECTION_NORMAL);
+    servo_2_y = dynamixel_register(&dynamixel2, 0x02, DYNAMIXEL_DIRECTION_REVERSE);
 
     telemetry_register("servo_1_x", serialize, servo_1_x);
     telemetry_register("servo_1_y", serialize, servo_1_y);
@@ -77,5 +98,16 @@ static void loop() {
     dynamixel_tick(&dynamixel2);
 }
 
+static void blink(mpack_t *mpack) {
+    bool state;
+    if(mpack_read_bool(mpack, &state)) {
+        servo_1_x->led = state;
+        servo_1_y->led = state;
+        servo_2_x->led = state;
+        servo_2_y->led = state;
+    }
+}
+
 TASK_REGISTER_INIT(init)
 TASK_REGISTER_PERIODIC(loop, 100)
+STREAM_REGISTER("blink", blink);

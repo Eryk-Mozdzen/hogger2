@@ -25,10 +25,15 @@
 #define CLOSED_LOOP_KP        0.001f
 #define CLOSED_LOOP_KI        0.000001f
 
-#define CLAMP(val, min, max) (((val) > (max)) ? (max) : (((val) < (min)) ? (min) : (val)));
+#define CLAMP(val, min, max) (((val) > (max)) ? (max) : (((val) < (min)) ? (min) : (val)))
+#define DIRECTION(val)       ((val >= 0) ? MOTOR_DIRECTION_CW : MOTOR_DIRECTION_CCW)
 
-static const motor_phase_t feedback_src_lookup[6] = {
+static const motor_phase_t feedback_src_lookup_cw[6] = {
     MOTOR_PHASE_U, MOTOR_PHASE_W, MOTOR_PHASE_V, MOTOR_PHASE_U, MOTOR_PHASE_W, MOTOR_PHASE_V,
+};
+
+static const motor_phase_t feedback_src_lookup_ccw[6] = {
+    MOTOR_PHASE_V, MOTOR_PHASE_U, MOTOR_PHASE_W, MOTOR_PHASE_V, MOTOR_PHASE_U, MOTOR_PHASE_W,
 };
 
 static const uint8_t feedback_dir_lookup[6] = {
@@ -167,7 +172,7 @@ void motor_tick(motor_t *motor) {
     const uint32_t time = HAL_GetTick() - motor->state_start_time;
 
     if(software_timer(&motor->vel_task, time, VEL_PERIOD)) {
-        const uint32_t count = motor->zc_count;
+        const int32_t count = motor->zc_count;
         motor->zc_count = 0;
 
         const float velocity = (2.f * PI * count) / (6 * MOTOR_POLE_PAIRS * VEL_PERIOD * 0.001f);
@@ -176,7 +181,8 @@ void motor_tick(motor_t *motor) {
 
     switch(motor->state) {
         case MOTOR_STATE_IDLE: {
-            if(motor->vel_setpoint > VEL_THRESHOLD) {
+            if(fabs(motor->vel_setpoint) > VEL_THRESHOLD) {
+                motor->direction = DIRECTION(motor->vel_setpoint);
                 motor->step = 0;
                 motor->pulse = ALIGN_PULSE;
 
@@ -193,19 +199,31 @@ void motor_tick(motor_t *motor) {
             }
         } break;
         case MOTOR_STATE_STARTUP_ALIGN1: {
-            if(motor->vel_setpoint < VEL_THRESHOLD) {
+            if(fabs(motor->vel_setpoint) < VEL_THRESHOLD) {
+                state_change(motor, MOTOR_STATE_PANIC);
+            }
+
+            if(DIRECTION(motor->vel_setpoint) != motor->direction) {
                 state_change(motor, MOTOR_STATE_PANIC);
             }
 
             if(time >= ALIGN_TIME) {
-                motor->step = 1;
+                if(motor->direction == MOTOR_DIRECTION_CW) {
+                    motor->step = 1;
+                } else {
+                    motor->step = 5;
+                }
                 motor->pulse = ALIGN_PULSE;
 
                 state_change(motor, MOTOR_STATE_STARTUP_ALIGN2);
             }
         } break;
         case MOTOR_STATE_STARTUP_ALIGN2: {
-            if(motor->vel_setpoint < VEL_THRESHOLD) {
+            if(fabs(motor->vel_setpoint) < VEL_THRESHOLD) {
+                state_change(motor, MOTOR_STATE_PANIC);
+            }
+
+            if(DIRECTION(motor->vel_setpoint) != motor->direction) {
                 state_change(motor, MOTOR_STATE_PANIC);
             }
 
@@ -233,12 +251,16 @@ void motor_tick(motor_t *motor) {
                 }
             }
 
-            if(motor->vel_setpoint < VEL_THRESHOLD) {
+            if(fabs(motor->vel_setpoint) < VEL_THRESHOLD) {
+                state_change(motor, MOTOR_STATE_PANIC);
+            }
+
+            if(DIRECTION(motor->vel_setpoint) != motor->direction) {
                 state_change(motor, MOTOR_STATE_PANIC);
             }
 
             if(time >= OPEN_LOOP_RAMP_TIME) {
-                if(motor->vel > VEL_THRESHOLD) {
+                if(fabs(motor->vel) > VEL_THRESHOLD) {
                     state_change(motor, MOTOR_STATE_RUNNING);
                 } else {
                     state_change(motor, MOTOR_STATE_PANIC);
@@ -252,11 +274,15 @@ void motor_tick(motor_t *motor) {
                 motor->switch_over = 1.f;
             }
 
-            if(motor->vel_setpoint < VEL_THRESHOLD) {
+            if(fabs(motor->vel_setpoint) < VEL_THRESHOLD) {
                 state_change(motor, MOTOR_STATE_PANIC);
             }
 
-            if(motor->vel < VEL_THRESHOLD) {
+            if(DIRECTION(motor->vel_setpoint) != motor->direction) {
+                state_change(motor, MOTOR_STATE_PANIC);
+            }
+
+            if(fabs(motor->vel) < VEL_THRESHOLD) {
                 state_change(motor, MOTOR_STATE_PANIC);
             }
         } break;
@@ -277,8 +303,8 @@ void motor_commutation_callback(motor_t *motor, const TIM_HandleTypeDef *htim) {
     }
 
     if(motor->state == MOTOR_STATE_RUNNING) {
-        motor->pid.process = motor->vel;
-        motor->pid.setpoint = motor->vel_setpoint;
+        motor->pid.process = fabs(motor->vel);
+        motor->pid.setpoint = fabs(motor->vel_setpoint);
         motor->pid.dt = __HAL_TIM_GET_AUTORELOAD(motor->commut_timer) * 0.001f;
         pid_calculate(&motor->pid);
         motor->pulse = CLAMP(OPEN_LOOP_PULSE + motor->switch_over * motor->pid.value,
@@ -286,8 +312,11 @@ void motor_commutation_callback(motor_t *motor, const TIM_HandleTypeDef *htim) {
     }
 
     if((motor->state == MOTOR_STATE_STARTUP_OPEN_LOOP) || (motor->state == MOTOR_STATE_RUNNING)) {
-        motor->step++;
-        motor->step %= 6;
+        if(motor->direction == MOTOR_DIRECTION_CW) {
+            motor->step = (motor->step + 6 + 1) % 6;
+        } else {
+            motor->step = (motor->step + 6 - 1) % 6;
+        }
     }
 
     switch(motor->step) {
@@ -343,20 +372,33 @@ void motor_sample_callback(motor_t *motor, const ADC_HandleTypeDef *hadc) {
 
     const uint32_t neutral = (bemf[MOTOR_PHASE_U] + bemf[MOTOR_PHASE_V] + bemf[MOTOR_PHASE_W]) / 3;
 
-    const uint8_t state = (bemf[feedback_src_lookup[motor->step]] > neutral);
+    if(motor->direction == MOTOR_DIRECTION_CW) {
+        const uint8_t state = (bemf[feedback_src_lookup_cw[motor->step]] > neutral);
 
-    motor->zc_filter <<= 1;
-    motor->zc_filter |= (state ^ feedback_dir_lookup[motor->step]);
+        motor->zc_filter <<= 1;
+        motor->zc_filter |= (state ^ feedback_dir_lookup[motor->step]);
+    } else {
+        const uint8_t state = (bemf[feedback_src_lookup_ccw[motor->step]] < neutral);
+
+        motor->zc_filter <<= 1;
+        motor->zc_filter |= (state ^ feedback_dir_lookup[motor->step]);
+    }
 
     const float alpha = 0.05f;
     const uint8_t ones = 4;
     if(filter_lookup[motor->zc_filter] >= ones) {
         motor->zc_occur = 1;
-        motor->zc_count++;
+
+        if(motor->direction == MOTOR_DIRECTION_CW) {
+            motor->zc_count++;
+        } else {
+            motor->zc_count--;
+        }
 
         if(motor->state == MOTOR_STATE_RUNNING) {
-            uint32_t period =
-                alpha * 2 * (counter - ((ones / 2) * 20)) + (1.f - alpha) * autoreload;
+            const uint32_t zc_time = counter - ((ones / 2) * 20);
+
+            uint32_t period = alpha * (2 * zc_time) + (1.f - alpha) * autoreload;
 
             if(motor->switch_over < 1.f) {
                 const uint32_t time = HAL_GetTick() - motor->state_start_time + OPEN_LOOP_RAMP_TIME;

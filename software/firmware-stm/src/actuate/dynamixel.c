@@ -83,10 +83,13 @@ void dynamixel_init(dynamixel_t *dynamixel) {
     dynamixel->task_time = HAL_GetTick();
 }
 
-dynamixel_servo_t *dynamixel_register(dynamixel_t *dynamixel, const uint8_t id) {
+dynamixel_servo_t *dynamixel_register(dynamixel_t *dynamixel,
+                                      const uint8_t id,
+                                      const dynamixel_direction_t direction) {
     for(uint8_t i = 0; i < DYNAMIXEL_REGISTER_MAX; i++) {
         if(dynamixel->registered[i].id == UNREGISTRED) {
             dynamixel->registered[i].id = id;
+            dynamixel->registered[i].direction = direction;
             return &dynamixel->registered[i];
         }
     }
@@ -103,7 +106,13 @@ void dynamixel_tick(dynamixel_t *dynamixel) {
 
         for(uint8_t i = 0; i < DYNAMIXEL_REGISTER_MAX; i++) {
             if(dynamixel->registered[i].id != UNREGISTRED) {
-                const uint16_t goal = 614.4f * (dynamixel->registered[i].goal / PI) + 512;
+                uint16_t goal;
+                if(dynamixel->registered[i].direction == DYNAMIXEL_DIRECTION_NORMAL) {
+                    goal = 614.4f * (+dynamixel->registered[i].goal / PI) + 512;
+                } else {
+                    goal = 614.4f * (-dynamixel->registered[i].goal / PI) + 512;
+                }
+
                 params[0] = AX12A_GOAL_POSITION_ADDRESS;
                 params[1] = (goal >> 0) & 0xFF;
                 params[2] = (goal >> 8) & 0xFF;
@@ -158,6 +167,12 @@ void dynamixel_tick(dynamixel_t *dynamixel) {
                     servo->temperature = params[7];
                     servo->error = error;
                     servo->timestamp = time;
+
+                    if(servo->direction == DYNAMIXEL_DIRECTION_REVERSE) {
+                        servo->position = -servo->position;
+                        servo->velocity = -servo->velocity;
+                        servo->load = -servo->load;
+                    }
                 }
             }
         }
