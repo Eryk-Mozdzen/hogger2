@@ -23,3 +23,8 @@ software/prefs
 software/firmware-stm/cubemx/*
 software/firmware-stm/generated
 !software/firmware-stm/cubemx/cubemx.ioc
+
+__pycache__
+software/simulation/src/Model.hpp
+software/simulation/src/Model.cpp
+software/common/control
