@@ -87,7 +87,7 @@ public:
         file.write(f'    static constexpr double {sp.ccode(param)} = {value:e};\n')
     file.write(
 '''
-    Model();
+    Model(const double x0, const double y0, const double theta0);
 
     const drake::systems::InputPort<double> & get_control_input_port() const;
     const drake::systems::OutputPort<double> & get_state_output_port() const;
@@ -99,10 +99,10 @@ with open(f'{here}/src/Model.cpp', 'w') as file:
     file.write(
 '''#include "Model.hpp"
 
-Model::Model() {
+Model::Model(const double x0, const double y0, const double theta0) {
 '''
     )
-    file.write('    this->DeclareContinuousState({0, 0, 0, 0, 0, 0.1, 0.1});\n')
+    file.write('    this->DeclareContinuousState({x0, y0, theta0, 0, 0, 0.1, 0.1});\n')
     file.write('    this->DeclareVectorInputPort("eta", ' + str(eta.shape[0]) + ');\n')
     file.write('    this->DeclareVectorOutputPort("q", ' + str(2*q.shape[0]) + ', &Model::eval, {this->all_state_ticket()});\n')
     file.write(

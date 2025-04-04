@@ -21,7 +21,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 )
 
 target_compile_options(${PROJECT_NAME} PRIVATE
-	-O0 -g
+	-O3
 	-Wall
 	-Wextra
 	-Wpedantic
