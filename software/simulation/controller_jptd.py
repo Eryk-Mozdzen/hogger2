@@ -38,22 +38,10 @@ eta = sp.Matrix([
     sp.Function('eta_5')(t),
 ])
 
-G = sp.Matrix([
-    [ R*sp.sin(theta), R*sp.cos(theta)*sp.cos(phi1),  R*(sp.sin(theta)*sp.sin(theta1) - sp.cos(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
-    [-R*sp.cos(theta), R*sp.sin(theta)*sp.cos(phi1), -R*(sp.cos(theta)*sp.sin(theta1) + sp.sin(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
-    [0, -R*sp.cos(phi1)/(2*L), R*sp.sin(phi1)*sp.cos(theta1)/(2*L), R*sp.cos(phi2)/(2*L), -R*sp.sin(phi2)*sp.cos(theta2)/(2*L)],
-    [1, 0, 0, 0, 0],
-    [0, 1, 0, 0, 0],
-    [0, 0, 1, 0, 0],
-    [1, 0, sp.sin(theta1), 0, -sp.sin(theta2)],
-    [0, 0, 0, 1, 0],
-    [0, 0, 0, 0, 1],
-])
-
 #G = sp.Matrix([
-#    [0, 0,  R*(sp.sin(theta)*sp.sin(theta1) - sp.cos(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
-#    [0, 0, -R*(sp.cos(theta)*sp.sin(theta1) + sp.sin(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
-#    [0, 0, R*sp.sin(phi1)*sp.cos(theta1)/(2*L), 0, -R*sp.sin(phi2)*sp.cos(theta2)/(2*L)],
+#    [ R*sp.sin(theta), R*sp.cos(theta)*sp.cos(phi1),  R*(sp.sin(theta)*sp.sin(theta1) - sp.cos(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
+#    [-R*sp.cos(theta), R*sp.sin(theta)*sp.cos(phi1), -R*(sp.cos(theta)*sp.sin(theta1) + sp.sin(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
+#    [0, -R*sp.cos(phi1)/(2*L), R*sp.sin(phi1)*sp.cos(theta1)/(2*L), R*sp.cos(phi2)/(2*L), -R*sp.sin(phi2)*sp.cos(theta2)/(2*L)],
 #    [1, 0, 0, 0, 0],
 #    [0, 1, 0, 0, 0],
 #    [0, 0, 1, 0, 0],
@@ -61,6 +49,18 @@ G = sp.Matrix([
 #    [0, 0, 0, 1, 0],
 #    [0, 0, 0, 0, 1],
 #])
+
+G = sp.Matrix([
+    [0, 0,  R*(sp.sin(theta)*sp.sin(theta1) - sp.cos(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
+    [0, 0, -R*(sp.cos(theta)*sp.sin(theta1) + sp.sin(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
+    [0, 0, R*sp.sin(phi1)*sp.cos(theta1)/(2*L), 0, -R*sp.sin(phi2)*sp.cos(theta2)/(2*L)],
+    [1, 0, 0, 0, 0],
+    [0, 1, 0, 0, 0],
+    [0, 0, 1, 0, 0],
+    [1, 0, sp.sin(theta1), 0, -sp.sin(theta2)],
+    [0, 0, 0, 1, 0],
+    [0, 0, 0, 0, 1],
+])
 
 h = sp.Matrix([
     x,
@@ -70,21 +70,21 @@ h = sp.Matrix([
     psi2,
 ])
 
-u = sp.Matrix([
-    eta[0].diff(t),
-    eta[1].diff(t),
-    eta[2].diff(t),
-    eta[3].diff(t),
-    eta[4].diff(t),
-])
-
 #u = sp.Matrix([
-#    eta[0],
-#    eta[1],
+#    eta[0].diff(t),
+#    eta[1].diff(t),
 #    eta[2].diff(t),
-#    eta[3],
+#    eta[3].diff(t),
 #    eta[4].diff(t),
 #])
+
+u = sp.Matrix([
+    eta[0],
+    eta[1],
+    eta[2].diff(t),
+    eta[3],
+    eta[4].diff(t),
+])
 
 q1 = G*eta
 q2 = G.diff(t)*eta + G*eta.diff(t)
@@ -217,7 +217,5 @@ source.add_function('feedback_v', 'v', [
 
 source.add_define('R', 0.05)
 source.add_define('L', 0.13)
-source.add_define('Omega_1', -300)
-source.add_define('Omega_2', +300)
 
 source.generate('../common/control')

@@ -53,8 +53,6 @@ dynamics = sp.simplify(dynamics)
 
 sp.pprint(dynamics)
 
-sp.pprint(dynamics.free_symbols)
-
 parameters = {
     R: 0.05,
     L: 0.13,
@@ -96,9 +94,9 @@ with open(f'{here}/src/Model.cpp', 'w') as file:
 Model::Model(const double x0, const double y0, const double theta0) {
 '''
     )
-    file.write('    this->DeclareContinuousState({x0, y0, theta0, 0, 0, 100, 0.1, 0.1, 100});\n')
+    file.write('    this->DeclareContinuousState({x0, y0, theta0, 0, 0, 0, 0.1, 0.1, 0});\n')
     file.write('    this->DeclareVectorInputPort("eta", 5);\n')
-    file.write('    this->DeclareVectorOutputPort("q", 18, &Model::eval, {this->all_state_ticket()});\n')
+    file.write('    this->DeclareVectorOutputPort("q", 9, &Model::eval, {this->all_state_ticket()});\n')
     file.write(
 '''}
 
@@ -122,33 +120,7 @@ void Model::DoCalcTimeDerivatives(const drake::systems::Context<double> &context
 '''}
 
 void Model::eval(const drake::systems::Context<double> &context, drake::systems::BasicVector<double> *output) const {
-'''
-    )
-    file.write('    const Eigen::Vector<double, 5> eta = this->GetInputPort("eta").Eval(context);\n')
-    file.write('    const Eigen::Vector<double, 9> q = context.get_continuous_state_vector().CopyToVector();\n')
-    file.write('\n')
-    for i, s in enumerate(eta):
-        if s in list(dynamics.free_symbols):
-            file.write(f'    const double {sp.ccode(s)} = eta[{i}];\n')
-    file.write('\n')
-    for i, s in enumerate(q):
-        if s in list(dynamics.free_symbols):
-            file.write(f'    const double {sp.ccode(s)} = q[{i}];\n')
-    file.write(
-'''
-    Eigen::Vector<double, 18> state;
-
-    state.segment(0, 9) = context.get_continuous_state_vector().CopyToVector();
-
-    state.segment(9, 9) = Eigen::Vector<double, 9>{
-'''
-    )
-    for i, dyn in enumerate(dynamics):
-        file.write(f'        {sp.ccode(dyn)},\n')
-    file.write(
-'''    };
-
-    output->SetFromVector(state);
+    output->SetFromVector(context.get_continuous_state_vector().CopyToVector());
 }
 
 const drake::systems::InputPort<double> & Model::get_control_input_port() const {
