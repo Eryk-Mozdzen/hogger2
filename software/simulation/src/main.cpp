@@ -18,8 +18,8 @@ int main() {
 	builder.Connect(model->get_state_output_port(), controller->get_state_input_port());
 	builder.Connect(controller->get_control_output_port(), model->get_control_input_port());
 
-	sink->Connect(&builder, model->get_state_output_port(), {0, 1, 2, 3, 4, 5, 6}, "x,y,theta,phi1,theta1,phi2,theta2");
-	sink->Connect(&builder, controller->get_control_output_port(), "dphi1,dtheta1,dtheta2");
+	sink->Connect(&builder, model->get_state_output_port(), {0, 1, 2, 3, 4, 6, 7}, "x,y,theta,phi1,theta1,phi2,theta2");
+	sink->Connect(&builder, controller->get_control_output_port(), "dphi1,dtheta1,dpsi1,dtheta2,dpsi2");
 	sink->Connect(&builder, generator->get_output_port(), {0, 1, 2}, "xd,yd,thetad");
 
 	auto diagram = builder.Build();
