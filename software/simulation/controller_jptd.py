@@ -38,22 +38,10 @@ eta = sp.Matrix([
     sp.Function('eta_5')(t),
 ])
 
-#G = sp.Matrix([
-#    [ R*sp.sin(theta), R*sp.cos(theta)*sp.cos(phi1),  R*(sp.sin(theta)*sp.sin(theta1) - sp.cos(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
-#    [-R*sp.cos(theta), R*sp.sin(theta)*sp.cos(phi1), -R*(sp.cos(theta)*sp.sin(theta1) + sp.sin(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
-#    [0, -R*sp.cos(phi1)/(2*L), R*sp.sin(phi1)*sp.cos(theta1)/(2*L), R*sp.cos(phi2)/(2*L), -R*sp.sin(phi2)*sp.cos(theta2)/(2*L)],
-#    [1, 0, 0, 0, 0],
-#    [0, 1, 0, 0, 0],
-#    [0, 0, 1, 0, 0],
-#    [1, 0, sp.sin(theta1), 0, -sp.sin(theta2)],
-#    [0, 0, 0, 1, 0],
-#    [0, 0, 0, 0, 1],
-#])
-
 G = sp.Matrix([
-    [0, 0,  R*(sp.sin(theta)*sp.sin(theta1) - sp.cos(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
-    [0, 0, -R*(sp.cos(theta)*sp.sin(theta1) + sp.sin(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
-    [0, 0, R*sp.sin(phi1)*sp.cos(theta1)/(2*L), 0, -R*sp.sin(phi2)*sp.cos(theta2)/(2*L)],
+    [ R*sp.sin(theta), R*sp.cos(theta)*sp.cos(phi1),  R*(sp.sin(theta)*sp.sin(theta1) - sp.cos(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
+    [-R*sp.cos(theta), R*sp.sin(theta)*sp.cos(phi1), -R*(sp.cos(theta)*sp.sin(theta1) + sp.sin(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
+    [0, -R*sp.cos(phi1)/(2*L), R*sp.sin(phi1)*sp.cos(theta1)/(2*L), R*sp.cos(phi2)/(2*L), -R*sp.sin(phi2)*sp.cos(theta2)/(2*L)],
     [1, 0, 0, 0, 0],
     [0, 1, 0, 0, 0],
     [0, 0, 1, 0, 0],
@@ -61,6 +49,18 @@ G = sp.Matrix([
     [0, 0, 0, 1, 0],
     [0, 0, 0, 0, 1],
 ])
+
+#G = sp.Matrix([
+#    [0, 0,  R*(sp.sin(theta)*sp.sin(theta1) - sp.cos(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
+#    [0, 0, -R*(sp.cos(theta)*sp.sin(theta1) + sp.sin(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
+#    [0, 0, R*sp.sin(phi1)*sp.cos(theta1)/(2*L), 0, -R*sp.sin(phi2)*sp.cos(theta2)/(2*L)],
+#    [1, 0, 0, 0, 0],
+#    [0, 1, 0, 0, 0],
+#    [0, 0, 1, 0, 0],
+#    [1, 0, sp.sin(theta1), 0, -sp.sin(theta2)],
+#    [0, 0, 0, 1, 0],
+#    [0, 0, 0, 0, 1],
+#])
 
 h = sp.Matrix([
     x,
@@ -70,21 +70,21 @@ h = sp.Matrix([
     psi2,
 ])
 
-#u = sp.Matrix([
-#    eta[0].diff(t),
-#    eta[1].diff(t),
-#    eta[2].diff(t),
-#    eta[3].diff(t),
-#    eta[4].diff(t),
-#])
-
 u = sp.Matrix([
-    eta[0],
-    eta[1],
+    eta[0].diff(t),
+    eta[1].diff(t),
     eta[2].diff(t),
-    eta[3],
+    eta[3].diff(t),
     eta[4].diff(t),
 ])
+
+#u = sp.Matrix([
+#    eta[0],
+#    eta[1],
+#    eta[2].diff(t),
+#    eta[3],
+#    eta[4].diff(t),
+#])
 
 q1 = G*eta
 q2 = G.diff(t)*eta + G*eta.diff(t)
@@ -109,16 +109,10 @@ h2 = h.diff(t, 2).subs([
     (q[8].diff(t), q1[8]),
 ])
 
-def factorize(vec, coeffs):
-    A = sp.zeros(len(vec),len(coeffs))
-    for i, v in enumerate(vec):
-        expr = sp.collect(sp.expand(v), syms=coeffs[:])
-        for j, c in enumerate(coeffs):
-            A[i, j] = expr.coeff(coeffs[j])
-    return A
-
-Kdd = factorize(h2, u)
+Kdd = h2.jacobian(u)
 P = h2 - Kdd*u
+
+assert sp.simplify(h2)==sp.simplify(Kdd*u + P), 'Dynamic linearization error: wrong calculation of Kdd and P!'
 
 Kdd = sp.simplify(Kdd)
 P = sp.simplify(P)
@@ -128,16 +122,21 @@ sp.pprint(sp.simplify(Kdd.det()))
 sp.pprint(P)
 
 v = sp.Matrix([
-    sp.Symbol('v[0]'),
-    sp.Symbol('v[1]'),
-    sp.Symbol('v[2]'),
-    sp.Symbol('v[3]'),
-    sp.Symbol('v[4]'),
+    sp.Symbol('v_1'),
+    sp.Symbol('v_2'),
+    sp.Symbol('v_3'),
+    sp.Symbol('v_4'),
+    sp.Symbol('v_5'),
 ])
 
 u = Kdd.inv()*(v - P)
 
 u = u.subs([
+    (v[0], sp.Symbol('v[0]')),
+    (v[1], sp.Symbol('v[1]')),
+    (v[2], sp.Symbol('v[2]')),
+    (v[3], sp.Symbol('v[3]')),
+    (v[4], sp.Symbol('v[4]')),
     (eta[0], sp.Symbol('eta[0]')),
     (eta[1], sp.Symbol('eta[1]')),
     (eta[2], sp.Symbol('eta[2]')),
@@ -154,68 +153,57 @@ u = u.subs([
     (q[8], sp.Symbol('q[8]')),
 ])
 
-source.add_function('linearize_u', 'u', [
-    ('v', v),
-    ('eta', eta),
-    ('q', q)
-], u)
+source.add_function(u, 'u', 'linearize_u(float *u, const float *v, const float *eta, const float *q)')
 
 K1 = sp.Matrix([[sp.Symbol(f'K1[{5*i + j}]') for j in range(5)] for i in range(5)])
 K2 = sp.Matrix([[sp.Symbol(f'K2[{5*i + j}]') for j in range(5)] for i in range(5)])
 
 h = sp.Matrix([
-    sp.Symbol('h[0]'),
-    sp.Symbol('h[1]'),
-    sp.Symbol('h[2]'),
-    sp.Symbol('h[3]'),
-    sp.Symbol('h[4]'),
-])
-
-d_h = sp.Matrix([
-    sp.Symbol('d_h[0]'),
-    sp.Symbol('d_h[1]'),
-    sp.Symbol('d_h[2]'),
-    sp.Symbol('d_h[3]'),
-    sp.Symbol('d_h[4]'),
+    sp.Function('h_1')(t),
+    sp.Function('h_2')(t),
+    sp.Function('h_3')(t),
+    sp.Function('h_4')(t),
+    sp.Function('h_5')(t),
 ])
 
 hd = sp.Matrix([
-    sp.Symbol('hd[0]'),
-    sp.Symbol('hd[1]'),
-    sp.Symbol('hd[2]'),
-    sp.Symbol('hd[3]'),
-    sp.Symbol('hd[4]'),
+    sp.Function('h_d1')(t),
+    sp.Function('h_d2')(t),
+    sp.Function('h_d3')(t),
+    sp.Function('h_d4')(t),
+    sp.Function('h_d5')(t),
 ])
 
-d_hd = sp.Matrix([
-    sp.Symbol('d_hd[0]'),
-    sp.Symbol('d_hd[1]'),
-    sp.Symbol('d_hd[2]'),
-    sp.Symbol('d_hd[3]'),
-    sp.Symbol('d_hd[4]'),
+v = hd.diff(t, 2) - K1*(h.diff(t) - hd.diff(t)) - K2*(h - hd)
+
+v = v.subs([
+    (h[0].diff(t), sp.Symbol('d_h[0]')),
+    (h[1].diff(t), sp.Symbol('d_h[1]')),
+    (h[2].diff(t), sp.Symbol('d_h[2]')),
+    (h[3].diff(t), sp.Symbol('d_h[3]')),
+    (h[4].diff(t), sp.Symbol('d_h[4]')),
+    (h[0], sp.Symbol('h[0]')),
+    (h[1], sp.Symbol('h[1]')),
+    (h[2], sp.Symbol('h[2]')),
+    (h[3], sp.Symbol('h[3]')),
+    (h[4], sp.Symbol('h[4]')),
+    (hd[0].diff(t, 2), sp.Symbol('d2_hd[0]')),
+    (hd[1].diff(t, 2), sp.Symbol('d2_hd[1]')),
+    (hd[2].diff(t, 2), sp.Symbol('d2_hd[2]')),
+    (hd[3].diff(t, 2), sp.Symbol('d2_hd[3]')),
+    (hd[4].diff(t, 2), sp.Symbol('d2_hd[4]')),
+    (hd[0].diff(t), sp.Symbol('d_hd[0]')),
+    (hd[1].diff(t), sp.Symbol('d_hd[1]')),
+    (hd[2].diff(t), sp.Symbol('d_hd[2]')),
+    (hd[3].diff(t), sp.Symbol('d_hd[3]')),
+    (hd[4].diff(t), sp.Symbol('d_hd[4]')),
+    (hd[0], sp.Symbol('hd[0]')),
+    (hd[1], sp.Symbol('hd[1]')),
+    (hd[2], sp.Symbol('hd[2]')),
+    (hd[3], sp.Symbol('hd[3]')),
+    (hd[4], sp.Symbol('hd[4]')),
 ])
 
-d2_hd = sp.Matrix([
-    sp.Symbol('d2_hd[0]'),
-    sp.Symbol('d2_hd[1]'),
-    sp.Symbol('d2_hd[2]'),
-    sp.Symbol('d2_hd[3]'),
-    sp.Symbol('d2_hd[4]'),
-])
-
-v = d2_hd - K1*(d_h - d_hd) - K2*(h - hd)
-
-source.add_function('feedback_v', 'v', [
-    ('K1', K1),
-    ('K2', K2),
-    ('h', h),
-    ('d_h', d_h),
-    ('hd', hd),
-    ('d_hd', d_hd),
-    ('d2_hd', d2_hd)
-], v)
-
-source.add_define('R', 0.05)
-source.add_define('L', 0.13)
+source.add_function(v, 'v', 'feedback_v(float *v, const float *K1, const float *K2, const float *h, const float *d_h, const float *hd, const float *d_hd, const float *d2_hd)')
 
 source.generate('../common/control')

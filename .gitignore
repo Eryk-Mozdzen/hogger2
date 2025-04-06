@@ -28,4 +28,5 @@ __pycache__
 .ipynb_checkpoints
 software/simulation/src/Model.hpp
 software/simulation/src/Model.cpp
-software/common/control
+software/common/control/jptd_dynamic.h
+software/common/control/jptd_dynamic.c

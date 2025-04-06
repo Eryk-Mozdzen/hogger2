@@ -53,11 +53,6 @@ dynamics = sp.simplify(dynamics)
 
 sp.pprint(dynamics)
 
-parameters = {
-    R: 0.05,
-    L: 0.13,
-}
-
 import os
 
 here = os.path.dirname(__file__)
@@ -73,12 +68,6 @@ class Model : public drake::systems::LeafSystem<double> {
     void eval(const drake::systems::Context<double> &context, drake::systems::BasicVector<double> *output) const;
 
 public:
-'''
-    )
-    for param, value in parameters.items():
-        file.write(f'    static constexpr double {sp.ccode(param)} = {value:e};\n')
-    file.write(
-'''
     Model(const double x0, const double y0, const double theta0);
 
     const drake::systems::InputPort<double> & get_control_input_port() const;
@@ -90,6 +79,7 @@ public:
 with open(f'{here}/src/Model.cpp', 'w') as file:
     file.write(
 '''#include "Model.hpp"
+#include "control/robot_parameters.h"
 
 Model::Model(const double x0, const double y0, const double theta0) {
 '''

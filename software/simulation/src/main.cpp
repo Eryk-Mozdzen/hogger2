@@ -1,7 +1,7 @@
 #include <drake/systems/framework/diagram_builder.h>
 #include <drake/systems/analysis/simulator.h>
 
-#include "generators/Circle.hpp"
+#include "generators/Lemniscate.hpp"
 #include "controllers/JPTD.hpp"
 #include "Model.hpp"
 #include "Sink.hpp"
@@ -9,7 +9,7 @@
 int main() {
 	drake::systems::DiagramBuilder<double> builder;
 
-	auto generator = builder.AddSystem<Circle>(0, 0, 2, 10);
+	auto generator = builder.AddSystem<Lemniscate>(2, 10);
 	auto controller = builder.AddSystem<JPTD>(2, 1);
 	auto model = builder.AddSystem<Model>(0, 0, 0);
 	auto sink = builder.AddSystem<Sink>();
@@ -26,10 +26,10 @@ int main() {
 
 	drake::systems::Simulator simulator(*diagram);
 
-	simulator.get_mutable_integrator().request_initial_step_size_target(1e-12);
-	simulator.get_mutable_integrator().set_requested_minimum_step_size(1e-12);
-	simulator.get_mutable_integrator().set_throw_on_minimum_step_size_violation(false);
-	simulator.get_mutable_integrator().set_fixed_step_mode(true);
+	//simulator.get_mutable_integrator().request_initial_step_size_target(1e-12);
+	//simulator.get_mutable_integrator().set_requested_minimum_step_size(1e-12);
+	//simulator.get_mutable_integrator().set_throw_on_minimum_step_size_violation(false);
+	//simulator.get_mutable_integrator().set_fixed_step_mode(true);
 
 	simulator.Initialize();
 	simulator.AdvanceTo(60);
