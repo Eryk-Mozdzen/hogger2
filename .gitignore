@@ -25,6 +25,7 @@ software/firmware-stm/generated
 !software/firmware-stm/cubemx/cubemx.ioc
 
 __pycache__
+.ipynb_checkpoints
 software/simulation/src/Model.hpp
 software/simulation/src/Model.cpp
 software/common/control
