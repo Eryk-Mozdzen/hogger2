@@ -10,7 +10,7 @@ Eigen::VectorX<double> Circle::value(const double &t) const {
     trajectory.segment(0, 5) = Eigen::Vector<double, 5>{
         x + R*cos(w*t),
         y + R*sin(w*t),
-        w*t + pi/2,
+        w*t + pi/2 - pi/4, // very important -pi/4 !!!
         -300*t,
         +300*t,
     };

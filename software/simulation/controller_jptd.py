@@ -38,22 +38,10 @@ eta = sp.Matrix([
     sp.Function('eta_5')(t),
 ])
 
-G = sp.Matrix([
-    [ R*sp.sin(theta), R*sp.cos(theta)*sp.cos(phi1),  R*(sp.sin(theta)*sp.sin(theta1) - sp.cos(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
-    [-R*sp.cos(theta), R*sp.sin(theta)*sp.cos(phi1), -R*(sp.cos(theta)*sp.sin(theta1) + sp.sin(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
-    [0, -R*sp.cos(phi1)/(2*L), R*sp.sin(phi1)*sp.cos(theta1)/(2*L), R*sp.cos(phi2)/(2*L), -R*sp.sin(phi2)*sp.cos(theta2)/(2*L)],
-    [1, 0, 0, 0, 0],
-    [0, 1, 0, 0, 0],
-    [0, 0, 1, 0, 0],
-    [1, 0, sp.sin(theta1), 0, -sp.sin(theta2)],
-    [0, 0, 0, 1, 0],
-    [0, 0, 0, 0, 1],
-])
-
 #G = sp.Matrix([
-#    [0, 0,  R*(sp.sin(theta)*sp.sin(theta1) - sp.cos(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
-#    [0, 0, -R*(sp.cos(theta)*sp.sin(theta1) + sp.sin(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
-#    [0, 0, R*sp.sin(phi1)*sp.cos(theta1)/(2*L), 0, -R*sp.sin(phi2)*sp.cos(theta2)/(2*L)],
+#    [ R*sp.sin(theta), R*sp.cos(theta)*sp.cos(phi1),  R*(sp.sin(theta)*sp.sin(theta1) - sp.cos(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
+#    [-R*sp.cos(theta), R*sp.sin(theta)*sp.cos(phi1), -R*(sp.cos(theta)*sp.sin(theta1) + sp.sin(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
+#    [0, -R*sp.cos(phi1)/(2*L), R*sp.sin(phi1)*sp.cos(theta1)/(2*L), R*sp.cos(phi2)/(2*L), -R*sp.sin(phi2)*sp.cos(theta2)/(2*L)],
 #    [1, 0, 0, 0, 0],
 #    [0, 1, 0, 0, 0],
 #    [0, 0, 1, 0, 0],
@@ -61,6 +49,18 @@ G = sp.Matrix([
 #    [0, 0, 0, 1, 0],
 #    [0, 0, 0, 0, 1],
 #])
+
+G = sp.Matrix([
+    [0, 0,  R*(sp.sin(theta)*sp.sin(theta1) - sp.cos(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
+    [0, 0, -R*(sp.cos(theta)*sp.sin(theta1) + sp.sin(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
+    [0, 0, R*sp.sin(phi1)*sp.cos(theta1)/(2*L), 0, -R*sp.sin(phi2)*sp.cos(theta2)/(2*L)],
+    [1, 0, 0, 0, 0],
+    [0, 1, 0, 0, 0],
+    [0, 0, 1, 0, 0],
+    [1, 0, sp.sin(theta1), 0, -sp.sin(theta2)],
+    [0, 0, 0, 1, 0],
+    [0, 0, 0, 0, 1],
+])
 
 h = sp.Matrix([
     x,
@@ -70,21 +70,21 @@ h = sp.Matrix([
     psi2,
 ])
 
-u = sp.Matrix([
-    eta[0].diff(t),
-    eta[1].diff(t),
-    eta[2].diff(t),
-    eta[3].diff(t),
-    eta[4].diff(t),
-])
-
 #u = sp.Matrix([
-#    eta[0],
-#    eta[1],
+#    eta[0].diff(t),
+#    eta[1].diff(t),
 #    eta[2].diff(t),
-#    eta[3],
+#    eta[3].diff(t),
 #    eta[4].diff(t),
 #])
+
+u = sp.Matrix([
+    eta[0],
+    eta[1],
+    eta[2].diff(t),
+    eta[3],
+    eta[4].diff(t),
+])
 
 q1 = G*eta
 q2 = G.diff(t)*eta + G*eta.diff(t)
@@ -114,12 +114,9 @@ P = h2 - Kdd*u
 
 assert sp.simplify(h2)==sp.simplify(Kdd*u + P), 'Dynamic linearization error: wrong calculation of Kdd and P!'
 
-Kdd = sp.simplify(Kdd)
-P = sp.simplify(P)
-
-sp.pprint(Kdd)
+sp.pprint(sp.simplify(Kdd))
 sp.pprint(sp.simplify(Kdd.det()))
-sp.pprint(P)
+sp.pprint(sp.simplify(P))
 
 v = sp.Matrix([
     sp.Symbol('v_1'),
@@ -130,6 +127,8 @@ v = sp.Matrix([
 ])
 
 u = Kdd.inv()*(v - P)
+
+u = sp.simplify(u)
 
 u = u.subs([
     (v[0], sp.Symbol('v[0]')),

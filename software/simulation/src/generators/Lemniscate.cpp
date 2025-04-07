@@ -10,7 +10,7 @@ Eigen::VectorX<double> Lemniscate::value(const double &t) const {
     trajectory.segment(0, 5) = Eigen::Vector<double, 5>{
         a*cos(t*w)/(pow(sin(t*w), 2) + 1),
         a*sin(t*w)*cos(t*w)/(pow(sin(t*w), 2) + 1),
-        fix(atan2(-a*w*pow(sin(t*w), 2)/(pow(sin(t*w), 2) + 1) + a*w*pow(cos(t*w), 2)/(pow(sin(t*w), 2) + 1) - 2*a*w*pow(sin(t*w), 2)*pow(cos(t*w), 2)/pow(pow(sin(t*w), 2) + 1, 2), -a*w*sin(t*w)/(pow(sin(t*w), 2) + 1) - 2*a*w*sin(t*w)*pow(cos(t*w), 2)/pow(pow(sin(t*w), 2) + 1, 2))),
+        fix(atan2(-a*w*pow(sin(t*w), 2)/(pow(sin(t*w), 2) + 1) + a*w*pow(cos(t*w), 2)/(pow(sin(t*w), 2) + 1) - 2*a*w*pow(sin(t*w), 2)*pow(cos(t*w), 2)/pow(pow(sin(t*w), 2) + 1, 2), -a*w*sin(t*w)/(pow(sin(t*w), 2) + 1) - 2*a*w*sin(t*w)*pow(cos(t*w), 2)/pow(pow(sin(t*w), 2) + 1, 2)) - pi/4), // very important -pi/4 !!!
         -300*t,
         +300*t,
     };
