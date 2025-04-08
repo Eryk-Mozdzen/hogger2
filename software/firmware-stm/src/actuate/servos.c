@@ -53,6 +53,13 @@ void servos_set_position(const float phi_1,
     servo_2_y->goal = validate(theta_2);
 }
 
+void servos_get_position(float *phi_1, float *theta_1, float *phi_2, float *theta_2) {
+    *phi_1 = servo_1_x->position;
+    *theta_1 = servo_1_y->position;
+    *phi_2 = servo_2_x->position;
+    *theta_2 = servo_2_y->position;
+}
+
 static void isr_transmit(UART_HandleTypeDef *huart) {
     dynamixel_transmit_callback(&dynamixel1, huart);
     dynamixel_transmit_callback(&dynamixel2, huart);

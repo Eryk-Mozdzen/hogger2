@@ -115,6 +115,7 @@ add_executable(${TARGET}
     "CMSIS-DSP/Source/FastMathFunctions/FastMathFunctions.c"
 
     "generated/estimator.c"
+    "../common/control/jptd_dynamic.c"
 
 	"src/main.c"
     "src/utils/task.c"
@@ -132,8 +133,10 @@ add_executable(${TARGET}
     "src/measure/flow.c"
     "src/measure/battery.c"
     "src/measure/estimator.c"
-    "src/control/controller.c"
     "src/control/blink.c"
+    "src/control/watchdog.c"
+    "src/control/manual.c"
+    "src/control/controller.c"
 
     "../common/lrcp/stream.c"
     "../common/lrcp/frame.c"

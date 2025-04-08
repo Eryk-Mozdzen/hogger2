@@ -65,6 +65,11 @@ void motors_set_velocity(const float psi1_dot, const float psi2_dot) {
     motor2.vel_setpoint = validate(psi2_dot);
 }
 
+void motors_get_velocity(float *psi1_dot, float *psi2_dot) {
+    *psi1_dot = motor1.vel;
+    *psi2_dot = motor2.vel;
+}
+
 static void init() {
     HAL_TIM_RegisterCallback(&htim1, HAL_TIM_COMMUTATION_CB_ID, isr_commutation);
     HAL_TIM_RegisterCallback(&htim8, HAL_TIM_COMMUTATION_CB_ID, isr_commutation);
