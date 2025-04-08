@@ -26,11 +26,11 @@ int main() {
 
 	drake::systems::Simulator simulator(*diagram);
 
-	simulator.get_mutable_integrator().request_initial_step_size_target(1e-5);
+	simulator.get_mutable_integrator().request_initial_step_size_target(1e-7);
 	simulator.get_mutable_integrator().set_requested_minimum_step_size(1e-7);
 	simulator.get_mutable_integrator().set_throw_on_minimum_step_size_violation(false);
 	//simulator.get_mutable_integrator().set_fixed_step_mode(true);
 
 	simulator.Initialize();
-	simulator.AdvanceTo(20);
+	simulator.AdvanceTo(10);
 }
