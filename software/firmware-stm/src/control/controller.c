@@ -26,25 +26,39 @@ typedef enum {
     INTEGRAL_IDX_PSI2,
 } integral_idx_t;
 
-static float trajectory[TRAJECTORY_NODES * TRAJECTORY_DIM * TRAJECTORY_DERIV] = {0};
-static float trajectory_dt = 0;
-static uint32_t trajectory_total = 0;
+typedef struct {
+    float nodes[TRAJECTORY_NODES * TRAJECTORY_DIM * TRAJECTORY_DERIV];
+    float dt;
+    uint32_t total;
 
-static bool started = false;
-static uint32_t start_time = 0;
-static float controller_time = 0;
-static float controller_hd[5] = {0};
-static float controller_d_hd[5] = {0};
-static float controller_d2_hd[5] = {0};
+    bool read_started;
+    uint32_t read_index;
+} trajectory_t;
 
-static float integral_value_prev[INTEGRAL_DIM] = {0};
-static float integral[INTEGRAL_DIM] = {0};
+typedef struct {
+    bool started;
+    uint32_t time_prev;
+    uint32_t time_start;
+    float time;
+    float hd[5];
+    float d_hd[5];
+    float d2_hd[5];
+    float h[5];
+    float d_h[5];
+} controller_t;
 
-static bool read_started = false;
-static uint32_t read_index = 0;
+typedef struct {
+    float prev[INTEGRAL_DIM];
+    float integral[INTEGRAL_DIM];
+    float input[INTEGRAL_DIM];
+} integrator_t;
 
-static void read() {
-    if(!read_started) {
+static trajectory_t trajectory = {0};
+static controller_t controller = {0};
+static integrator_t integrator = {0};
+
+static void trajectory_read_loop() {
+    if(!trajectory.read_started) {
         return;
     }
 
@@ -56,11 +70,12 @@ static void read() {
     cmp_write_str(&response.cmp, "trajectory", 10);
     cmp_write_map(&response.cmp, 2);
     cmp_write_str(&response.cmp, "index", 5);
-    cmp_write_u32(&response.cmp, read_index);
+    cmp_write_u32(&response.cmp, trajectory.read_index);
     cmp_write_str(&response.cmp, "node", 5);
     cmp_write_array(&response.cmp, TRAJECTORY_DIM * TRAJECTORY_DERIV);
 
-    const float *node = &trajectory[read_index * TRAJECTORY_DIM * TRAJECTORY_DERIV];
+    const float *node =
+        &trajectory.nodes[trajectory.read_index * TRAJECTORY_DIM * TRAJECTORY_DERIV];
 
     for(uint32_t j = 0; j < (TRAJECTORY_DIM * TRAJECTORY_DERIV); j++) {
         cmp_write_float(&response.cmp, node[j]);
@@ -68,18 +83,18 @@ static void read() {
 
     stream_transmit(&response);
 
-    read_index++;
+    trajectory.read_index++;
 
-    if(read_index >= trajectory_total) {
-        read_started = false;
+    if(trajectory.read_index >= trajectory.total) {
+        trajectory.read_started = false;
     }
 }
 
-static void trajectory_read(mpack_t *mpack) {
+static void trajectory_read_start(mpack_t *mpack) {
     (void)mpack;
 
-    read_started = true;
-    read_index = 0;
+    trajectory.read_started = true;
+    trajectory.read_index = 0;
 }
 
 static void trajectory_write(mpack_t *mpack) {
@@ -102,9 +117,9 @@ static void trajectory_write(mpack_t *mpack) {
             if(!cmp_read_float(&mpack->cmp, &val)) {
                 return;
             }
-            trajectory_total = val;
+            trajectory.total = val;
         } else if(strncmp(key, "dt", key_size) == 0) {
-            if(!cmp_read_float(&mpack->cmp, &trajectory_dt)) {
+            if(!cmp_read_float(&mpack->cmp, &trajectory.dt)) {
                 return;
             }
         } else if(strncmp(key, "start", key_size) == 0) {
@@ -120,7 +135,7 @@ static void trajectory_write(mpack_t *mpack) {
             }
 
             for(uint8_t j = 0; j < array_size; j++) {
-                float *node = &trajectory[(start + j) * TRAJECTORY_DIM * TRAJECTORY_DERIV];
+                float *node = &trajectory.nodes[(start + j) * TRAJECTORY_DIM * TRAJECTORY_DERIV];
 
                 uint32_t inner_array_size = 0;
                 if(!cmp_read_array(&mpack->cmp, &inner_array_size)) {
@@ -144,41 +159,21 @@ static void trajectory_write(mpack_t *mpack) {
     }
 }
 
-static void trajectory_continue(mpack_t *mpack) {
-    (void)mpack;
-
-    watchdog_reset();
-
-    if(!started) {
-        started = true;
-        start_time = task_timebase();
-
-        memset(integral_value_prev, 0, sizeof(integral_value_prev));
-        memset(integral, 0, sizeof(integral));
-        integral[INTEGRAL_IDX_ETA3] = -300;
-        integral[INTEGRAL_IDX_ETA5] = +300;
-    }
-}
-
-static void trajectory_abort() {
-    started = false;
-}
-
 static void trajectory_interpolate(float *hd, float *d_hd, float *d2_hd, const float t) {
     // quintic Hermite interpolation
 
-    const float T_total = (trajectory_total - 1) * trajectory_dt;
+    const float T_total = (trajectory.total - 1) * trajectory.dt;
     const float t_mod = fmodf(t, T_total);
 
-    uint32_t seg = (uint32_t)(t_mod / trajectory_dt);
+    uint32_t seg = (uint32_t)(t_mod / trajectory.dt);
 
-    if(seg >= trajectory_total - 1) {
-        seg = trajectory_total - 2;
+    if(seg >= trajectory.total - 1) {
+        seg = trajectory.total - 2;
     }
 
-    const float t0 = seg * trajectory_dt;
+    const float t0 = seg * trajectory.dt;
     const float local_t = t_mod - t0;
-    const float tau = local_t / trajectory_dt;
+    const float tau = local_t / trajectory.dt;
 
     const float tau2 = tau * tau;
     const float tau3 = tau2 * tau;
@@ -206,10 +201,10 @@ static void trajectory_interpolate(float *hd, float *d_hd, float *d2_hd, const f
     const float d2h11 = -24.0f * tau + 84.0f * tau2 - 60.0f * tau3;
     const float d2h21 = 3.0f * tau - 12.0f * tau2 + 10.0f * tau3;
 
-    const float *p0 = &trajectory[seg * TRAJECTORY_DIM * TRAJECTORY_DERIV];
-    const float *p1 = &trajectory[(seg + 1) * TRAJECTORY_DIM * TRAJECTORY_DERIV];
+    const float *p0 = &trajectory.nodes[seg * TRAJECTORY_DIM * TRAJECTORY_DERIV];
+    const float *p1 = &trajectory.nodes[(seg + 1) * TRAJECTORY_DIM * TRAJECTORY_DERIV];
 
-    const float T = trajectory_dt;
+    const float T = trajectory.dt;
     const float T2 = T * T;
 
     for(uint32_t i = 0; i < TRAJECTORY_DIM; i++) {
@@ -234,20 +229,39 @@ static void trajectory_interpolate(float *hd, float *d_hd, float *d2_hd, const f
     }
 }
 
-static void loop() {
-    if(!started) {
+static void controller_continue(mpack_t *mpack) {
+    (void)mpack;
+
+    watchdog_reset();
+
+    if(!controller.started) {
+        controller.started = true;
+        controller.time_start = task_timebase();
+
+        memset(integrator.prev, 0, sizeof(integrator.prev));
+        memset(integrator.integral, 0, sizeof(integrator.integral));
+        integrator.integral[INTEGRAL_IDX_ETA3] = -300;
+        integrator.integral[INTEGRAL_IDX_ETA5] = +300;
+    }
+}
+
+static void controller_abort() {
+    controller.started = false;
+}
+
+static void controller_loop() {
+    const uint32_t now = task_timebase();
+
+    const float dt = (now - controller.time_prev) * 0.0001f;
+    controller.time = (now - controller.time_start) * 0.000001f;
+
+    controller.time_prev = now;
+
+    if(!controller.started) {
         return;
     }
 
-    static uint32_t prev = 0;
-    const uint32_t now = task_timebase();
-
-    const float dt = (now - prev) * 0.0001f;
-    controller_time = (now - start_time) * 0.000001f;
-
-    prev = now;
-
-    trajectory_interpolate(controller_hd, controller_d_hd, controller_d2_hd, controller_time);
+    trajectory_interpolate(controller.hd, controller.d_hd, controller.d2_hd, controller.time);
 
     const float K1[25] = {
         CONTROLLER_K1, 0, 0, 0, 0, 0, CONTROLLER_K1, 0, 0, 0, 0, 0, CONTROLLER_K1, 0, 0, 0, 0, 0,
@@ -269,17 +283,21 @@ static void loop() {
     float theta2;
     servos_get_position(&phi1, &theta1, &phi2, &theta2);
 
-    const float h[5] = {
-        ESTIMATOR_GET_POS_X(),       ESTIMATOR_GET_POS_Y(),       ESTIMATOR_GET_POS_THETA(),
-        integral[INTEGRAL_IDX_PHI1], integral[INTEGRAL_IDX_PSI2],
-    };
+    controller.h[0] = ESTIMATOR_GET_POS_X();
+    controller.h[1] = ESTIMATOR_GET_POS_Y();
+    controller.h[2] = ESTIMATOR_GET_POS_THETA();
+    controller.h[3] = integrator.integral[INTEGRAL_IDX_PHI1];
+    controller.h[4] = integrator.integral[INTEGRAL_IDX_PSI2];
 
-    const float d_h[5] = {
-        ESTIMATOR_GET_VEL_X(), ESTIMATOR_GET_VEL_Y(), ESTIMATOR_GET_VEL_THETA(), psi1_dot, psi2_dot,
-    };
+    controller.d_h[0] = ESTIMATOR_GET_VEL_X();
+    controller.d_h[1] = ESTIMATOR_GET_VEL_Y();
+    controller.d_h[2] = ESTIMATOR_GET_VEL_THETA();
+    controller.d_h[3] = psi1_dot;
+    controller.d_h[4] = psi2_dot;
 
     float v[5];
-    jptd_dynamic_feedback_v(v, K1, K2, h, d_h, controller_hd, controller_d_hd, controller_d2_hd);
+    jptd_dynamic_feedback_v(v, K1, K2, controller.h, controller.d_h, controller.hd, controller.d_hd,
+                            controller.d2_hd);
 
     const float q[9] = {
         ESTIMATOR_GET_POS_X(),
@@ -287,14 +305,14 @@ static void loop() {
         ESTIMATOR_GET_POS_THETA(),
         phi1,
         theta1,
-        integral[INTEGRAL_IDX_PSI1],
+        integrator.integral[INTEGRAL_IDX_PSI1],
         phi2,
         theta2,
-        integral[INTEGRAL_IDX_PSI2],
+        integrator.integral[INTEGRAL_IDX_PSI2],
     };
 
     float eta[5] = {
-        0, 0, integral[INTEGRAL_IDX_ETA3], 0, integral[INTEGRAL_IDX_ETA5],
+        0, 0, integrator.integral[INTEGRAL_IDX_ETA3], 0, integrator.integral[INTEGRAL_IDX_ETA5],
     };
 
     float u[5];
@@ -304,68 +322,94 @@ static void loop() {
     eta[1] = u[1];
     eta[3] = u[3];
 
-    float value[INTEGRAL_DIM] = {0};
-    value[INTEGRAL_IDX_PHI1] = eta[0];
-    value[INTEGRAL_IDX_THETA1] = eta[1];
-    value[INTEGRAL_IDX_THETA2] = eta[3];
-    value[INTEGRAL_IDX_ETA3] = u[2];
-    value[INTEGRAL_IDX_ETA5] = u[4];
-    value[INTEGRAL_IDX_PSI1] = psi1_dot;
-    value[INTEGRAL_IDX_PSI2] = psi2_dot;
+    integrator.input[INTEGRAL_IDX_PHI1] = eta[0];
+    integrator.input[INTEGRAL_IDX_THETA1] = eta[1];
+    integrator.input[INTEGRAL_IDX_THETA2] = eta[3];
+    integrator.input[INTEGRAL_IDX_ETA3] = u[2];
+    integrator.input[INTEGRAL_IDX_ETA5] = u[4];
+    integrator.input[INTEGRAL_IDX_PSI1] = psi1_dot;
+    integrator.input[INTEGRAL_IDX_PSI2] = psi2_dot;
 
     for(uint32_t i = 0; i < INTEGRAL_DIM; i++) {
-        integral[i] += 0.5f * (value[i] + integral_value_prev[i]) * dt;
-        integral_value_prev[i] = integral[i];
+        integrator.integral[i] += 0.5f * (integrator.input[i] + integrator.prev[i]) * dt;
+        integrator.prev[i] = integrator.integral[i];
     }
 
-    const float setpoint_phi2 = integral[INTEGRAL_IDX_PHI1] + sinf(integral[INTEGRAL_IDX_THETA1]) -
-                                sinf(integral[INTEGRAL_IDX_THETA2]);
+    const float setpoint_phi2 = integrator.integral[INTEGRAL_IDX_PHI1] +
+                                sinf(integrator.integral[INTEGRAL_IDX_THETA1]) -
+                                sinf(integrator.integral[INTEGRAL_IDX_THETA2]);
 
-    // motors_set_velocity(integral[INTEGRAL_IDX_ETA3], integral[INTEGRAL_IDX_ETA5]);
-    servos_set_position(integral[INTEGRAL_IDX_PHI1], integral[INTEGRAL_IDX_THETA1], setpoint_phi2,
-                        integral[INTEGRAL_IDX_THETA2]);
+    motors_set_velocity(integrator.integral[INTEGRAL_IDX_ETA3],
+                        integrator.integral[INTEGRAL_IDX_ETA5]);
+    servos_set_position(integrator.integral[INTEGRAL_IDX_PHI1],
+                        integrator.integral[INTEGRAL_IDX_THETA1], setpoint_phi2,
+                        integrator.integral[INTEGRAL_IDX_THETA2]);
 }
 
-static void serialize(cmp_ctx_t *cmp, void *context) {
+static void trajectory_serialize(cmp_ctx_t *cmp, void *context) {
     (void)context;
 
-    cmp_write_map(cmp, 4);
-    cmp_write_str(cmp, "started", 7);
-    cmp_write_bool(cmp, started);
-    cmp_write_str(cmp, "time", 4);
-    cmp_write_float(cmp, controller_time);
-    cmp_write_str(cmp, "trajectory", 10);
     cmp_write_map(cmp, 5);
-    cmp_write_str(cmp, "nodes_dt", 8);
-    cmp_write_float(cmp, trajectory_dt);
-    cmp_write_str(cmp, "nodes_total", 11);
-    cmp_write_u32(cmp, trajectory_total);
-    cmp_write_str(cmp, "pos", 3);
+    cmp_write_str(cmp, "dt", 2);
+    cmp_write_float(cmp, trajectory.dt);
+    cmp_write_str(cmp, "total", 5);
+    cmp_write_u32(cmp, trajectory.total);
+    cmp_write_str(cmp, "hd", 2);
     cmp_write_array(cmp, TRAJECTORY_DIM);
     for(uint32_t i = 0; i < TRAJECTORY_DIM; i++) {
-        cmp_write_float(cmp, controller_hd[i]);
+        cmp_write_float(cmp, controller.hd[i]);
     }
-    cmp_write_str(cmp, "vel", 3);
+    cmp_write_str(cmp, "d_hd", 4);
     cmp_write_array(cmp, TRAJECTORY_DIM);
     for(uint32_t i = 0; i < TRAJECTORY_DIM; i++) {
-        cmp_write_float(cmp, controller_d_hd[i]);
+        cmp_write_float(cmp, controller.d_hd[i]);
     }
-    cmp_write_str(cmp, "acc", 3);
+    cmp_write_str(cmp, "d2_hd", 5);
     cmp_write_array(cmp, TRAJECTORY_DIM);
     for(uint32_t i = 0; i < TRAJECTORY_DIM; i++) {
-        cmp_write_float(cmp, controller_d2_hd[i]);
+        cmp_write_float(cmp, controller.d2_hd[i]);
     }
+}
+
+static void controller_serialize(cmp_ctx_t *cmp, void *context) {
+    (void)context;
+
+    cmp_write_map(cmp, 5);
+
+    cmp_write_str(cmp, "started", 7);
+    cmp_write_bool(cmp, controller.started);
+    cmp_write_str(cmp, "time", 4);
+    cmp_write_float(cmp, controller.time);
+    cmp_write_str(cmp, "h", 1);
+    cmp_write_array(cmp, 5);
+    for(uint32_t i = 0; i < 5; i++) {
+        cmp_write_float(cmp, controller.h[i]);
+    }
+    cmp_write_str(cmp, "d_h", 3);
+    cmp_write_array(cmp, 5);
+    for(uint32_t i = 0; i < 5; i++) {
+        cmp_write_float(cmp, controller.d_h[i]);
+    }
+
+    cmp_write_str(cmp, "integrator", 10);
+    cmp_write_map(cmp, 2);
     cmp_write_str(cmp, "integral", 8);
     cmp_write_array(cmp, INTEGRAL_DIM);
     for(uint32_t i = 0; i < INTEGRAL_DIM; i++) {
-        cmp_write_float(cmp, integral[i]);
+        cmp_write_float(cmp, integrator.integral[i]);
+    }
+    cmp_write_str(cmp, "input", 5);
+    cmp_write_array(cmp, INTEGRAL_DIM);
+    for(uint32_t i = 0; i < INTEGRAL_DIM; i++) {
+        cmp_write_float(cmp, integrator.input[i]);
     }
 }
 
-STREAM_REGISTER("trajectory_read", trajectory_read)
+STREAM_REGISTER("trajectory_read", trajectory_read_start)
 STREAM_REGISTER("trajectory_write", trajectory_write)
-STREAM_REGISTER("trajectory_continue", trajectory_continue)
-WATCHDOG_REGISTER(trajectory_abort)
-TASK_REGISTER_PERIODIC(read, 10000)
-TASK_REGISTER_PERIODIC(loop, 100)
-TELEMETRY_REGISTER("controller", serialize, NULL)
+STREAM_REGISTER("controller_continue", controller_continue)
+WATCHDOG_REGISTER(controller_abort)
+TASK_REGISTER_PERIODIC(trajectory_read_loop, 10000)
+TASK_REGISTER_PERIODIC(controller_loop, 100)
+TELEMETRY_REGISTER("trajectory", trajectory_serialize, NULL)
+TELEMETRY_REGISTER("controller", controller_serialize, NULL)

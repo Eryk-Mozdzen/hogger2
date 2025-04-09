@@ -39,7 +39,7 @@ time_0 = time.time()
 
 def periodic():
     data = {
-        'trajectory_continue': None
+        'controller_continue': None
     }
     publisher.send_json(data)
 
@@ -51,7 +51,7 @@ def reset_ekf(event):
     publisher.send_json(data)
 
 period = 10
-total = 1000
+total = 100
 traj_t = np.linspace(0, period, total)
 
 def write_trajectory(event):
@@ -175,9 +175,9 @@ def update(frame):
             translated = rotated + np.array([x, y])
             estimated.set_xy(translated)
 
-        x = telemetry['controller']['trajectory']['pos'][0]
-        y = telemetry['controller']['trajectory']['pos'][1]
-        theta = telemetry['controller']['trajectory']['pos'][2]
+        x = telemetry['trajectory']['hd'][0]
+        y = telemetry['trajectory']['hd'][1]
+        theta = telemetry['trajectory']['hd'][2]
 
         if x and y and theta:
             c, s = np.cos(theta), np.sin(theta)

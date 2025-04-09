@@ -12,6 +12,7 @@ class Window : public QWidget {
     LiveChart *motor2;
     LiveChart *optical;
     LiveChart *accel;
+    LiveChart *trajectory;
 
 private slots:
     void receive(const QJsonDocument &json);

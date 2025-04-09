@@ -105,6 +105,23 @@ Window::Window(QWidget *parent) : QWidget(parent) {
 
         layout->addWidget(accel, 1, 1);
     }
+
+    {
+        LiveChart::Config config;
+        config.title = "trajectory";
+        config.yLabel = "nie wiem";
+        config.yMin = -10;
+        config.yMax = 10;
+        config.yPrecision = 0;
+        config.yTick = 1;
+
+        trajectory = new LiveChart(config, this);
+        trajectory->addSeries("pos", QPen(Qt::red, 1, Qt::SolidLine));
+        trajectory->addSeries("vel", QPen(Qt::green, 1, Qt::SolidLine));
+        trajectory->addSeries("acc", QPen(Qt::blue, 1, Qt::SolidLine));
+
+        layout->addWidget(trajectory, 0, 2);
+    }
 }
 
 void Window::receive(const QJsonDocument &json) {
@@ -140,6 +157,11 @@ void Window::receive(const QJsonDocument &json) {
     accel->append("x", time, accel_["out"].toArray()[0].toDouble());
     accel->append("y", time, accel_["out"].toArray()[1].toDouble());
     accel->append("z", time, accel_["out"].toArray()[2].toDouble());
+
+    const QJsonObject trajectory_ = telemetry["trajectory"].toObject();
+    trajectory->append("pos", time, trajectory_["hd"].toArray()[0].toDouble());
+    trajectory->append("vel", time, trajectory_["d_hd"].toArray()[0].toDouble());
+    trajectory->append("acc", time, trajectory_["d2_hd"].toArray()[0].toDouble());
 
     LiveChart::synchronize(time);
 }
