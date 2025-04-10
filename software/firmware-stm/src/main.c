@@ -15,10 +15,10 @@ extern void MX_TIM15_Init();
 extern void MX_ADC1_Init();
 extern void MX_ADC2_Init();
 extern void MX_USART1_UART_Init();
-extern void MX_USART2_UART_Init();
 extern void MX_UART4_Init();
 extern void MX_I2C1_Init();
 extern void MX_I2C2_Init();
+extern void MX_SPI1_Init();
 extern void MX_SPI3_Init();
 extern void MX_ICACHE_Init();
 
@@ -40,10 +40,10 @@ int main() {
     MX_ADC1_Init();
     MX_ADC2_Init();
     MX_USART1_UART_Init();
-    MX_USART2_UART_Init();
     MX_UART4_Init();
     MX_I2C1_Init();
     MX_I2C2_Init();
+    MX_SPI1_Init();
     MX_SPI3_Init();
     MX_ICACHE_Init();
 

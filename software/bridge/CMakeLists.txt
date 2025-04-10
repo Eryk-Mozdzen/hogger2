@@ -4,6 +4,11 @@ project(bridge)
 
 add_executable(${PROJECT_NAME}
 	"main.c"
+	"../common/cmp/cmp.c"
+)
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+    "../common"
 )
 
 target_compile_options(${PROJECT_NAME} PRIVATE
@@ -16,4 +21,5 @@ target_compile_options(${PROJECT_NAME} PRIVATE
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
 	zmq
+	cjson
 )
