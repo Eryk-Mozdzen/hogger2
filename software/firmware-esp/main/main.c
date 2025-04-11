@@ -21,54 +21,51 @@
 #define GPIO_CS        7
 #define GPIO_HANDSHAKE 10
 
-#define WIFI_SSID        "Hogger^2"
-#define WIFI_PASSWORD    "12345678"
-#define RX_PORT          3333
-#define TX_PORT          4444
-#define BUFFER_SIZE      (32 * 1024)
-#define TRANSACTION_SIZE 2048
-#define HEADER_SIZE      sizeof(uint32_t)
-#define PAYLOAD_SIZE     (TRANSACTION_SIZE - HEADER_SIZE)
+#define WIFI_SSID     "Hogger^2"
+#define WIFI_PASSWORD "12345678"
+#define RX_PORT       3333
+#define TX_PORT       4444
+#define BUFFER_SIZE   (32 * 1024)
+
+#define SPI_TRANSACTION_SIZE 2048
+#define SPI_HEADER_SIZE      sizeof(uint16_t)
+#define SPI_PAYLOAD_SIZE     (SPI_TRANSACTION_SIZE - SPI_HEADER_SIZE)
 
 typedef struct {
-    uint8_t rx_buffer[TRANSACTION_SIZE];
-    uint8_t tx_buffer[TRANSACTION_SIZE];
+    uint8_t rx_buffer[SPI_TRANSACTION_SIZE];
+    uint8_t tx_buffer[SPI_TRANSACTION_SIZE];
 
-    uint32_t rx_size;
-    uint32_t tx_size;
+    uint16_t rx_size;
+    uint16_t tx_size;
 
-    SemaphoreHandle_t lock;
-    lrcp_stream_t stream;
-
+    lrcp_stream_t base;
     QueueHandle_t rx_queue;
     QueueHandle_t tx_queue;
-} slave_t;
+    SemaphoreHandle_t lock;
+} spi_t;
 
 typedef struct {
     uint8_t *buffer;
     size_t capacity;
     size_t size;
     size_t position;
-} buffer_t;
+} cmp_buffer_t;
 
-static slave_t slave;
+static spi_t spi;
 
-static uint8_t decoder_buffer[BUFFER_SIZE];
-static lrcp_decoder_t decoder;
-
-static void slave_transaction_setup(spi_slave_transaction_t *transaction) {
+static void spi_transaction_setup(spi_slave_transaction_t *transaction) {
     (void)transaction;
 
     BaseType_t mustYield = pdFALSE;
 
-    for(slave.tx_size = 0; slave.tx_size < PAYLOAD_SIZE; slave.tx_size++) {
-        if(!xQueueReceiveFromISR(slave.tx_queue, &slave.tx_buffer[HEADER_SIZE + slave.tx_size],
+    for(spi.tx_size = 0; spi.tx_size < SPI_PAYLOAD_SIZE; spi.tx_size++) {
+        if(!xQueueReceiveFromISR(spi.tx_queue, &spi.tx_buffer[SPI_HEADER_SIZE + spi.tx_size],
                                  &mustYield)) {
             break;
         }
     }
 
-    memcpy(slave.tx_buffer, &slave.tx_size, HEADER_SIZE);
+    memcpy(spi.tx_buffer, &spi.tx_size, SPI_HEADER_SIZE);
 
     gpio_set_level(GPIO_HANDSHAKE, 1);
 
@@ -77,19 +74,19 @@ static void slave_transaction_setup(spi_slave_transaction_t *transaction) {
     }
 }
 
-static void slave_transaction_end(spi_slave_transaction_t *transaction) {
+static void spi_transaction_end(spi_slave_transaction_t *transaction) {
     (void)transaction;
 
-    memcpy(&slave.rx_size, slave.rx_buffer, HEADER_SIZE);
+    memcpy(&spi.rx_size, spi.rx_buffer, SPI_HEADER_SIZE);
 
-    if(slave.rx_size > PAYLOAD_SIZE) {
-        slave.rx_size = PAYLOAD_SIZE;
+    if(spi.rx_size > SPI_PAYLOAD_SIZE) {
+        spi.rx_size = SPI_PAYLOAD_SIZE;
     }
 
     BaseType_t mustYield = pdFALSE;
 
-    for(uint32_t i = 0; i < slave.rx_size; i++) {
-        xQueueSendFromISR(slave.rx_queue, &slave.rx_buffer[HEADER_SIZE + i], &mustYield);
+    for(uint32_t i = 0; i < spi.rx_size; i++) {
+        xQueueSendFromISR(spi.rx_queue, &spi.rx_buffer[SPI_HEADER_SIZE + i], &mustYield);
     }
 
     gpio_set_level(GPIO_HANDSHAKE, 0);
@@ -99,11 +96,11 @@ static void slave_transaction_end(spi_slave_transaction_t *transaction) {
     }
 }
 
-static uint32_t slave_reader(void *context, void *data, const uint32_t data_capacity) {
+static uint32_t spi_stream_reader(void *context, void *data, const uint32_t data_capacity) {
     (void)context;
 
     for(uint32_t i = 0; i < data_capacity; i++) {
-        if(!xQueueReceive(slave.rx_queue, &((uint8_t *)data)[i], 0)) {
+        if(!xQueueReceive(spi.rx_queue, &((uint8_t *)data)[i], 0)) {
             return i;
         }
     }
@@ -111,11 +108,11 @@ static uint32_t slave_reader(void *context, void *data, const uint32_t data_capa
     return data_capacity;
 }
 
-static uint32_t slave_writer(void *context, const void *data, const uint32_t data_size) {
+static uint32_t spi_stream_writer(void *context, const void *data, const uint32_t data_size) {
     (void)context;
 
     for(uint32_t i = 0; i < data_size; i++) {
-        if(!xQueueSend(slave.tx_queue, &((uint8_t *)data)[i], 0)) {
+        if(!xQueueSend(spi.tx_queue, &((uint8_t *)data)[i], 0)) {
             return i;
         }
     }
@@ -123,12 +120,26 @@ static uint32_t slave_writer(void *context, const void *data, const uint32_t dat
     return data_size;
 }
 
-static void slave_init() {
-    lrcp_stream_init(&slave.stream, NULL, slave_reader, slave_writer);
+static void spi_task(void *arg) {
+    ESP_LOGI("app", "SPI task started");
 
-    slave.rx_queue = xQueueCreate(BUFFER_SIZE, 1);
-    slave.tx_queue = xQueueCreate(BUFFER_SIZE, 1);
-    slave.lock = xSemaphoreCreateMutex();
+    spi_slave_transaction_t transaction = {
+        .length = SPI_TRANSACTION_SIZE * 8,
+        .tx_buffer = &spi.tx_buffer,
+        .rx_buffer = &spi.rx_buffer,
+    };
+
+    while(1) {
+        spi_slave_transmit(SPI2_HOST, &transaction, portMAX_DELAY);
+    }
+}
+
+static void spi_init() {
+    lrcp_stream_init(&spi.base, NULL, spi_stream_reader, spi_stream_writer);
+
+    spi.rx_queue = xQueueCreate(BUFFER_SIZE, 1);
+    spi.tx_queue = xQueueCreate(BUFFER_SIZE, 1);
+    spi.lock = xSemaphoreCreateMutex();
 
     const spi_bus_config_t buscfg = {
         .mosi_io_num = GPIO_MOSI,
@@ -136,7 +147,7 @@ static void slave_init() {
         .sclk_io_num = GPIO_SCK,
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
-        .max_transfer_sz = TRANSACTION_SIZE,
+        .max_transfer_sz = SPI_TRANSACTION_SIZE,
     };
 
     const spi_slave_interface_config_t slvcfg = {
@@ -144,8 +155,8 @@ static void slave_init() {
         .spics_io_num = GPIO_CS,
         .queue_size = 8,
         .flags = 0,
-        .post_setup_cb = slave_transaction_setup,
-        .post_trans_cb = slave_transaction_end,
+        .post_setup_cb = spi_transaction_setup,
+        .post_trans_cb = spi_transaction_end,
     };
 
     const gpio_config_t gpiocfg = {
@@ -155,26 +166,10 @@ static void slave_init() {
 
     spi_slave_initialize(SPI2_HOST, &buscfg, &slvcfg, SPI_DMA_CH_AUTO);
     gpio_config(&gpiocfg);
-
-    ESP_LOGI("app", "slave started");
 }
 
-static void slave_task(void *arg) {
-    ESP_LOGI("app", "slave task started");
-
-    spi_slave_transaction_t transaction = {
-        .length = TRANSACTION_SIZE * 8,
-        .tx_buffer = &slave.tx_buffer,
-        .rx_buffer = &slave.rx_buffer,
-    };
-
-    while(1) {
-        spi_slave_transmit(SPI2_HOST, &transaction, portMAX_DELAY);
-    }
-}
-
-static size_t buffer_writer(cmp_ctx_t *ctx, const void *data, size_t count) {
-    buffer_t *buf = (buffer_t *)ctx->buf;
+static size_t cmp_buffer_writer(cmp_ctx_t *ctx, const void *data, size_t count) {
+    cmp_buffer_t *buf = (cmp_buffer_t *)ctx->buf;
 
     if((buf->position + count) > buf->capacity) {
         return 0;
@@ -187,67 +182,21 @@ static size_t buffer_writer(cmp_ctx_t *ctx, const void *data, size_t count) {
     return count;
 }
 
-static void blink_task(void *params) {
-    (void)params;
-
-    const gpio_config_t cfg = {
-        .pin_bit_mask = BIT64(GPIO_LED),
-        .mode = GPIO_MODE_OUTPUT,
-    };
-
-    gpio_config(&cfg);
-
-    bool led = false;
-
-    ESP_LOGI("app", "blink task started");
-
-    while(1) {
-        led = !led;
-
-        uint8_t buf[128];
-
-        buffer_t buffer = {
-            .buffer = buf,
-            .capacity = sizeof(buf),
-            .size = 0,
-            .position = 0,
-        };
-        cmp_ctx_t cmp;
-        cmp_init(&cmp, &buffer, NULL, NULL, buffer_writer);
-
-        cmp_write_map(&cmp, 1);
-        cmp_write_str(&cmp, "blink", 5);
-        cmp_write_bool(&cmp, led);
-
-        if(xSemaphoreTake(slave.lock, portMAX_DELAY)) {
-            lrcp_frame_encode(&slave.stream, buffer.buffer, buffer.size);
-            xSemaphoreGive(slave.lock);
-        }
-
-        gpio_set_level(GPIO_LED, led);
-        vTaskDelay(pdMS_TO_TICKS(led ? 100 : 900));
-    }
-}
-
-static void udp_transmitter_task(void *params) {
+static void wifi_transmitter_task(void *params) {
     (void)params;
 
     const int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
-    if(sock < 0) {
-        ESP_LOGE("udp", "Failed to create socket");
-        return;
-    }
 
     int broadcast = 1;
     setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast));
 
     esp_netif_ip_info_t ip_info;
     esp_netif_t *netif_sta = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
-    if(!netif_sta || esp_netif_get_ip_info(netif_sta, &ip_info) != ESP_OK) {
-        ESP_LOGE("app", "Failed to get IP/netmask info");
-        close(sock);
-        return;
-    }
+    esp_netif_get_ip_info(netif_sta, &ip_info);
+
+    static uint8_t decoded[BUFFER_SIZE];
+    lrcp_decoder_t decoder;
+    lrcp_frame_decoder_init(&decoder);
 
     struct sockaddr_in dest_addr = {
         .sin_family = AF_INET,
@@ -255,25 +204,20 @@ static void udp_transmitter_task(void *params) {
         .sin_addr.s_addr = (ip_info.ip.addr & ip_info.netmask.addr) | (~ip_info.netmask.addr),
     };
 
-    lrcp_frame_decoder_init(&decoder);
-
     uint32_t last = xTaskGetTickCount();
 
-    ESP_LOGI("app", "UDP transmitter started on port %d", TX_PORT);
+    ESP_LOGI("app", "WIFI transmitter started on port %d", TX_PORT);
 
     while(1) {
-        if(xSemaphoreTake(slave.lock, portMAX_DELAY)) {
-            const uint32_t size =
-                lrcp_frame_decode(&slave.stream, &decoder, decoder_buffer, sizeof(decoder_buffer));
-
-            xSemaphoreGive(slave.lock);
+        if(xSemaphoreTake(spi.lock, portMAX_DELAY)) {
+            const uint32_t size = lrcp_frame_decode(&spi.base, &decoder, decoded, sizeof(decoded));
+            xSemaphoreGive(spi.lock);
 
             if(size > 0) {
                 last = xTaskGetTickCount();
 
                 // ESP_LOGI("app", "SPI -> %lu -> socket", size);
-                sendto(sock, decoder_buffer, size, 0, (struct sockaddr *)&dest_addr,
-                       sizeof(dest_addr));
+                sendto(sock, decoded, size, 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
             }
         }
 
@@ -282,14 +226,14 @@ static void udp_transmitter_task(void *params) {
 
             uint8_t buf[128];
 
-            buffer_t buffer = {
+            cmp_buffer_t buffer = {
                 .buffer = buf,
                 .capacity = sizeof(buf),
                 .size = 0,
                 .position = 0,
             };
             cmp_ctx_t cmp;
-            cmp_init(&cmp, &buffer, NULL, NULL, buffer_writer);
+            cmp_init(&cmp, &buffer, NULL, NULL, cmp_buffer_writer);
 
             cmp_write_map(&cmp, 1);
             cmp_write_str(&cmp, "host_timeout", 12);
@@ -303,14 +247,13 @@ static void udp_transmitter_task(void *params) {
     }
 }
 
-static void udp_receiver_task(void *pvParameters) {
+static void wifi_receiver_task(void *pvParameters) {
     const int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
-    struct sockaddr_in addr = {
+    const struct sockaddr_in addr = {
         .sin_family = AF_INET,
         .sin_port = htons(RX_PORT),
         .sin_addr.s_addr = htonl(INADDR_ANY),
     };
-
     bind(sock, (struct sockaddr *)&addr, sizeof(addr));
 
     static char buffer[BUFFER_SIZE];
@@ -320,7 +263,7 @@ static void udp_receiver_task(void *pvParameters) {
 
     uint32_t last = xTaskGetTickCount();
 
-    ESP_LOGI("app", "UDP receiver started on port %d", RX_PORT);
+    ESP_LOGI("app", "WIFI receiver started on port %d", RX_PORT);
 
     while(1) {
         const int size =
@@ -330,9 +273,9 @@ static void udp_receiver_task(void *pvParameters) {
             last = xTaskGetTickCount();
 
             // ESP_LOGI("app", "SPI <- %d <- socket", size);
-            if(xSemaphoreTake(slave.lock, portMAX_DELAY)) {
-                lrcp_frame_encode(&slave.stream, buffer, size);
-                xSemaphoreGive(slave.lock);
+            if(xSemaphoreTake(spi.lock, portMAX_DELAY)) {
+                lrcp_frame_encode(&spi.base, buffer, size);
+                xSemaphoreGive(spi.lock);
             }
         }
 
@@ -341,20 +284,23 @@ static void udp_receiver_task(void *pvParameters) {
 
             uint8_t buf[128];
 
-            buffer_t buffer = {
+            cmp_buffer_t buffer = {
                 .buffer = buf,
                 .capacity = sizeof(buf),
                 .size = 0,
                 .position = 0,
             };
             cmp_ctx_t cmp;
-            cmp_init(&cmp, &buffer, NULL, NULL, buffer_writer);
+            cmp_init(&cmp, &buffer, NULL, NULL, cmp_buffer_writer);
 
             cmp_write_map(&cmp, 1);
             cmp_write_str(&cmp, "stop", 4);
             cmp_write_nil(&cmp);
 
-            lrcp_frame_encode(&slave.stream, buffer.buffer, buffer.size);
+            if(xSemaphoreTake(spi.lock, portMAX_DELAY)) {
+                lrcp_frame_encode(&spi.base, buffer.buffer, buffer.size);
+                xSemaphoreGive(spi.lock);
+            }
         }
 
         vTaskDelay(1);
@@ -374,8 +320,8 @@ static void wifi_event(void *arg, esp_event_base_t event_base, int32_t event_id,
         ESP_LOGI("wifi", "connected to AP ssid: \"%s\" password: \"%s\"", WIFI_SSID, WIFI_PASSWORD);
         ESP_LOGI("wifi", "got ip: " IPSTR, IP2STR(&event->ip_info.ip));
 
-        xTaskCreate(udp_transmitter_task, "udp broadcast", 4096, NULL, 5, NULL);
-        xTaskCreate(udp_receiver_task, "udp server", 16384, NULL, 5, NULL);
+        xTaskCreate(wifi_transmitter_task, "WIFI transmitter", 4096, NULL, 5, NULL);
+        xTaskCreate(wifi_receiver_task, "WIFI receiver", 16384, NULL, 5, NULL);
     }
 }
 
@@ -407,6 +353,48 @@ static void wifi_init() {
     ESP_ERROR_CHECK(esp_wifi_start());
 }
 
+static void blink_task(void *params) {
+    (void)params;
+
+    const gpio_config_t cfg = {
+        .pin_bit_mask = BIT64(GPIO_LED),
+        .mode = GPIO_MODE_OUTPUT,
+    };
+
+    gpio_config(&cfg);
+
+    bool led = false;
+
+    ESP_LOGI("app", "blink task started");
+
+    while(1) {
+        led = !led;
+
+        uint8_t buf[128];
+
+        cmp_buffer_t buffer = {
+            .buffer = buf,
+            .capacity = sizeof(buf),
+            .size = 0,
+            .position = 0,
+        };
+        cmp_ctx_t cmp;
+        cmp_init(&cmp, &buffer, NULL, NULL, cmp_buffer_writer);
+
+        cmp_write_map(&cmp, 1);
+        cmp_write_str(&cmp, "blink", 5);
+        cmp_write_bool(&cmp, led);
+
+        if(xSemaphoreTake(spi.lock, portMAX_DELAY)) {
+            lrcp_frame_encode(&spi.base, buffer.buffer, buffer.size);
+            xSemaphoreGive(spi.lock);
+        }
+
+        gpio_set_level(GPIO_LED, led);
+        vTaskDelay(pdMS_TO_TICKS(led ? 100 : 900));
+    }
+}
+
 void app_main() {
     const esp_err_t result = nvs_flash_init();
     if((result == ESP_ERR_NVS_NO_FREE_PAGES) || (result == ESP_ERR_NVS_NEW_VERSION_FOUND)) {
@@ -414,9 +402,9 @@ void app_main() {
         ESP_ERROR_CHECK(nvs_flash_init());
     }
 
-    slave_init();
+    spi_init();
     wifi_init();
 
+    xTaskCreate(spi_task, "SPI task", 8192, NULL, 5, NULL);
     xTaskCreate(blink_task, "blink", 8192, NULL, 5, NULL);
-    xTaskCreate(slave_task, "slave", 8192, NULL, 5, NULL);
 }

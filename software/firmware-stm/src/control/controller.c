@@ -71,7 +71,7 @@ static void trajectory_read_loop() {
     cmp_write_map(&response.cmp, 2);
     cmp_write_str(&response.cmp, "index", 5);
     cmp_write_u32(&response.cmp, trajectory.read_index);
-    cmp_write_str(&response.cmp, "node", 5);
+    cmp_write_str(&response.cmp, "node", 4);
     cmp_write_array(&response.cmp, TRAJECTORY_DIM * TRAJECTORY_DERIV);
 
     const float *node =
@@ -103,57 +103,32 @@ static void trajectory_write(mpack_t *mpack) {
         return;
     }
 
-    uint32_t start = 0;
+    uint32_t index = 0;
 
     for(uint32_t i = 0; i < map_size; i++) {
-        char key[32];
+        char key[32] = {0};
         uint32_t key_size = sizeof(key);
         if(!cmp_read_str(&mpack->cmp, key, &key_size)) {
             return;
         }
 
         if(strncmp(key, "total", key_size) == 0) {
-            float val = 0;
-            if(!cmp_read_float(&mpack->cmp, &val)) {
+            if(!mpack_read_uint32(mpack, &trajectory.total)) {
                 return;
             }
-            trajectory.total = val;
         } else if(strncmp(key, "dt", key_size) == 0) {
-            if(!cmp_read_float(&mpack->cmp, &trajectory.dt)) {
+            if(!mpack_read_float32(mpack, &trajectory.dt)) {
                 return;
             }
-        } else if(strncmp(key, "start", key_size) == 0) {
-            float val = 0;
-            if(!cmp_read_float(&mpack->cmp, &val)) {
+        } else if(strncmp(key, "index", key_size) == 0) {
+            if(!mpack_read_uint32(mpack, &index)) {
                 return;
             }
-            start = val;
-        } else if(strncmp(key, "nodes", key_size) == 0) {
-            uint32_t array_size = 0;
-            if(!cmp_read_array(&mpack->cmp, &array_size)) {
+        } else if(strncmp(key, "node", key_size) == 0) {
+            float *node = &trajectory.nodes[index * TRAJECTORY_DIM * TRAJECTORY_DERIV];
+
+            if(!mpack_read_float32_array(mpack, node, TRAJECTORY_DIM * TRAJECTORY_DERIV)) {
                 return;
-            }
-
-            for(uint8_t j = 0; j < array_size; j++) {
-                float *node = &trajectory.nodes[(start + j) * TRAJECTORY_DIM * TRAJECTORY_DERIV];
-
-                uint32_t inner_array_size = 0;
-                if(!cmp_read_array(&mpack->cmp, &inner_array_size)) {
-                    return;
-                }
-
-                if(inner_array_size != (TRAJECTORY_DIM * TRAJECTORY_DERIV)) {
-                    return;
-                }
-
-                for(uint8_t k = 0; k < inner_array_size; k++) {
-                    float val = 0;
-                    if(!cmp_read_float(&mpack->cmp, &val)) {
-                        return;
-                    }
-
-                    node[k] = val;
-                }
             }
         }
     }
