@@ -6,7 +6,6 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 #include <freertos/task.h>
-#include <freertos/timers.h>
 #include <lrcp/frame.h>
 #include <lrcp/stream.h>
 #include <netdb.h>
@@ -15,26 +14,31 @@
 #include <string.h>
 #include <sys/socket.h>
 
+#define GPIO_LED       0
+#define GPIO_MOSI      4
+#define GPIO_MISO      5
+#define GPIO_SCK       6
+#define GPIO_CS        7
+#define GPIO_HANDSHAKE 10
+
 #define WIFI_SSID        "Hogger^2"
 #define WIFI_PASSWORD    "12345678"
 #define RX_PORT          3333
 #define TX_PORT          4444
-#define BUFFER_SIZE      (10 * 1024)
+#define BUFFER_SIZE      (32 * 1024)
 #define TRANSACTION_SIZE 2048
 #define HEADER_SIZE      sizeof(uint32_t)
 #define PAYLOAD_SIZE     (TRANSACTION_SIZE - HEADER_SIZE)
 
 typedef struct {
-    uint8_t decoder_buffer[BUFFER_SIZE];
     uint8_t rx_buffer[TRANSACTION_SIZE];
     uint8_t tx_buffer[TRANSACTION_SIZE];
 
-    uint32_t rx_buffer_size;
-    uint32_t tx_buffer_size;
+    uint32_t rx_size;
+    uint32_t tx_size;
 
     SemaphoreHandle_t lock;
     lrcp_stream_t stream;
-    lrcp_decoder_t decoder;
 
     QueueHandle_t rx_queue;
     QueueHandle_t tx_queue;
@@ -47,47 +51,51 @@ typedef struct {
     size_t position;
 } buffer_t;
 
-static TimerHandle_t host_watchdog;
-static TimerHandle_t station_watchdog;
-
 static slave_t slave;
 
-static int s_retry_num = 0;
+static uint8_t decoder_buffer[BUFFER_SIZE];
+static lrcp_decoder_t decoder;
 
-static void slave_transaction_start(spi_slave_transaction_t *transaction) {
+static void slave_transaction_setup(spi_slave_transaction_t *transaction) {
     (void)transaction;
 
-    memset(slave.rx_buffer, 0, sizeof(slave.rx_buffer));
-    memset(slave.tx_buffer, 0, sizeof(slave.tx_buffer));
+    BaseType_t mustYield = pdFALSE;
 
-    slave.rx_buffer_size = 0;
-    slave.tx_buffer_size = 0;
-
-    for(slave.tx_buffer_size = 0; slave.tx_buffer_size < PAYLOAD_SIZE; slave.tx_buffer_size++) {
-        BaseType_t pxHigherPriorityTaskWoken = pdFALSE;
-        if(!xQueueReceiveFromISR(slave.tx_queue,
-                                 &slave.tx_buffer[HEADER_SIZE + slave.tx_buffer_size],
-                                 &pxHigherPriorityTaskWoken)) {
+    for(slave.tx_size = 0; slave.tx_size < PAYLOAD_SIZE; slave.tx_size++) {
+        if(!xQueueReceiveFromISR(slave.tx_queue, &slave.tx_buffer[HEADER_SIZE + slave.tx_size],
+                                 &mustYield)) {
             break;
         }
     }
 
-    memcpy(slave.tx_buffer, &slave.tx_buffer_size, HEADER_SIZE);
+    memcpy(slave.tx_buffer, &slave.tx_size, HEADER_SIZE);
+
+    gpio_set_level(GPIO_HANDSHAKE, 1);
+
+    if(mustYield) {
+        portYIELD_FROM_ISR();
+    }
 }
 
 static void slave_transaction_end(spi_slave_transaction_t *transaction) {
     (void)transaction;
 
-    memcpy(&slave.rx_buffer_size, slave.rx_buffer, HEADER_SIZE);
+    memcpy(&slave.rx_size, slave.rx_buffer, HEADER_SIZE);
 
-    if(slave.rx_buffer_size > PAYLOAD_SIZE) {
-        slave.rx_buffer_size = PAYLOAD_SIZE;
+    if(slave.rx_size > PAYLOAD_SIZE) {
+        slave.rx_size = PAYLOAD_SIZE;
     }
 
-    for(uint32_t i = 0; i < slave.rx_buffer_size; i++) {
-        BaseType_t pxHigherPriorityTaskWoken = pdFALSE;
-        xQueueSendFromISR(slave.rx_queue, &slave.rx_buffer[HEADER_SIZE + i],
-                          &pxHigherPriorityTaskWoken);
+    BaseType_t mustYield = pdFALSE;
+
+    for(uint32_t i = 0; i < slave.rx_size; i++) {
+        xQueueSendFromISR(slave.rx_queue, &slave.rx_buffer[HEADER_SIZE + i], &mustYield);
+    }
+
+    gpio_set_level(GPIO_HANDSHAKE, 0);
+
+    if(mustYield) {
+        portYIELD_FROM_ISR();
     }
 }
 
@@ -117,16 +125,15 @@ static uint32_t slave_writer(void *context, const void *data, const uint32_t dat
 
 static void slave_init() {
     lrcp_stream_init(&slave.stream, NULL, slave_reader, slave_writer);
-    lrcp_frame_decoder_init(&slave.decoder);
 
     slave.rx_queue = xQueueCreate(BUFFER_SIZE, 1);
     slave.tx_queue = xQueueCreate(BUFFER_SIZE, 1);
     slave.lock = xSemaphoreCreateMutex();
 
     const spi_bus_config_t buscfg = {
-        .mosi_io_num = 4,
-        .miso_io_num = 5,
-        .sclk_io_num = 6,
+        .mosi_io_num = GPIO_MOSI,
+        .miso_io_num = GPIO_MISO,
+        .sclk_io_num = GPIO_SCK,
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
         .max_transfer_sz = TRANSACTION_SIZE,
@@ -134,19 +141,25 @@ static void slave_init() {
 
     const spi_slave_interface_config_t slvcfg = {
         .mode = 0,
-        .spics_io_num = 7,
-        .queue_size = 64,
+        .spics_io_num = GPIO_CS,
+        .queue_size = 8,
         .flags = 0,
-        .post_setup_cb = slave_transaction_start,
+        .post_setup_cb = slave_transaction_setup,
         .post_trans_cb = slave_transaction_end,
     };
 
+    const gpio_config_t gpiocfg = {
+        .pin_bit_mask = BIT64(GPIO_HANDSHAKE),
+        .mode = GPIO_MODE_OUTPUT,
+    };
+
     spi_slave_initialize(SPI2_HOST, &buscfg, &slvcfg, SPI_DMA_CH_AUTO);
+    gpio_config(&gpiocfg);
 
     ESP_LOGI("app", "slave started");
 }
 
-void slave_task(void *arg) {
+static void slave_task(void *arg) {
     ESP_LOGI("app", "slave task started");
 
     spi_slave_transaction_t transaction = {
@@ -160,32 +173,7 @@ void slave_task(void *arg) {
     }
 }
 
-bool buffer_reader(cmp_ctx_t *ctx, void *data, size_t count) {
-    buffer_t *buf = (buffer_t *)ctx->buf;
-
-    if((buf->position + count) > buf->capacity) {
-        return false;
-    }
-
-    memcpy(data, buf->buffer + buf->position, count);
-    buf->position += count;
-
-    return true;
-}
-
-bool buffer_skipper(cmp_ctx_t *ctx, size_t count) {
-    buffer_t *buf = (buffer_t *)ctx->buf;
-
-    if((buf->position + count) > buf->capacity) {
-        return false;
-    }
-
-    buf->position += count;
-
-    return true;
-}
-
-size_t buffer_writer(cmp_ctx_t *ctx, const void *data, size_t count) {
+static size_t buffer_writer(cmp_ctx_t *ctx, const void *data, size_t count) {
     buffer_t *buf = (buffer_t *)ctx->buf;
 
     if((buf->position + count) > buf->capacity) {
@@ -202,9 +190,12 @@ size_t buffer_writer(cmp_ctx_t *ctx, const void *data, size_t count) {
 static void blink_task(void *params) {
     (void)params;
 
-    gpio_reset_pin(0);
-    gpio_set_direction(0, GPIO_MODE_OUTPUT);
-    gpio_set_level(0, 0);
+    const gpio_config_t cfg = {
+        .pin_bit_mask = BIT64(GPIO_LED),
+        .mode = GPIO_MODE_OUTPUT,
+    };
+
+    gpio_config(&cfg);
 
     bool led = false;
 
@@ -233,12 +224,12 @@ static void blink_task(void *params) {
             xSemaphoreGive(slave.lock);
         }
 
-        gpio_set_level(0, led);
+        gpio_set_level(GPIO_LED, led);
         vTaskDelay(pdMS_TO_TICKS(led ? 100 : 900));
     }
 }
 
-static void udp_broadcast_task(void *params) {
+static void udp_transmitter_task(void *params) {
     (void)params;
 
     const int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
@@ -264,84 +255,127 @@ static void udp_broadcast_task(void *params) {
         .sin_addr.s_addr = (ip_info.ip.addr & ip_info.netmask.addr) | (~ip_info.netmask.addr),
     };
 
-    ESP_LOGI("app", "UDP broadcast on port %d", TX_PORT);
+    lrcp_frame_decoder_init(&decoder);
+
+    uint32_t last = xTaskGetTickCount();
+
+    ESP_LOGI("app", "UDP transmitter started on port %d", TX_PORT);
 
     while(1) {
         if(xSemaphoreTake(slave.lock, portMAX_DELAY)) {
-            const uint32_t size = lrcp_frame_decode(
-                &slave.stream, &slave.decoder, slave.decoder_buffer, sizeof(slave.decoder_buffer));
+            const uint32_t size =
+                lrcp_frame_decode(&slave.stream, &decoder, decoder_buffer, sizeof(decoder_buffer));
 
             xSemaphoreGive(slave.lock);
 
             if(size > 0) {
-                xTimerReset(host_watchdog, portMAX_DELAY);
+                last = xTaskGetTickCount();
 
-                sendto(sock, slave.decoder_buffer, size, 0, (struct sockaddr *)&dest_addr,
+                // ESP_LOGI("app", "SPI -> %lu -> socket", size);
+                sendto(sock, decoder_buffer, size, 0, (struct sockaddr *)&dest_addr,
                        sizeof(dest_addr));
-
-                // ESP_LOGI("app", "lrcp rx size %lu", size);
             }
+        }
+
+        if((xTaskGetTickCount() - last) >= 100) {
+            last = xTaskGetTickCount();
+
+            uint8_t buf[128];
+
+            buffer_t buffer = {
+                .buffer = buf,
+                .capacity = sizeof(buf),
+                .size = 0,
+                .position = 0,
+            };
+            cmp_ctx_t cmp;
+            cmp_init(&cmp, &buffer, NULL, NULL, buffer_writer);
+
+            cmp_write_map(&cmp, 1);
+            cmp_write_str(&cmp, "host_timeout", 12);
+            cmp_write_nil(&cmp);
+
+            sendto(sock, buffer.buffer, buffer.size, 0, (struct sockaddr *)&dest_addr,
+                   sizeof(dest_addr));
         }
 
         vTaskDelay(1);
     }
 }
 
-static void udp_server_task(void *pvParameters) {
+static void udp_receiver_task(void *pvParameters) {
     const int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
     struct sockaddr_in addr = {
-        .sin_family = AF_INET, .sin_port = htons(RX_PORT), .sin_addr.s_addr = htonl(INADDR_ANY)};
+        .sin_family = AF_INET,
+        .sin_port = htons(RX_PORT),
+        .sin_addr.s_addr = htonl(INADDR_ANY),
+    };
 
     bind(sock, (struct sockaddr *)&addr, sizeof(addr));
 
-    char buffer[BUFFER_SIZE];
+    static char buffer[BUFFER_SIZE];
 
     struct sockaddr_storage source_addr;
     socklen_t addr_len = sizeof(source_addr);
 
-    ESP_LOGI("app", "UDP server started on port %d", RX_PORT);
+    uint32_t last = xTaskGetTickCount();
+
+    ESP_LOGI("app", "UDP receiver started on port %d", RX_PORT);
 
     while(1) {
         const int size =
             recvfrom(sock, buffer, sizeof(buffer), 0, (struct sockaddr *)&source_addr, &addr_len);
 
         if(size > 0) {
-            xTimerReset(station_watchdog, portMAX_DELAY);
+            last = xTaskGetTickCount();
 
+            // ESP_LOGI("app", "SPI <- %d <- socket", size);
             if(xSemaphoreTake(slave.lock, portMAX_DELAY)) {
                 lrcp_frame_encode(&slave.stream, buffer, size);
                 xSemaphoreGive(slave.lock);
             }
+        }
 
-            // ESP_LOGI("app", "lrcp tx size %d", size);
+        if((xTaskGetTickCount() - last) >= 100) {
+            last = xTaskGetTickCount();
+
+            uint8_t buf[128];
+
+            buffer_t buffer = {
+                .buffer = buf,
+                .capacity = sizeof(buf),
+                .size = 0,
+                .position = 0,
+            };
+            cmp_ctx_t cmp;
+            cmp_init(&cmp, &buffer, NULL, NULL, buffer_writer);
+
+            cmp_write_map(&cmp, 1);
+            cmp_write_str(&cmp, "stop", 4);
+            cmp_write_nil(&cmp);
+
+            lrcp_frame_encode(&slave.stream, buffer.buffer, buffer.size);
         }
 
         vTaskDelay(1);
     }
-
-    close(sock);
-    vTaskDelete(NULL);
 }
 
 static void wifi_event(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
     if(event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
         esp_wifi_connect();
     } else if(event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
-        if(s_retry_num < 10) {
-            esp_wifi_connect();
-            s_retry_num++;
-            ESP_LOGI("wifi", "retry to connect to the AP");
-        }
+        esp_wifi_connect();
+        ESP_LOGI("wifi", "retry to connect to AP ssid: \"%s\" password: \"%s\"", WIFI_SSID,
+                 WIFI_PASSWORD);
     } else if(event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         const ip_event_got_ip_t *event = event_data;
 
-        s_retry_num = 0;
-
-        ESP_LOGI("wifi", "got ip: " IPSTR, IP2STR(&event->ip_info.ip));
         ESP_LOGI("wifi", "connected to AP ssid: \"%s\" password: \"%s\"", WIFI_SSID, WIFI_PASSWORD);
+        ESP_LOGI("wifi", "got ip: " IPSTR, IP2STR(&event->ip_info.ip));
 
-        xTaskCreate(udp_broadcast_task, "udp broadcast", 4096, NULL, 5, NULL);
-        xTaskCreate(udp_server_task, "udp server", 16384, NULL, 5, NULL);
+        xTaskCreate(udp_transmitter_task, "udp broadcast", 4096, NULL, 5, NULL);
+        xTaskCreate(udp_receiver_task, "udp server", 16384, NULL, 5, NULL);
     }
 }
 
@@ -373,35 +407,6 @@ static void wifi_init() {
     ESP_ERROR_CHECK(esp_wifi_start());
 }
 
-static void host_timeout(TimerHandle_t timer) {
-    (void)timer;
-
-    // ESP_LOGW("app", "host timeout");
-}
-
-static void station_timeout(TimerHandle_t timer) {
-    (void)timer;
-
-    uint8_t buf[128];
-
-    buffer_t buffer = {
-        .buffer = buf,
-        .capacity = sizeof(buf),
-        .size = 0,
-        .position = 0,
-    };
-    cmp_ctx_t cmp;
-    cmp_init(&cmp, &buffer, NULL, NULL, buffer_writer);
-
-    cmp_write_map(&cmp, 1);
-    cmp_write_str(&cmp, "stop", 4);
-    cmp_write_nil(&cmp);
-
-    lrcp_frame_encode(&slave.stream, buffer.buffer, buffer.size);
-
-    // ESP_LOGW("app", "station timeout");
-}
-
 void app_main() {
     const esp_err_t result = nvs_flash_init();
     if((result == ESP_ERR_NVS_NO_FREE_PAGES) || (result == ESP_ERR_NVS_NEW_VERSION_FOUND)) {
@@ -412,12 +417,6 @@ void app_main() {
     slave_init();
     wifi_init();
 
-    host_watchdog = xTimerCreate("host wdg", pdMS_TO_TICKS(1000), true, NULL, host_timeout);
-    station_watchdog = xTimerCreate("sta wdg", pdMS_TO_TICKS(1000), true, NULL, station_timeout);
-
-    xTimerStart(host_watchdog, portMAX_DELAY);
-    xTimerStart(station_watchdog, portMAX_DELAY);
-
-    xTaskCreate(blink_task, "blink", 4096, NULL, 5, NULL);
+    xTaskCreate(blink_task, "blink", 8192, NULL, 5, NULL);
     xTaskCreate(slave_task, "slave", 8192, NULL, 5, NULL);
 }

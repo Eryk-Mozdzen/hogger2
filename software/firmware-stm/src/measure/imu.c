@@ -39,9 +39,6 @@ static void isr_data_received(I2C_HandleTypeDef *hi2c) {
 }
 
 static void init() {
-    interrupt_register(isr_data_ready, IMU_INT_Pin);
-    HAL_I2C_RegisterCallback(&hi2c2, HAL_I2C_MEM_RX_COMPLETE_CB_ID, isr_data_received);
-
     mpu6050_write(MPU6050_REG_PWR_MGMT_1, MPU6050_PWR_MGMT_1_DEVICE_RESET);
 
     HAL_Delay(10);
@@ -72,6 +69,9 @@ static void init() {
     mpu6050_write(MPU6050_REG_GYRO_CONFIG, MPU6050_GYRO_CONFIG_RANGE_500DPS);
 
     mpu6050_write(MPU6050_REG_SMPLRT_DIV, 0);
+
+    HAL_I2C_RegisterCallback(&hi2c2, HAL_I2C_MEM_RX_COMPLETE_CB_ID, isr_data_received);
+    interrupt_register(isr_data_ready, IMU_INT_Pin);
 }
 
 static void process() {

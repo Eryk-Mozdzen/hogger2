@@ -14,6 +14,15 @@ typedef struct {
     size_t position;
 } buffer_t;
 
+typedef struct {
+    char ip[32];
+    size_t rx_msgs;
+    size_t tx_msgs;
+    size_t rx_bytes;
+    size_t tx_bytes;
+    pthread_mutex_t mutex;
+} statistics_data_t;
+
 static bool buffer_reader(cmp_ctx_t *ctx, void *data, size_t count) {
     buffer_t *buf = (buffer_t *)ctx->buf;
 
@@ -150,8 +159,8 @@ static cJSON *msgpack_to_json(cmp_ctx_t *cmp) {
     return cJSON_CreateNull();
 }
 
-static void *udp_receiver(void *args) {
-    (void)args;
+static void *receiver(void *args) {
+    statistics_data_t *data = args;
 
     const int sock = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -172,6 +181,11 @@ static void *udp_receiver(void *args) {
     while(1) {
         const ssize_t size =
             recvfrom(sock, buffer_rx, sizeof(buffer_rx), 0, (struct sockaddr *)&addr, &addr_len);
+
+        pthread_mutex_lock(&data->mutex);
+        data->rx_msgs++;
+        data->rx_bytes += size;
+        pthread_mutex_unlock(&data->mutex);
 
         buffer_t buffer = {
             .buffer = (uint8_t *)buffer_rx,
@@ -201,8 +215,8 @@ static void *udp_receiver(void *args) {
     return NULL;
 }
 
-static void *udp_transmitter(void *args) {
-    (void)args;
+static void *transmitter(void *args) {
+    statistics_data_t *data = args;
 
     const int sock = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -225,8 +239,6 @@ static void *udp_transmitter(void *args) {
             continue;
         }
 
-        printf("%.*s\n\r", size, buffer_rx);
-
         cJSON *json = cJSON_Parse(buffer_rx);
         if(!json) {
             continue;
@@ -243,6 +255,11 @@ static void *udp_transmitter(void *args) {
 
         json_to_msgpack(&cmp, json);
 
+        pthread_mutex_lock(&data->mutex);
+        data->tx_msgs++;
+        data->tx_bytes += buffer.size;
+        pthread_mutex_unlock(&data->mutex);
+
         sendto(sock, buffer.buffer, buffer.size, 0, (struct sockaddr *)&send_addr,
                sizeof(send_addr));
 
@@ -255,13 +272,57 @@ static void *udp_transmitter(void *args) {
     return NULL;
 }
 
+static void *statistics(void *args) {
+    statistics_data_t *data = args;
+
+    printf("\033[2J\033[H");
+
+    while(1) {
+        pthread_mutex_lock(&data->mutex);
+
+        const float upload = (float)data->rx_bytes / 1024.f;
+        const float download = (float)data->tx_bytes / 1024.f;
+
+        printf("\0337");
+        printf("\033[1;1H");
+        printf("\033[K");
+        printf("------------------------------------------------\n");
+        printf("  upload: %8.3f kB/s %6lu msg/s\n", upload, data->rx_msgs);
+        printf("download: %8.3f kB/s %6lu msg/s\n", download, data->tx_msgs);
+        printf("------------------------------------------------\n");
+        printf("\0338");
+        fflush(stdout);
+
+        data->rx_msgs = 0;
+        data->tx_msgs = 0;
+        data->rx_bytes = 0;
+        data->tx_bytes = 0;
+
+        pthread_mutex_unlock(&data->mutex);
+
+        sleep(1);
+    }
+
+    return NULL;
+}
+
 int main() {
-    pthread_t receiver;
-    pthread_t transmitter;
+    pthread_t thread_receiver;
+    pthread_t thread_transmitter;
+    pthread_t thread_statistics;
 
-    pthread_create(&receiver, NULL, udp_receiver, NULL);
-    pthread_create(&transmitter, NULL, udp_transmitter, NULL);
+    statistics_data_t data = {0};
+    pthread_mutex_init(&data.mutex, NULL);
 
-    pthread_join(receiver, NULL);
-    pthread_join(transmitter, NULL);
+    pthread_create(&thread_receiver, NULL, receiver, &data);
+    pthread_create(&thread_transmitter, NULL, transmitter, &data);
+    pthread_create(&thread_statistics, NULL, statistics, &data);
+
+    pthread_join(thread_receiver, NULL);
+    pthread_join(thread_transmitter, NULL);
+    pthread_join(thread_statistics, NULL);
+
+    pthread_mutex_destroy(&data.mutex);
+
+    return 0;
 }
