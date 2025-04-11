@@ -5,7 +5,7 @@
 
 static void manual(mpack_t *mpack) {
     float manual[6];
-    if(mpack_read_array(mpack, manual, 6)) {
+    if(mpack_read_float32_array(mpack, manual, 6)) {
         watchdog_reset();
 
         motors_set_velocity(manual[2], manual[5]);

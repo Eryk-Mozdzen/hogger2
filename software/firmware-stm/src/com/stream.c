@@ -1,112 +1,82 @@
 #include <lrcp/frame.h>
 #include <lrcp/stream.h>
+#include <main.h>
 #include <stm32h5xx_hal.h>
 #include <string.h>
 
 #include "com/stream.h"
+#include "utils/interrupt.h"
 #include "utils/mpack.h"
 #include "utils/task.h"
 
-#define MAX_REGISTERED   16
-#define RX_TIME_WATCHDOG 1000
+#define MAX_REGISTERED 16
 
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define SPI_TRANSACTION_SIZE 2048
+#define SPI_HEADER_SIZE      sizeof(uint16_t)
+#define SPI_PAYLOAD_SIZE     (SPI_TRANSACTION_SIZE - SPI_HEADER_SIZE)
 
-extern UART_HandleTypeDef huart2;
+extern SPI_HandleTypeDef hspi1;
 
 typedef struct {
-    uint8_t buffer[10 * 1024];
-    volatile uint32_t read;
-    volatile uint32_t write;
-} serial_fifo_t;
+    uint8_t buffer[32 * 1024];
+    uint32_t read;
+    uint32_t write;
+} fifo_t;
 
-static lrcp_stream_t stream;
-static lrcp_decoder_t decoder;
-static serial_fifo_t fifo_rx;
-static serial_fifo_t fifo_tx;
-static volatile uint32_t transmission;
-static uint32_t time_last_rx;
+typedef struct {
+    uint8_t rx_buffer[SPI_TRANSACTION_SIZE];
+    uint8_t tx_buffer[SPI_TRANSACTION_SIZE];
+
+    uint16_t rx_size;
+    uint16_t tx_size;
+
+    lrcp_stream_t base;
+    fifo_t fifo_rx;
+    fifo_t fifo_tx;
+
+    volatile uint32_t handshake;
+    volatile uint32_t complete;
+} stream_t;
 
 typedef struct {
     const char *type;
     stream_receiver_t receiver;
 } registered_t;
 
+static stream_t stream;
+static lrcp_decoder_t decoder;
+static uint8_t decoded[32 * 1024];
+
 static registered_t registered[MAX_REGISTERED] = {0};
 static uint32_t count = 0;
 
-static inline uint32_t fifo_pending(const serial_fifo_t *fifo) {
+static inline uint32_t fifo_pending(const fifo_t *fifo) {
     return ((fifo->read > fifo->write ? sizeof(fifo->buffer) : 0) + fifo->write) - fifo->read;
 }
 
-static uint32_t reader(void *context, void *data, const uint32_t data_capacity) {
+static uint32_t stream_reader(void *context, void *data, const uint32_t data_capacity) {
     (void)context;
     uint32_t i;
 
-    for(i = 0; fifo_pending(&fifo_rx) && i < data_capacity; i++) {
-        ((uint8_t *)data)[i] = fifo_rx.buffer[fifo_rx.read];
-        fifo_rx.read++;
-        fifo_rx.read %= sizeof(fifo_rx.buffer);
+    for(i = 0; fifo_pending(&stream.fifo_rx) && i < data_capacity; i++) {
+        ((uint8_t *)data)[i] = stream.fifo_rx.buffer[stream.fifo_rx.read];
+        stream.fifo_rx.read++;
+        stream.fifo_rx.read %= sizeof(stream.fifo_rx.buffer);
     }
 
     return i;
 }
 
-static uint32_t writer(void *context, const void *data, const uint32_t data_size) {
+static uint32_t stream_writer(void *context, const void *data, const uint32_t data_size) {
     (void)context;
 
     for(uint32_t i = 0; i < data_size; i++) {
-        fifo_tx.buffer[fifo_tx.write] = ((const uint8_t *)data)[i];
-        fifo_tx.write++;
-        fifo_tx.write %= sizeof(fifo_tx.buffer);
+        stream.fifo_tx.buffer[stream.fifo_tx.write] = ((const uint8_t *)data)[i];
+        stream.fifo_tx.write++;
+        stream.fifo_tx.write %= sizeof(stream.fifo_tx.buffer);
     }
 
     return data_size;
-}
-
-static void tick() {
-    const uint32_t time = HAL_GetTick();
-    const uint32_t rx_position =
-        (sizeof(fifo_rx.buffer) - __HAL_DMA_GET_COUNTER(huart2.hdmarx)) % sizeof(fifo_rx.buffer);
-
-    if(rx_position != fifo_rx.write) {
-        time_last_rx = time;
-    }
-
-    fifo_rx.write = rx_position;
-
-    if((time - time_last_rx) >= RX_TIME_WATCHDOG) {
-        time_last_rx = time;
-        HAL_UART_Receive_DMA(&huart2, fifo_rx.buffer, sizeof(fifo_rx.buffer));
-    }
-
-    const uint32_t tx_pending = fifo_pending(&fifo_tx);
-
-    if(!transmission && tx_pending) {
-        const uint32_t len = MIN(tx_pending, sizeof(fifo_tx.buffer) - fifo_tx.read);
-
-        transmission = 1;
-        HAL_UART_Transmit_DMA(&huart2, &fifo_tx.buffer[fifo_tx.read], len);
-        fifo_tx.read += len;
-        fifo_tx.read %= sizeof(fifo_tx.buffer);
-    }
-}
-
-static void isr_transmit(UART_HandleTypeDef *huart) {
-    (void)huart;
-
-    transmission = 0;
-
-    const uint32_t tx_pending = fifo_pending(&fifo_tx);
-
-    if(tx_pending) {
-        const uint32_t len = MIN(tx_pending, sizeof(fifo_tx.buffer) - fifo_tx.read);
-
-        transmission = 1;
-        HAL_UART_Transmit_DMA(&huart2, &fifo_tx.buffer[fifo_tx.read], len);
-        fifo_tx.read += len;
-        fifo_tx.read %= sizeof(fifo_tx.buffer);
-    }
 }
 
 void stream_register(const char *type, const stream_receiver_t receiver) {
@@ -116,49 +86,98 @@ void stream_register(const char *type, const stream_receiver_t receiver) {
 }
 
 void stream_transmit(const mpack_t *mpack) {
-    lrcp_frame_encode(&stream, mpack->buffer, mpack->size);
+    lrcp_frame_encode(&stream.base, mpack->buffer, mpack->size);
 }
 
-static void init() {
-    HAL_UART_RegisterCallback(&huart2, HAL_UART_TX_COMPLETE_CB_ID, isr_transmit);
+static void stream_decode() {
+    while(1) {
+        const uint32_t size = lrcp_frame_decode(&stream.base, &decoder, decoded, sizeof(decoded));
 
-    lrcp_stream_init(&stream, NULL, reader, writer);
-    lrcp_frame_decoder_init(&decoder);
-
-    time_last_rx = 0;
-    transmission = 0;
-
-    fifo_rx.read = 0;
-    fifo_rx.write = 0;
-    fifo_tx.read = 0;
-    fifo_tx.write = 0;
-
-    HAL_UART_Receive_DMA(&huart2, fifo_rx.buffer, sizeof(fifo_rx.buffer));
-}
-
-static void loop() {
-    tick();
-
-    static uint8_t decoded[2048];
-    const uint32_t size = lrcp_frame_decode(&stream, &decoder, decoded, sizeof(decoded));
-
-    mpack_t mpack;
-    if(mpack_create_from(&mpack, decoded, size)) {
-        char type[32] = {0};
-        uint32_t type_size = sizeof(type);
-        if(!cmp_read_str(&mpack.cmp, type, &type_size)) {
+        if(!size) {
             return;
         }
 
-        for(uint32_t i = 0; i < count; i++) {
-            if((strncmp(type, registered[i].type, type_size) == 0) && registered[i].receiver) {
-                mpack_t copy;
-                mpack_copy(&copy, &mpack);
-                registered[i].receiver(&copy);
+        mpack_t mpack;
+        if(mpack_create_from(&mpack, decoded, size)) {
+            char type[32] = {0};
+            uint32_t type_size = sizeof(type);
+            if(!cmp_read_str(&mpack.cmp, type, &type_size)) {
+                return;
+            }
+
+            for(uint32_t i = 0; i < count; i++) {
+                if((strncmp(type, registered[i].type, type_size) == 0) && registered[i].receiver) {
+                    mpack_t copy;
+                    mpack_copy(&copy, &mpack);
+                    registered[i].receiver(&copy);
+                }
             }
         }
     }
 }
 
+static void transaction_handshake() {
+    stream.handshake = 1;
+}
+
+static void transaction_start() {
+    for(stream.tx_size = 0; (stream.tx_size < SPI_PAYLOAD_SIZE) && fifo_pending(&stream.fifo_tx);
+        stream.tx_size++) {
+        stream.tx_buffer[SPI_HEADER_SIZE + stream.tx_size] =
+            stream.fifo_tx.buffer[stream.fifo_tx.read];
+        stream.fifo_tx.read++;
+        stream.fifo_tx.read %= sizeof(stream.fifo_tx.buffer);
+    }
+
+    memcpy(stream.tx_buffer, &stream.tx_size, SPI_HEADER_SIZE);
+
+    HAL_GPIO_WritePin(ESP_CS_GPIO_Port, ESP_CS_Pin, 0);
+    HAL_SPI_TransmitReceive_DMA(&hspi1, stream.tx_buffer, stream.rx_buffer, SPI_TRANSACTION_SIZE);
+}
+
+static void transaction_complete(SPI_HandleTypeDef *hspi) {
+    (void)hspi;
+
+    HAL_GPIO_WritePin(ESP_CS_GPIO_Port, ESP_CS_Pin, 1);
+
+    memcpy(&stream.rx_size, stream.rx_buffer, SPI_HEADER_SIZE);
+
+    if(stream.rx_size > SPI_PAYLOAD_SIZE) {
+        stream.rx_size = SPI_PAYLOAD_SIZE;
+    }
+
+    stream.complete = 1;
+}
+
+static void transaction_finalize() {
+    for(uint32_t i = 0; i < stream.rx_size; i++) {
+        stream.fifo_rx.buffer[stream.fifo_rx.write] = stream.rx_buffer[SPI_HEADER_SIZE + i];
+        stream.fifo_rx.write++;
+        stream.fifo_rx.write %= sizeof(stream.fifo_rx.buffer);
+    }
+}
+
+static void init() {
+    lrcp_stream_init(&stream.base, NULL, stream_reader, stream_writer);
+    lrcp_frame_decoder_init(&decoder);
+
+    stream.fifo_rx.read = 0;
+    stream.fifo_rx.write = 0;
+    stream.fifo_tx.read = 0;
+    stream.fifo_tx.write = 0;
+
+    stream.complete = 0;
+
+    HAL_GPIO_WritePin(ESP_EN_GPIO_Port, ESP_EN_Pin, 0);
+    HAL_Delay(100);
+    HAL_GPIO_WritePin(ESP_EN_GPIO_Port, ESP_EN_Pin, 1);
+    HAL_Delay(100);
+
+    HAL_SPI_RegisterCallback(&hspi1, HAL_SPI_TX_RX_COMPLETE_CB_ID, transaction_complete);
+    interrupt_register(transaction_handshake, ESP_HANDSHAKE_Pin);
+}
+
 TASK_REGISTER_INIT(init)
-TASK_REGISTER_PERIODIC(loop, 1000)
+TASK_REGISTER_PERIODIC(stream_decode, 1000)
+TASK_REGISTER_INTERRUPT(transaction_start, &stream.handshake)
+TASK_REGISTER_INTERRUPT(transaction_finalize, &stream.complete)

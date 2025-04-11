@@ -36,9 +36,6 @@ static void isr_data_received(I2C_HandleTypeDef *hi2c) {
 }
 
 static void init() {
-    interrupt_register(isr_data_ready, MAG_INT_Pin);
-    HAL_I2C_RegisterCallback(&hi2c1, HAL_I2C_MEM_RX_COMPLETE_CB_ID, isr_data_received);
-
     hmc5883l_write(QMC5883L_REG_CONTROL_2, QMC5883L_CONFIG_2_SOFT_RST);
 
     HAL_Delay(100);
@@ -50,6 +47,9 @@ static void init() {
     hmc5883l_write(QMC5883L_REG_CONTROL_1, QMC5883L_CONFIG_1_OSR_512 | QMC5883L_CONFIG_1_RNG_8G |
                                                QMC5883L_CONFIG_1_ODR_200HZ |
                                                QMC5883L_CONFIG_1_MODE_CONTINOUS);
+
+    HAL_I2C_RegisterCallback(&hi2c1, HAL_I2C_MEM_RX_COMPLETE_CB_ID, isr_data_received);
+    interrupt_register(isr_data_ready, MAG_INT_Pin);
 }
 
 static void process() {
