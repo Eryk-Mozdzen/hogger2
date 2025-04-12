@@ -7,14 +7,14 @@
 #include "generated/estimator.h"
 #include "utils/task.h"
 
-#define CONTROLLER_K1 2.f
-#define CONTROLLER_K2 3.f
-
-#define TRAJECTORY_NODES 1000
-#define TRAJECTORY_DIM   5
-#define TRAJECTORY_DERIV 3
-
-#define INTEGRAL_DIM 7
+#define DEG2RAD            (PI / 180.f)
+#define RAD2DEG            (180.f / PI)
+#define CONTROLLER_K1      2.f
+#define CONTROLLER_K2      3.f
+#define INTEGRAL_DIM       7
+#define GENERATOR_PARAMS   10
+#define TRAJECTORY_READ_DT 0.1f
+#define TRAJECTORY_READ_T  10.f
 
 typedef enum {
     INTEGRAL_IDX_PHI1,
@@ -26,13 +26,14 @@ typedef enum {
     INTEGRAL_IDX_PSI2,
 } integral_idx_t;
 
+typedef void (*generator_t)(float *, float *, float *, const float);
+
 typedef struct {
-    float nodes[TRAJECTORY_NODES * TRAJECTORY_DIM * TRAJECTORY_DERIV];
-    float dt;
-    uint32_t total;
+    generator_t generator;
+    float params[GENERATOR_PARAMS];
 
     bool read_started;
-    uint32_t read_index;
+    float read_time;
 } trajectory_t;
 
 typedef struct {
@@ -57,6 +58,82 @@ static trajectory_t trajectory = {0};
 static controller_t controller = {0};
 static integrator_t integrator = {0};
 
+static float angle_fix(float angle) {
+    while(angle > (270 * DEG2RAD)) {
+        angle -= 2 * PI;
+    }
+
+    while(angle < (-90 * DEG2RAD)) {
+        angle += 2 * PI;
+    }
+
+    return angle;
+}
+
+static void generator_circle(float *hd, float *d_hd, float *d2_hd, const float t) {
+    const float x = trajectory.params[0];
+    const float y = trajectory.params[1];
+    const float r = trajectory.params[2];
+    const float T = trajectory.params[3];
+    const float w = 2 * PI / T;
+
+    hd[0] = x + r * cos(w * t);
+    hd[1] = y + r * sin(w * t);
+    hd[2] = w * t + PI / 2 - PI / 4; // very important -pi/4 !!!
+    hd[3] = -300 * t;
+    hd[4] = +300 * t;
+
+    d_hd[0] = -r * w * sin(w * t);
+    d_hd[1] = r * w * cos(w * t);
+    d_hd[2] = w;
+    d_hd[3] = -300;
+    d_hd[4] = +300;
+
+    d2_hd[0] = -r * w * w * cos(w * t);
+    d2_hd[1] = -r * w * w * sin(w * t);
+    d2_hd[2] = 0;
+    d2_hd[3] = 0;
+    d2_hd[4] = 0;
+}
+
+static void generator_lemniscate(float *hd, float *d_hd, float *d2_hd, const float t) {
+    const float a = trajectory.params[0];
+    const float T = trajectory.params[1];
+    const float w = 2 * PI / T;
+
+    hd[0] = a * cos(t * w) / (pow(sin(t * w), 2) + 1);
+    hd[1] = a * sin(t * w) * cos(t * w) / (pow(sin(t * w), 2) + 1);
+    hd[2] = angle_fix(
+        atan2(-a * w * pow(sin(t * w), 2) / (pow(sin(t * w), 2) + 1) +
+                  a * w * pow(cos(t * w), 2) / (pow(sin(t * w), 2) + 1) -
+                  2 * a * w * pow(sin(t * w), 2) * pow(cos(t * w), 2) /
+                      pow(pow(sin(t * w), 2) + 1, 2),
+              -a * w * sin(t * w) / (pow(sin(t * w), 2) + 1) -
+                  2 * a * w * sin(t * w) * pow(cos(t * w), 2) / pow(pow(sin(t * w), 2) + 1, 2)) -
+        PI / 4); // very important -pi/4 !!!
+    hd[3] = -300 * t;
+    hd[4] = +300 * t;
+
+    d_hd[0] = a * w * (pow(sin(t * w), 2) - 3) * sin(t * w) / pow(pow(sin(t * w), 2) + 1, 2);
+    d_hd[1] = a * w * (1 - 3 * pow(sin(t * w), 2)) / pow(pow(sin(t * w), 2) + 1, 2);
+    d_hd[2] = 3 * w * cos(t * w) / (pow(sin(t * w), 2) + 1);
+    d_hd[3] = -300;
+    d_hd[4] = +300;
+
+    d2_hd[0] = a * pow(w, 2) * (-pow(sin(t * w), 4) + 12 * pow(sin(t * w), 2) - 3) * cos(t * w) /
+               pow(pow(sin(t * w), 2) + 1, 3);
+    d2_hd[1] =
+        2 * a * pow(w, 2) * (14 * sin(2 * t * w) + 3 * sin(4 * t * w)) / pow(cos(2 * t * w) - 3, 3);
+    d2_hd[2] = pow(w, 2) *
+               (-19 * pow(sin(t * w), 10) + 31 * pow(sin(t * w), 8) + 17 * pow(sin(t * w), 6) -
+                33 * pow(sin(t * w), 4) * pow(cos(t * w), 6) - 41 * pow(sin(t * w), 4) -
+                10 * pow(sin(t * w), 2) + 14 * pow(cos(t * w), 10) - 2 * pow(cos(t * w), 8) -
+                19 * pow(cos(t * w), 6) - 2) *
+               sin(t * w) / pow(pow(sin(t * w), 2) + 1, 4);
+    d2_hd[3] = 0;
+    d2_hd[4] = 0;
+}
+
 static void trajectory_read_loop() {
     if(!trajectory.read_started) {
         return;
@@ -69,23 +146,24 @@ static void trajectory_read_loop() {
 
     cmp_write_str(&response.cmp, "trajectory", 10);
     cmp_write_map(&response.cmp, 2);
-    cmp_write_str(&response.cmp, "index", 5);
-    cmp_write_u32(&response.cmp, trajectory.read_index);
+    cmp_write_str(&response.cmp, "time", 4);
+    cmp_write_float(&response.cmp, trajectory.read_time);
     cmp_write_str(&response.cmp, "node", 4);
-    cmp_write_array(&response.cmp, TRAJECTORY_DIM * TRAJECTORY_DERIV);
+    cmp_write_array(&response.cmp, 15);
 
-    const float *node =
-        &trajectory.nodes[trajectory.read_index * TRAJECTORY_DIM * TRAJECTORY_DERIV];
-
-    for(uint32_t j = 0; j < (TRAJECTORY_DIM * TRAJECTORY_DERIV); j++) {
-        cmp_write_float(&response.cmp, node[j]);
+    float node[15] = {0};
+    if(trajectory.generator) {
+        trajectory.generator(&node[0], &node[5], &node[10], trajectory.read_time);
+    }
+    for(uint32_t i = 0; i < 15; i++) {
+        cmp_write_float(&response.cmp, node[i]);
     }
 
     stream_transmit(&response);
 
-    trajectory.read_index++;
+    trajectory.read_time += TRAJECTORY_READ_DT;
 
-    if(trajectory.read_index >= trajectory.total) {
+    if(trajectory.read_time >= TRAJECTORY_READ_T) {
         trajectory.read_started = false;
     }
 }
@@ -94,7 +172,7 @@ static void trajectory_read_start(mpack_t *mpack) {
     (void)mpack;
 
     trajectory.read_started = true;
-    trajectory.read_index = 0;
+    trajectory.read_time = 0;
 }
 
 static void trajectory_write(mpack_t *mpack) {
@@ -103,8 +181,6 @@ static void trajectory_write(mpack_t *mpack) {
         return;
     }
 
-    uint32_t index = 0;
-
     for(uint32_t i = 0; i < map_size; i++) {
         char key[32] = {0};
         uint32_t key_size = sizeof(key);
@@ -112,95 +188,21 @@ static void trajectory_write(mpack_t *mpack) {
             return;
         }
 
-        if(strncmp(key, "total", key_size) == 0) {
-            if(!mpack_read_uint32(mpack, &trajectory.total)) {
+        if(strncmp(key, "generator", key_size) == 0) {
+            char name[32] = {0};
+            if(!mpack_read_str(mpack, name, sizeof(name))) {
                 return;
             }
-        } else if(strncmp(key, "dt", key_size) == 0) {
-            if(!mpack_read_float32(mpack, &trajectory.dt)) {
-                return;
+            if(strcmp(name, "circle") == 0) {
+                trajectory.generator = generator_circle;
+            } else if(strcmp(name, "lemniscate") == 0) {
+                trajectory.generator = generator_lemniscate;
             }
-        } else if(strncmp(key, "index", key_size) == 0) {
-            if(!mpack_read_uint32(mpack, &index)) {
-                return;
-            }
-        } else if(strncmp(key, "node", key_size) == 0) {
-            float *node = &trajectory.nodes[index * TRAJECTORY_DIM * TRAJECTORY_DERIV];
-
-            if(!mpack_read_float32_array(mpack, node, TRAJECTORY_DIM * TRAJECTORY_DERIV)) {
+        } else if(strncmp(key, "params", key_size) == 0) {
+            if(!mpack_read_float32_array(mpack, trajectory.params, GENERATOR_PARAMS)) {
                 return;
             }
         }
-    }
-}
-
-static void trajectory_interpolate(float *hd, float *d_hd, float *d2_hd, const float t) {
-    // quintic Hermite interpolation
-
-    const float T_total = (trajectory.total - 1) * trajectory.dt;
-    const float t_mod = fmodf(t, T_total);
-
-    uint32_t seg = (uint32_t)(t_mod / trajectory.dt);
-
-    if(seg >= trajectory.total - 1) {
-        seg = trajectory.total - 2;
-    }
-
-    const float t0 = seg * trajectory.dt;
-    const float local_t = t_mod - t0;
-    const float tau = local_t / trajectory.dt;
-
-    const float tau2 = tau * tau;
-    const float tau3 = tau2 * tau;
-    const float tau4 = tau3 * tau;
-    const float tau5 = tau4 * tau;
-
-    const float h00 = 1.0f - 10.0f * tau3 + 15.0f * tau4 - 6.0f * tau5;
-    const float h10 = tau - 6.0f * tau3 + 8.0f * tau4 - 3.0f * tau5;
-    const float h20 = 0.5f * tau2 - 1.5f * tau3 + 1.5f * tau4 - 0.5f * tau5;
-    const float h01 = 10.0f * tau3 - 15.0f * tau4 + 6.0f * tau5;
-    const float h11 = -4.0f * tau3 + 7.0f * tau4 - 3.0f * tau5;
-    const float h21 = 0.5f * tau3 - tau4 + 0.5f * tau5;
-
-    const float dh00 = -30.0f * tau2 + 60.0f * tau3 - 30.0f * tau4;
-    const float dh10 = 1.0f - 18.0f * tau2 + 32.0f * tau3 - 15.0f * tau4;
-    const float dh20 = tau - 4.5f * tau2 + 6.0f * tau3 - 2.5f * tau4;
-    const float dh01 = 30.0f * tau2 - 60.0f * tau3 + 30.0f * tau4;
-    const float dh11 = -12.0f * tau2 + 28.0f * tau3 - 15.0f * tau4;
-    const float dh21 = 1.5f * tau2 - 4.0f * tau3 + 2.5f * tau4;
-
-    const float d2h00 = -60.0f * tau + 180.0f * tau2 - 120.0f * tau3;
-    const float d2h10 = -36.0f * tau + 96.0f * tau2 - 60.0f * tau3;
-    const float d2h20 = 1.0f - 9.0f * tau + 18.0f * tau2 - 10.0f * tau3;
-    const float d2h01 = 60.0f * tau - 180.0f * tau2 + 120.0f * tau3;
-    const float d2h11 = -24.0f * tau + 84.0f * tau2 - 60.0f * tau3;
-    const float d2h21 = 3.0f * tau - 12.0f * tau2 + 10.0f * tau3;
-
-    const float *p0 = &trajectory.nodes[seg * TRAJECTORY_DIM * TRAJECTORY_DERIV];
-    const float *p1 = &trajectory.nodes[(seg + 1) * TRAJECTORY_DIM * TRAJECTORY_DERIV];
-
-    const float T = trajectory.dt;
-    const float T2 = T * T;
-
-    for(uint32_t i = 0; i < TRAJECTORY_DIM; i++) {
-        const float pos0 = p0[0 * TRAJECTORY_DIM + i];
-        const float vel0 = p0[1 * TRAJECTORY_DIM + i];
-        const float acc0 = p0[2 * TRAJECTORY_DIM + i];
-
-        const float pos1 = p1[0 * TRAJECTORY_DIM + i];
-        const float vel1 = p1[1 * TRAJECTORY_DIM + i];
-        const float acc1 = p1[2 * TRAJECTORY_DIM + i];
-
-        hd[i] = h00 * pos0 + (T * h10) * vel0 + (T2 * h20) * acc0 + h01 * pos1 + (T * h11) * vel1 +
-                (T2 * h21) * acc1;
-
-        const float dP_dtau = dh00 * pos0 + (T * dh10) * vel0 + (T2 * dh20) * acc0 + dh01 * pos1 +
-                              (T * dh11) * vel1 + (T2 * dh21) * acc1;
-        d_hd[i] = dP_dtau / T;
-
-        const float d2P_dtau2 = d2h00 * pos0 + (T * d2h10) * vel0 + (T2 * d2h20) * acc0 +
-                                d2h01 * pos1 + (T * d2h11) * vel1 + (T2 * d2h21) * acc1;
-        d2_hd[i] = d2P_dtau2 / T2;
     }
 }
 
@@ -236,7 +238,9 @@ static void controller_loop() {
         return;
     }
 
-    trajectory_interpolate(controller.hd, controller.d_hd, controller.d2_hd, controller.time);
+    if(trajectory.generator) {
+        trajectory.generator(controller.hd, controller.d_hd, controller.d2_hd, controller.time);
+    }
 
     const float K1[25] = {
         CONTROLLER_K1, 0, 0, 0, 0, 0, CONTROLLER_K1, 0, 0, 0, 0, 0, CONTROLLER_K1, 0, 0, 0, 0, 0,
@@ -324,24 +328,20 @@ static void controller_loop() {
 static void trajectory_serialize(cmp_ctx_t *cmp, void *context) {
     (void)context;
 
-    cmp_write_map(cmp, 5);
-    cmp_write_str(cmp, "dt", 2);
-    cmp_write_float(cmp, trajectory.dt);
-    cmp_write_str(cmp, "total", 5);
-    cmp_write_u32(cmp, trajectory.total);
+    cmp_write_map(cmp, 3);
     cmp_write_str(cmp, "hd", 2);
-    cmp_write_array(cmp, TRAJECTORY_DIM);
-    for(uint32_t i = 0; i < TRAJECTORY_DIM; i++) {
+    cmp_write_array(cmp, 5);
+    for(uint32_t i = 0; i < 5; i++) {
         cmp_write_float(cmp, controller.hd[i]);
     }
     cmp_write_str(cmp, "d_hd", 4);
-    cmp_write_array(cmp, TRAJECTORY_DIM);
-    for(uint32_t i = 0; i < TRAJECTORY_DIM; i++) {
+    cmp_write_array(cmp, 5);
+    for(uint32_t i = 0; i < 5; i++) {
         cmp_write_float(cmp, controller.d_hd[i]);
     }
     cmp_write_str(cmp, "d2_hd", 5);
-    cmp_write_array(cmp, TRAJECTORY_DIM);
-    for(uint32_t i = 0; i < TRAJECTORY_DIM; i++) {
+    cmp_write_array(cmp, 5);
+    for(uint32_t i = 0; i < 5; i++) {
         cmp_write_float(cmp, controller.d2_hd[i]);
     }
 }

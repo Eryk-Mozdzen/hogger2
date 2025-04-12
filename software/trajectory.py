@@ -1,7 +1,6 @@
 import zmq
 import time
 import numpy as np
-import sympy as sp
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import matplotlib.gridspec as gridspec
@@ -14,22 +13,6 @@ subscriber.connect("tcp://localhost:6000")
 subscriber.setsockopt(zmq.SUBSCRIBE, b'')
 publisher = context.socket(zmq.PUB)
 publisher.connect("tcp://localhost:7000")
-
-t, a, f = sp.symbols('t a f')
-w = 2*np.pi*f
-x = a*sp.cos(w*t)*sp.sin(w*t)/(1 + sp.sin(w*t)**2)
-y = a*sp.cos(w*t)/(1 + sp.sin(w*t)**2)
-theta = sp.atan2(y.diff(t), x.diff(t)) - sp.pi/4
-trajectory = sp.Matrix([
-    x, y, theta,
-    x.diff(t), y.diff(t), theta.diff(t),
-    x.diff(t, 2), y.diff(t, 2), theta.diff(t, 2),
-])
-trajectory = trajectory.subs([
-    (a, 2),
-    (f, 0.1),
-])
-trajectory = sp.lambdify(t, trajectory)
 
 fig = plt.figure()
 grid = gridspec.GridSpec(17, 3)
@@ -50,40 +33,17 @@ def reset_ekf(event):
     data = {'reset': None}
     publisher.send_json(data)
 
-period = 10
-total = 100
-traj_t = np.linspace(0, period, total)
-
 def write_trajectory(event):
-    for i in range(len(traj_t)):
-        traj = np.array(trajectory(traj_t[i])).flatten()
-        data = {
-            'trajectory_write': {
-                'dt': period/total,
-                'index': i,
-                'total': total,
-                'node': [
-                    traj[0],
-                    traj[1],
-                    traj[2],
-                    -300,
-                    +300,
-                    traj[3],
-                    traj[4],
-                    traj[5],
-                    0,
-                    0,
-                    traj[6],
-                    traj[7],
-                    traj[8],
-                    0,
-                    0,
-                ],
-            },
-        }
-        publisher.send_json(data)
-        print(f'transmit {i} nodes')
-        time.sleep(0.01)
+    data = {
+        'trajectory_write': {
+            'generator': 'lemniscate',
+            'params': [
+                2,
+                10,
+            ],
+        },
+    }
+    publisher.send_json(data)
 
 def read_trajectory(event):
     data = {

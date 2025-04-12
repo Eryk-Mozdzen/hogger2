@@ -69,6 +69,13 @@ bool mpack_read_bool(mpack_t *mpack, bool *value) {
     return cmp_read_bool(&mpack->cmp, value);
 }
 
+bool mpack_read_str(mpack_t *mpack, char *value, const uint32_t size) {
+    uint32_t len = size;
+    const bool result = cmp_read_str(&mpack->cmp, value, &len);
+    value[size - 1] = '\0';
+    return result;
+}
+
 bool mpack_read_uint32(mpack_t *mpack, uint32_t *value) {
     cmp_object_t object;
     if(!cmp_read_object(&mpack->cmp, &object)) {

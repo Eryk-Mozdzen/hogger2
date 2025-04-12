@@ -209,17 +209,18 @@ static void wifi_transmitter_task(void *params) {
     ESP_LOGI("app", "WIFI transmitter started on port %d", TX_PORT);
 
     while(1) {
-        if(xSemaphoreTake(spi.lock, portMAX_DELAY)) {
-            const uint32_t size = lrcp_frame_decode(&spi.base, &decoder, decoded, sizeof(decoded));
+        uint32_t size;
+
+        do {
+            xSemaphoreTake(spi.lock, portMAX_DELAY);
+            size = lrcp_frame_decode(&spi.base, &decoder, decoded, sizeof(decoded));
             xSemaphoreGive(spi.lock);
 
             if(size > 0) {
                 last = xTaskGetTickCount();
-
-                // ESP_LOGI("app", "SPI -> %lu -> socket", size);
                 sendto(sock, decoded, size, 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
             }
-        }
+        } while(size);
 
         if((xTaskGetTickCount() - last) >= 100) {
             last = xTaskGetTickCount();
@@ -266,18 +267,19 @@ static void wifi_receiver_task(void *pvParameters) {
     ESP_LOGI("app", "WIFI receiver started on port %d", RX_PORT);
 
     while(1) {
-        const int size =
-            recvfrom(sock, buffer, sizeof(buffer), 0, (struct sockaddr *)&source_addr, &addr_len);
+        int size;
 
-        if(size > 0) {
-            last = xTaskGetTickCount();
+        do {
+            size = recvfrom(sock, buffer, sizeof(buffer), 0, (struct sockaddr *)&source_addr,
+                            &addr_len);
 
-            // ESP_LOGI("app", "SPI <- %d <- socket", size);
-            if(xSemaphoreTake(spi.lock, portMAX_DELAY)) {
+            if(size > 0) {
+                last = xTaskGetTickCount();
+                xSemaphoreTake(spi.lock, portMAX_DELAY);
                 lrcp_frame_encode(&spi.base, buffer, size);
                 xSemaphoreGive(spi.lock);
             }
-        }
+        } while(size);
 
         if((xTaskGetTickCount() - last) >= 100) {
             last = xTaskGetTickCount();
@@ -297,10 +299,9 @@ static void wifi_receiver_task(void *pvParameters) {
             cmp_write_str(&cmp, "stop", 4);
             cmp_write_nil(&cmp);
 
-            if(xSemaphoreTake(spi.lock, portMAX_DELAY)) {
-                lrcp_frame_encode(&spi.base, buffer.buffer, buffer.size);
-                xSemaphoreGive(spi.lock);
-            }
+            xSemaphoreTake(spi.lock, portMAX_DELAY);
+            lrcp_frame_encode(&spi.base, buffer.buffer, buffer.size);
+            xSemaphoreGive(spi.lock);
         }
 
         vTaskDelay(1);
@@ -385,10 +386,9 @@ static void blink_task(void *params) {
         cmp_write_str(&cmp, "blink", 5);
         cmp_write_bool(&cmp, led);
 
-        if(xSemaphoreTake(spi.lock, portMAX_DELAY)) {
-            lrcp_frame_encode(&spi.base, buffer.buffer, buffer.size);
-            xSemaphoreGive(spi.lock);
-        }
+        xSemaphoreTake(spi.lock, portMAX_DELAY);
+        lrcp_frame_encode(&spi.base, buffer.buffer, buffer.size);
+        xSemaphoreGive(spi.lock);
 
         gpio_set_level(GPIO_LED, led);
         vTaskDelay(pdMS_TO_TICKS(led ? 100 : 900));
