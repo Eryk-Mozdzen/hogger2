@@ -6,7 +6,7 @@
 	(paper "A4")
 	(title_block
 		(title "Hogger2 Controller")
-		(date "2025-03-09")
+		(date "2025-04-12")
 		(rev "V1.1")
 		(comment 4 "Author: Eryk Możdżeń")
 	)
@@ -6613,7 +6613,7 @@
 		)
 		(uuid "0b60cc45-b93a-412c-a19a-0179e3e5e0bf")
 	)
-	(label "ESP_RDY"
+	(label "ESP_HANDSHAKE"
 		(at 142.24 119.38 0)
 		(effects
 			(font
@@ -6663,7 +6663,7 @@
 		)
 		(uuid "24a7d885-1b14-47b6-b0e0-ca2e51758217")
 	)
-	(label "ESP_RDY"
+	(label "ESP_HANDSHAKE"
 		(at 220.98 143.51 0)
 		(effects
 			(font
@@ -6673,7 +6673,7 @@
 		)
 		(uuid "2a331f31-2e06-4a62-8bc6-756fcfd06dd9")
 	)
-	(label "ESP_HANDSHAKE"
+	(label "ESP_DATAREADY"
 		(at 220.98 125.73 0)
 		(effects
 			(font
@@ -7003,7 +7003,7 @@
 		)
 		(uuid "fa099013-8b17-4a46-aafd-ccabd1984903")
 	)
-	(label "ESP_HANDSHAKE"
+	(label "ESP_DATAREADY"
 		(at 142.24 99.06 0)
 		(effects
 			(font
