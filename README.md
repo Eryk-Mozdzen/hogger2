@@ -8,4 +8,8 @@ CAD files are developed using Onshape [here](https://cad.onshape.com/documents/5
 
 ## Hardware architecture
 
-![Alt text](./architecture.drawio.svg)
+![Alt text](./hardware.drawio.svg)
+
+## Software architecture
+
+![Alt text](./software.drawio.svg)
