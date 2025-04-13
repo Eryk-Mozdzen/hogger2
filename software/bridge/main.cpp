@@ -1,11 +1,9 @@
 #include <arpa/inet.h>
-#include <unistd.h>
-
 #include <iostream>
 #include <mutex>
-#include <thread>
-
 #include <nlohmann/json.hpp>
+#include <thread>
+#include <unistd.h>
 #include <zmq.hpp>
 
 struct StatisticsData {

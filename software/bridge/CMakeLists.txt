@@ -9,10 +9,6 @@ add_executable(${PROJECT_NAME}
 	"main.cpp"
 )
 
-target_include_directories(${PROJECT_NAME} PRIVATE
-    "../common"
-)
-
 target_compile_options(${PROJECT_NAME} PRIVATE
 	-O3
 	-std=c++17
