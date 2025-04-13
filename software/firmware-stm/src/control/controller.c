@@ -11,10 +11,15 @@
 #define RAD2DEG            (180.f / PI)
 #define CONTROLLER_K1      2.f
 #define CONTROLLER_K2      3.f
-#define INTEGRAL_DIM       7
+#define INTEGRAL_DIM       5
 #define GENERATOR_PARAMS   10
 #define TRAJECTORY_READ_DT 0.1f
 #define TRAJECTORY_READ_T  10.f
+#define MOTOR1_VEL         -300.f
+#define MOTOR2_VEL         +300.f
+#define GIMBAL_MAX         (10.f * DEG2RAD)
+
+#define CLAMP(val, min, max) (((val) > (max)) ? (max) : (((val) < (min)) ? (min) : (val)))
 
 typedef enum {
     INTEGRAL_IDX_PHI1,
@@ -22,15 +27,13 @@ typedef enum {
     INTEGRAL_IDX_THETA2,
     INTEGRAL_IDX_ETA3,
     INTEGRAL_IDX_ETA5,
-    INTEGRAL_IDX_PSI1,
-    INTEGRAL_IDX_PSI2,
 } integral_idx_t;
 
 typedef void (*generator_t)(float *, float *, float *, const float);
 
 typedef struct {
     generator_t generator;
-    float params[GENERATOR_PARAMS];
+    float generator_params[GENERATOR_PARAMS];
 
     bool read_started;
     float read_time;
@@ -71,23 +74,23 @@ static float angle_fix(float angle) {
 }
 
 static void generator_circle(float *hd, float *d_hd, float *d2_hd, const float t) {
-    const float x = trajectory.params[0];
-    const float y = trajectory.params[1];
-    const float r = trajectory.params[2];
-    const float T = trajectory.params[3];
+    const float x = trajectory.generator_params[0];
+    const float y = trajectory.generator_params[1];
+    const float r = trajectory.generator_params[2];
+    const float T = trajectory.generator_params[3];
     const float w = 2 * PI / T;
 
     hd[0] = x + r * cos(w * t);
     hd[1] = y + r * sin(w * t);
     hd[2] = w * t + PI / 2 - PI / 4; // very important -pi/4 !!!
-    hd[3] = -300 * t;
-    hd[4] = +300 * t;
+    hd[3] = MOTOR1_VEL * t;
+    hd[4] = MOTOR2_VEL * t;
 
     d_hd[0] = -r * w * sin(w * t);
     d_hd[1] = r * w * cos(w * t);
     d_hd[2] = w;
-    d_hd[3] = -300;
-    d_hd[4] = +300;
+    d_hd[3] = MOTOR1_VEL;
+    d_hd[4] = MOTOR2_VEL;
 
     d2_hd[0] = -r * w * w * cos(w * t);
     d2_hd[1] = -r * w * w * sin(w * t);
@@ -97,8 +100,8 @@ static void generator_circle(float *hd, float *d_hd, float *d2_hd, const float t
 }
 
 static void generator_lemniscate(float *hd, float *d_hd, float *d2_hd, const float t) {
-    const float a = trajectory.params[0];
-    const float T = trajectory.params[1];
+    const float a = trajectory.generator_params[0];
+    const float T = trajectory.generator_params[1];
     const float w = 2 * PI / T;
 
     hd[0] = a * cos(t * w) / (pow(sin(t * w), 2) + 1);
@@ -111,14 +114,14 @@ static void generator_lemniscate(float *hd, float *d_hd, float *d2_hd, const flo
               -a * w * sin(t * w) / (pow(sin(t * w), 2) + 1) -
                   2 * a * w * sin(t * w) * pow(cos(t * w), 2) / pow(pow(sin(t * w), 2) + 1, 2)) -
         PI / 4); // very important -pi/4 !!!
-    hd[3] = -300 * t;
-    hd[4] = +300 * t;
+    hd[3] = MOTOR1_VEL * t;
+    hd[4] = MOTOR2_VEL * t;
 
     d_hd[0] = a * w * (pow(sin(t * w), 2) - 3) * sin(t * w) / pow(pow(sin(t * w), 2) + 1, 2);
     d_hd[1] = a * w * (1 - 3 * pow(sin(t * w), 2)) / pow(pow(sin(t * w), 2) + 1, 2);
     d_hd[2] = 3 * w * cos(t * w) / (pow(sin(t * w), 2) + 1);
-    d_hd[3] = -300;
-    d_hd[4] = +300;
+    d_hd[3] = MOTOR1_VEL;
+    d_hd[4] = MOTOR2_VEL;
 
     d2_hd[0] = a * pow(w, 2) * (-pow(sin(t * w), 4) + 12 * pow(sin(t * w), 2) - 3) * cos(t * w) /
                pow(pow(sin(t * w), 2) + 1, 3);
@@ -199,7 +202,7 @@ static void trajectory_write(mpack_t *mpack) {
                 trajectory.generator = generator_lemniscate;
             }
         } else if(strncmp(key, "params", key_size) == 0) {
-            if(!mpack_read_float32_array(mpack, trajectory.params, GENERATOR_PARAMS)) {
+            if(!mpack_read_float32_array(mpack, trajectory.generator_params, GENERATOR_PARAMS)) {
                 return;
             }
         }
@@ -217,8 +220,8 @@ static void controller_continue(mpack_t *mpack) {
 
         memset(integrator.prev, 0, sizeof(integrator.prev));
         memset(integrator.integral, 0, sizeof(integrator.integral));
-        integrator.integral[INTEGRAL_IDX_ETA3] = -300;
-        integrator.integral[INTEGRAL_IDX_ETA5] = +300;
+        integrator.integral[INTEGRAL_IDX_ETA3] = MOTOR1_VEL;
+        integrator.integral[INTEGRAL_IDX_ETA5] = MOTOR2_VEL;
     }
 }
 
@@ -229,12 +232,14 @@ static void controller_abort() {
 static void controller_loop() {
     const uint32_t now = task_timebase();
 
-    const float dt = (now - controller.time_prev) * 0.0001f;
+    const float dt = (now - controller.time_prev) * 0.001f;
     controller.time = (now - controller.time_start) * 0.000001f;
 
     controller.time_prev = now;
 
     if(!controller.started) {
+        memset(&controller, 0, sizeof(controller));
+        memset(&integrator, 0, sizeof(integrator));
         return;
     }
 
@@ -252,10 +257,6 @@ static void controller_loop() {
         CONTROLLER_K2, 0, 0, 0, 0, 0, CONTROLLER_K2,
     };
 
-    float psi1_dot;
-    float psi2_dot;
-    motors_get_velocity(&psi1_dot, &psi2_dot);
-
     float phi1;
     float theta1;
     float phi2;
@@ -265,14 +266,14 @@ static void controller_loop() {
     controller.h[0] = ESTIMATOR_GET_POS_X();
     controller.h[1] = ESTIMATOR_GET_POS_Y();
     controller.h[2] = ESTIMATOR_GET_POS_THETA();
-    controller.h[3] = integrator.integral[INTEGRAL_IDX_PHI1];
-    controller.h[4] = integrator.integral[INTEGRAL_IDX_PSI2];
+    controller.h[3] = controller.hd[3];
+    controller.h[4] = controller.hd[4];
 
     controller.d_h[0] = ESTIMATOR_GET_VEL_X();
     controller.d_h[1] = ESTIMATOR_GET_VEL_Y();
     controller.d_h[2] = ESTIMATOR_GET_VEL_THETA();
-    controller.d_h[3] = psi1_dot;
-    controller.d_h[4] = psi2_dot;
+    controller.d_h[3] = controller.d_hd[3];
+    controller.d_h[4] = controller.d_hd[4];
 
     float v[5];
     jptd_dynamic_feedback_v(v, K1, K2, controller.h, controller.d_h, controller.hd, controller.d_hd,
@@ -284,10 +285,10 @@ static void controller_loop() {
         ESTIMATOR_GET_POS_THETA(),
         phi1,
         theta1,
-        integrator.integral[INTEGRAL_IDX_PSI1],
-        phi2,
-        theta2,
-        integrator.integral[INTEGRAL_IDX_PSI2],
+        controller.hd[3],
+        phi2 + 0.05f * expf(-10000.f * phi2 * phi2),       // for non-zero values of phi_2
+        theta2 + 0.05f * expf(-10000.f * theta2 * theta2), // for non-zero values of theta_2
+        controller.hd[4],
     };
 
     float eta[5] = {
@@ -306,23 +307,34 @@ static void controller_loop() {
     integrator.input[INTEGRAL_IDX_THETA2] = eta[3];
     integrator.input[INTEGRAL_IDX_ETA3] = u[2];
     integrator.input[INTEGRAL_IDX_ETA5] = u[4];
-    integrator.input[INTEGRAL_IDX_PSI1] = psi1_dot;
-    integrator.input[INTEGRAL_IDX_PSI2] = psi2_dot;
+
+    float min[INTEGRAL_DIM] = {0};
+    min[INTEGRAL_IDX_PHI1] = -GIMBAL_MAX;
+    min[INTEGRAL_IDX_THETA1] = -GIMBAL_MAX;
+    min[INTEGRAL_IDX_THETA2] = -GIMBAL_MAX;
+    min[INTEGRAL_IDX_ETA3] = MOTOR1_VEL;
+    min[INTEGRAL_IDX_ETA5] = MOTOR2_VEL;
+
+    float max[INTEGRAL_DIM] = {0};
+    max[INTEGRAL_IDX_PHI1] = GIMBAL_MAX;
+    max[INTEGRAL_IDX_THETA1] = GIMBAL_MAX;
+    max[INTEGRAL_IDX_THETA2] = GIMBAL_MAX;
+    max[INTEGRAL_IDX_ETA3] = MOTOR1_VEL;
+    max[INTEGRAL_IDX_ETA5] = MOTOR2_VEL;
 
     for(uint32_t i = 0; i < INTEGRAL_DIM; i++) {
         integrator.integral[i] += 0.5f * (integrator.input[i] + integrator.prev[i]) * dt;
+        integrator.integral[i] = CLAMP(integrator.integral[i], min[i], max[i]);
         integrator.prev[i] = integrator.integral[i];
     }
 
-    const float setpoint_phi2 = integrator.integral[INTEGRAL_IDX_PHI1] +
-                                sinf(integrator.integral[INTEGRAL_IDX_THETA1]) -
-                                sinf(integrator.integral[INTEGRAL_IDX_THETA2]);
+    const float setpoint_phi1 = integrator.integral[INTEGRAL_IDX_PHI1];
+    const float setpoint_theta1 = integrator.integral[INTEGRAL_IDX_THETA1];
+    const float setpoint_theta2 = integrator.integral[INTEGRAL_IDX_THETA2];
+    const float setpoint_phi2 = setpoint_phi1 + sinf(setpoint_theta1) - sinf(setpoint_theta2);
 
-    motors_set_velocity(integrator.integral[INTEGRAL_IDX_ETA3],
-                        integrator.integral[INTEGRAL_IDX_ETA5]);
-    servos_set_position(integrator.integral[INTEGRAL_IDX_PHI1],
-                        integrator.integral[INTEGRAL_IDX_THETA1], setpoint_phi2,
-                        integrator.integral[INTEGRAL_IDX_THETA2]);
+    motors_set_velocity(MOTOR1_VEL, MOTOR2_VEL);
+    servos_set_position(setpoint_phi1, setpoint_theta1, setpoint_phi2, setpoint_theta2);
 }
 
 static void trajectory_serialize(cmp_ctx_t *cmp, void *context) {
@@ -385,6 +397,6 @@ STREAM_REGISTER("trajectory_write", trajectory_write)
 STREAM_REGISTER("controller_continue", controller_continue)
 WATCHDOG_REGISTER(controller_abort)
 TASK_REGISTER_PERIODIC(trajectory_read_loop, 10000)
-TASK_REGISTER_PERIODIC(controller_loop, 100)
+TASK_REGISTER_PERIODIC(controller_loop, 1000)
 TELEMETRY_REGISTER("trajectory", trajectory_serialize, NULL)
 TELEMETRY_REGISTER("controller", controller_serialize, NULL)
