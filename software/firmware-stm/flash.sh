@@ -1,3 +1,3 @@
 #!/bin/bash
 
-st-flash --reset write firmware-stm.bin 0x08000000
+STM32_Programmer_CLI -c port=SWD -w firmware-stm.elf -rst

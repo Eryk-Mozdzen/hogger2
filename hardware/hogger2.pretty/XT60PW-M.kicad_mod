@@ -68,6 +68,68 @@
 	)
 	(attr through_hole)
 	(fp_line
+		(start -7.75 -10.35)
+		(end -7.75 3.85)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "b96b9460-c98f-435a-a96a-2274d0199f6d")
+	)
+	(fp_line
+		(start -7.75 -10.35)
+		(end 7.75 -10.35)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "d0d98836-9cae-43dd-b84c-142b07bc4c59")
+	)
+	(fp_line
+		(start -3.75 7.85)
+		(end 3.75 7.85)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "79ef4d3f-70d1-418b-aed0-5b139ddd2dd2")
+	)
+	(fp_line
+		(start 7.75 -10.35)
+		(end 7.75 3.85)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "eff65941-c7ea-433d-bca2-494e1b319a66")
+	)
+	(fp_arc
+		(start -3.75 7.85)
+		(mid -6.578427 6.678427)
+		(end -7.75 3.85)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "8d0de996-1fac-4d4d-88f2-407eb908f467")
+	)
+	(fp_arc
+		(start 7.75 3.85)
+		(mid 6.578427 6.678427)
+		(end 3.75 7.85)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "762c4b54-fe4d-44a7-9e42-a0f4f31551da")
+	)
+	(fp_line
 		(start -8.25 -10.85)
 		(end -8.25 8.55)
 		(stroke
@@ -106,68 +168,6 @@
 		)
 		(layer "F.CrtYd")
 		(uuid "c30f0ad4-7076-4fd6-963f-9d12265c2bb7")
-	)
-	(fp_line
-		(start -7.75 -10.35)
-		(end -7.75 3.85)
-		(stroke
-			(width 0.1)
-			(type solid)
-		)
-		(layer "F.Fab")
-		(uuid "b96b9460-c98f-435a-a96a-2274d0199f6d")
-	)
-	(fp_line
-		(start -7.75 -10.35)
-		(end 7.75 -10.35)
-		(stroke
-			(width 0.1)
-			(type solid)
-		)
-		(layer "F.Fab")
-		(uuid "d0d98836-9cae-43dd-b84c-142b07bc4c59")
-	)
-	(fp_line
-		(start -3.75 7.85)
-		(end 3.75 7.85)
-		(stroke
-			(width 0.1)
-			(type solid)
-		)
-		(layer "F.Fab")
-		(uuid "79ef4d3f-70d1-418b-aed0-5b139ddd2dd2")
-	)
-	(fp_line
-		(start 7.75 -10.35)
-		(end 7.75 3.85)
-		(stroke
-			(width 0.1)
-			(type solid)
-		)
-		(layer "F.Fab")
-		(uuid "eff65941-c7ea-433d-bca2-494e1b319a66")
-	)
-	(fp_arc
-		(start -3.75 7.85)
-		(mid -6.578427 6.678427)
-		(end -7.75 3.85)
-		(stroke
-			(width 0.1)
-			(type solid)
-		)
-		(layer "F.Fab")
-		(uuid "8d0de996-1fac-4d4d-88f2-407eb908f467")
-	)
-	(fp_arc
-		(start 7.75 3.85)
-		(mid 6.578427 6.678427)
-		(end 3.75 7.85)
-		(stroke
-			(width 0.1)
-			(type solid)
-		)
-		(layer "F.Fab")
-		(uuid "762c4b54-fe4d-44a7-9e42-a0f4f31551da")
 	)
 	(fp_text user "${REFERENCE}"
 		(at 0 -13.15 0)

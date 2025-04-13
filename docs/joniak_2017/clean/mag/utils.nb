@@ -1,0 +1,1702 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 9.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       157,          7]
+NotebookDataLength[     60966,       1693]
+NotebookOptionsPosition[     59799,       1649]
+NotebookOutlinePosition[     60182,       1665]
+CellTagsIndexPosition[     60139,       1662]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[
+ RowBox[{"\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{
+    RowBox[{
+     RowBox[{"loadNotebook", "[", "name_", "]"}], ":=", 
+     RowBox[{"(", "\[IndentingNewLine]", 
+      RowBox[{
+       RowBox[{"nb1", "=", 
+        RowBox[{"NotebookOpen", "[", 
+         RowBox[{
+         "\"\<C:\\\\Users\\\\Admin\\\\Documents\\\\GitHub\\\\hog2\\\\\
+Magisterka\\\\clean\\\\\>\"", " ", "<>", " ", "name"}], "]"}]}], ";", "\n", 
+       RowBox[{"SelectionMove", "[", 
+        RowBox[{"nb1", ",", "All", ",", "Notebook"}], "]"}], ";", "\n", 
+       RowBox[{"SelectionEvaluate", "[", "nb1", "]"}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"NotebookClose", "[", "nb1", "]"}], ";", "\[IndentingNewLine]",
+        "0"}], "\[IndentingNewLine]", ")"}]}], ";"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+    "loc", "=", 
+     "\"\<C:\\\\Users\\\\Admin\\\\Documents\\\\GitHub\\\\hog2\\\\Magisterka\\\
+\\doc - off\\\\\>\""}], ";"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"kolo", "[", 
+      RowBox[{"t_", ",", "r_", ",", "speed_"}], "]"}], ":=", " ", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"r", "*", 
+        RowBox[{"Cos", "[", 
+         RowBox[{"t", "/", "speed"}], "]"}]}], ",", 
+       RowBox[{"r", "*", 
+        RowBox[{"Sin", "[", 
+         RowBox[{"t", "/", "speed"}], "]"}]}]}], "}"}]}], ";"}], 
+   "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"liniaX", "[", 
+      RowBox[{"t_", ",", "y_", ",", "speed_"}], "]"}], ":=", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"t", "/", "speed"}], ",", "y"}], "}"}]}], ";"}], 
+   "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"liniaY", "[", 
+      RowBox[{"t_", ",", "x_", ",", "speed_"}], "]"}], ":=", 
+     RowBox[{"{", 
+      RowBox[{"x", ",", 
+       RowBox[{"t", "/", "speed"}]}], "}"}]}], ";"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"osemka", "[", 
+      RowBox[{"t_", ",", "speed_"}], "]"}], ":=", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"Sin", "[", 
+        RowBox[{"t", "/", 
+         RowBox[{"(", 
+          RowBox[{"2", "*", "speed"}], ")"}]}], "]"}], ",", 
+       RowBox[{"Cos", "[", 
+        RowBox[{
+         RowBox[{"t", "/", "speed"}], "+", 
+         RowBox[{"Pi", "/", "4"}]}], "]"}]}], "}"}]}], ";"}], 
+   "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"mod2", "[", "x0_", "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"x", "=", "x0"}], "}"}], ",", "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{"While", "[", 
+         RowBox[{
+          RowBox[{"x", ">", "4"}], ",", 
+          RowBox[{"x", "=", 
+           RowBox[{"x", "-", "4"}]}]}], "]"}], ";", "\[IndentingNewLine]", 
+        "x"}]}], "\[IndentingNewLine]", "]"}]}], ";"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"kwadrat", "[", 
+      RowBox[{"t2_", ",", "a_", ",", "speed_"}], "]"}], ":=", 
+     "\[IndentingNewLine]", 
+     RowBox[{"(*", 
+      RowBox[{"a", "*", 
+       RowBox[{"Which", "[", 
+        RowBox[{
+         RowBox[{"t2", "<", "1"}], ",", 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"t2", "-", "0.5"}], ",", 
+           RowBox[{"-", "0.5"}]}], "}"}], ",", 
+         RowBox[{"t2", "<", "2"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"0.5", ",", 
+           RowBox[{"t2", "-", "1.5"}]}], "}"}], ",", 
+         RowBox[{"t2", "<", "3"}], ",", 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"-", "t2"}], "+", "2.5"}], ",", "0.5"}], "}"}], ",", 
+         "True", ",", 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"-", "0.5"}], ",", 
+           RowBox[{
+            RowBox[{"-", "t2"}], "+", "3.5"}]}], "}"}]}], "]"}]}], "*)"}], 
+     "\[IndentingNewLine]", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"a", "*", 
+        RowBox[{"Which", "[", " ", 
+         RowBox[{
+          RowBox[{
+           RowBox[{"Mod", "[", 
+            RowBox[{
+             RowBox[{"t2", "/", "speed"}], ",", "4"}], "]"}], "<", "1"}], ",", 
+          RowBox[{
+           RowBox[{"mod2", "[", 
+            RowBox[{"t2", "/", "speed"}], "]"}], "-", "0.5"}], ",", 
+          RowBox[{
+           RowBox[{"mod2", "[", 
+            RowBox[{"t2", "/", "speed"}], "]"}], "<", "2"}], ",", "0.5", ",", 
+          RowBox[{
+           RowBox[{"mod2", "[", 
+            RowBox[{"t2", "/", "speed"}], "]"}], "<", "3"}], ",", 
+          RowBox[{
+           RowBox[{"-", 
+            RowBox[{"mod2", "[", 
+             RowBox[{"t2", "/", "speed"}], "]"}]}], "+", "2.5"}], ",", "True",
+           ",", 
+          RowBox[{"-", "0.5"}]}], "]"}]}], ",", 
+       RowBox[{"a", "*", 
+        RowBox[{"Which", "[", 
+         RowBox[{
+          RowBox[{
+           RowBox[{"Mod", "[", 
+            RowBox[{
+             RowBox[{"t2", "/", "speed"}], ",", "4"}], "]"}], "<", "1"}], ",", 
+          RowBox[{"-", "0.5"}], ",", 
+          RowBox[{
+           RowBox[{"mod2", "[", 
+            RowBox[{"t2", "/", "speed"}], "]"}], "<", "2"}], ",", 
+          RowBox[{
+           RowBox[{"mod2", "[", 
+            RowBox[{"t2", "/", "speed"}], "]"}], "-", "1.5"}], ",", 
+          RowBox[{
+           RowBox[{"mod2", "[", 
+            RowBox[{"t2", "/", "speed"}], "]"}], "<", "3"}], ",", "0.5", ",", 
+          "True", ",", 
+          RowBox[{
+           RowBox[{"-", 
+            RowBox[{"mod2", "[", 
+             RowBox[{"t2", "/", "speed"}], "]"}]}], "+", "3.5"}]}], "]"}]}]}],
+       "}"}]}], ";"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"arcCurvature", "[", 
+      RowBox[{"x_", ",", "y_", ",", "s_"}], "]"}], ":=", " ", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{
+         RowBox[{"D", "[", 
+          RowBox[{"x", ",", "s"}], "]"}], "*", 
+         RowBox[{"D", "[", 
+          RowBox[{
+           RowBox[{"D", "[", 
+            RowBox[{"y", ",", "s"}], "]"}], ",", "s"}], "]"}]}], "-", 
+        RowBox[{
+         RowBox[{"D", "[", 
+          RowBox[{"y", ",", "s"}], "]"}], "*", 
+         RowBox[{"D", "[", 
+          RowBox[{
+           RowBox[{"D", "[", 
+            RowBox[{"x", ",", "s"}], "]"}], ",", "s"}], "]"}]}]}], ")"}], "/", 
+      RowBox[{"(", 
+       RowBox[{"Power", "[", 
+        RowBox[{
+         RowBox[{
+          RowBox[{
+           RowBox[{"(", 
+            RowBox[{"D", "[", 
+             RowBox[{"x", ",", "s"}], "]"}], ")"}], "^", "2"}], "+", 
+          RowBox[{
+           RowBox[{"(", 
+            RowBox[{"D", "[", 
+             RowBox[{"y", ",", "s"}], "]"}], ")"}], "^", "2"}]}], ",", 
+         RowBox[{"3", "/", "2"}]}], "]"}], ")"}]}]}], ";"}], 
+   "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"arcLength", "[", 
+      RowBox[{"x_", ",", "y_", ",", "s_", ",", "t_"}], "]"}], ":=", 
+     RowBox[{"NIntegrate", "[", 
+      RowBox[{
+       RowBox[{"Sqrt", "[", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"D", "[", 
+           RowBox[{"x", ",", "s"}], "]"}], "^", "2"}], "+", 
+         RowBox[{
+          RowBox[{"D", "[", 
+           RowBox[{"y", ",", "s"}], "]"}], "^", "2"}]}], "]"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"s", ",", "0", ",", "t"}], "}"}]}], "]"}]}], ";"}], 
+   "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"trim", "[", 
+      RowBox[{"value_", ",", "minimum_", ",", "maximum_"}], "]"}], ":=", 
+     RowBox[{"If", "[", 
+      RowBox[{
+       RowBox[{"value", " ", "<", " ", "minimum"}], ",", " ", "minimum", ",", 
+       " ", 
+       RowBox[{"If", "[", 
+        RowBox[{
+         RowBox[{"value", " ", ">", " ", "maximum"}], ",", " ", "maximum", 
+         ",", " ", "value"}], "]"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", 
+   "\[IndentingNewLine]", 
+   RowBox[{"SetAttributes", "[", 
+    RowBox[{"filterFunction", ",", "HoldAll"}], "]"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"filterFunction", "[", 
+      RowBox[{
+       RowBox[{"f_", "[", "t___", "]"}], ",", "tmax_", ",", "step_", ",", 
+       "omega_"}], "]"}], ":=", 
+     RowBox[{"(", "\[IndentingNewLine]", 
+      RowBox[{
+       RowBox[{"data", "=", 
+        RowBox[{"Table", "[", 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{"t", ",", 
+            RowBox[{"f", "[", "t", "]"}]}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"t", ",", "0", ",", "tmax", ",", " ", "step"}], "}"}]}], 
+         "]"}]}], ";", "\[IndentingNewLine]", 
+       RowBox[{"filteredData", "=", 
+        RowBox[{"LowpassFilter", "[", 
+         RowBox[{
+          RowBox[{
+           RowBox[{"Transpose", "[", "data", "]"}], "[", 
+           RowBox[{"[", "2", "]"}], "]"}], ",", "omega"}], "]"}]}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"filteredFunction", "=", 
+        RowBox[{"Interpolation", "[", 
+         RowBox[{"Transpose", "[", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{
+             RowBox[{"Transpose", "[", "data", "]"}], "[", 
+             RowBox[{"[", "1", "]"}], "]"}], ",", "filteredData"}], "}"}], 
+          "]"}], "]"}]}], ";", "\[IndentingNewLine]", "filteredFunction"}], 
+      "\[IndentingNewLine]", ")"}]}], ";"}], "\[IndentingNewLine]", 
+   "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"ClearGlobal", "[", "]"}], ":=", 
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"ClearAll", "[", "\"\<Global`*\>\"", "]"}], ";", 
+       RowBox[{"Clear", "[", "Derivative", "]"}], ";"}], ")"}]}], ";"}], 
+   "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"RemoveGlobal", "[", "]"}], ":=", 
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"ClearGlobal", "[", "]"}], ";", 
+       RowBox[{"Remove", "[", "\"\<Global`*\>\"", "]"}], ";"}], ")"}]}], 
+    ";"}]}]}]], "Input",
+ CellChangeTimes->{{3.670578167523817*^9, 3.670578294285256*^9}, {
+   3.6705783259264235`*^9, 3.6705785959405527`*^9}, {3.6705786346176815`*^9, 
+   3.6705787223389626`*^9}, {3.67057881472348*^9, 3.670578969302991*^9}, {
+   3.670579009559784*^9, 3.6705791149031377`*^9}, {3.670579158188283*^9, 
+   3.670579176490344*^9}, {3.6705794422292304`*^9, 3.6705795093944445`*^9}, {
+   3.670583788239252*^9, 3.6705837916042643`*^9}, {3.670583868417593*^9, 
+   3.6705839379588118`*^9}, {3.6705839685779123`*^9, 3.670583984731964*^9}, 
+   3.6705840177120686`*^9, 3.670584306591124*^9, {3.670584465218598*^9, 
+   3.670584495221697*^9}, 3.6705850124735003`*^9, {3.6705852745204687`*^9, 
+   3.6705853705819707`*^9}, 3.6705854057291265`*^9, {3.670585927235744*^9, 
+   3.670585948903983*^9}, {3.6705860905920877`*^9, 3.6705860963914194`*^9}, {
+   3.67058615427973*^9, 3.670586165028345*^9}, {3.6705862110479774`*^9, 
+   3.6705862188994265`*^9}, {3.6705862642150183`*^9, 
+   3.6705863944804688`*^9}, {3.6705898131037517`*^9, 3.670589815970765*^9}, 
+   3.671874619610468*^9, {3.6737707743376637`*^9, 3.673770803234374*^9}, {
+   3.673803030237549*^9, 3.673803032832697*^9}, {3.673841230961794*^9, 
+   3.6738412540501146`*^9}, {3.6738414347704515`*^9, 
+   3.6738414360695257`*^9}, {3.6740347259890766`*^9, 3.674034726652115*^9}, {
+   3.6740349834208007`*^9, 3.6740351413378334`*^9}, {3.6740354269001665`*^9, 
+   3.674035438819848*^9}, {3.6740355664241467`*^9, 3.6740356529120936`*^9}, {
+   3.674035926657751*^9, 3.674035952040203*^9}, {3.6740359909924307`*^9, 
+   3.6740360758372836`*^9}, {3.6740365579448586`*^9, 3.6740365677314186`*^9}, 
+   3.6740366415426397`*^9, 3.674036739469241*^9, 3.674037356509534*^9, {
+   3.6740666838879642`*^9, 3.6740666907053537`*^9}, {3.674732883684185*^9, 
+   3.674732947466833*^9}, {3.674733496792253*^9, 3.674733503182618*^9}, {
+   3.6747335335563555`*^9, 3.674733541659819*^9}, {3.6747335834522095`*^9, 
+   3.674733600172166*^9}, {3.674733807676035*^9, 3.674733809748153*^9}, {
+   3.67473396319193*^9, 3.674733963847967*^9}, {3.6747340082005043`*^9, 
+   3.6747340132487926`*^9}, {3.674734054760167*^9, 3.674734139799031*^9}, {
+   3.6747341860886784`*^9, 3.6747342264639883`*^9}, {3.674734324889618*^9, 
+   3.674734390773386*^9}, {3.674734937117635*^9, 3.674734938860735*^9}, {
+   3.6747349894696293`*^9, 3.6747349944609146`*^9}, {3.6747356083300257`*^9, 
+   3.6747356132283063`*^9}, {3.6747357014623528`*^9, 
+   3.6747357018153734`*^9}, {3.6747358524619894`*^9, 3.67473585386907*^9}, {
+   3.6747360703374515`*^9, 3.674736076697815*^9}, {3.675509860268493*^9, 
+   3.67550986414977*^9}, {3.6756981833415403`*^9, 3.6756981849740667`*^9}, 
+   3.6757038706733103`*^9, 3.6757039018362675`*^9}],
+
+Cell[BoxData[
+ RowBox[{"RemoveGlobal", "[", "]"}]], "Input",
+ CellChangeTimes->{{3.6705899209891453`*^9, 3.670589945764236*^9}}],
+
+Cell[BoxData[
+ RowBox[{"qu", "[", "t", "]"}]], "Input",
+ CellChangeTimes->{{3.6718689534413815`*^9, 3.6718689549484673`*^9}}],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"If", "[", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"ArcTan", "[", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"xd", "'"}], "[", "t", "]"}], ",", 
+      RowBox[{
+       RowBox[{"yd", "'"}], "[", "t", "]"}]}], "]"}], ">", 
+    RowBox[{
+     RowBox[{"-", "Pi"}], "/", "2"}]}], ",", 
+   RowBox[{"ArcTan", "[", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"xd", "'"}], "[", "t", "]"}], ",", 
+     RowBox[{
+      RowBox[{"yd", "'"}], "[", "t", "]"}]}], "]"}], ",", 
+   RowBox[{
+    RowBox[{"ArcTan", "[", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"xd", "'"}], "[", "t", "]"}], ",", 
+      RowBox[{
+       RowBox[{"yd", "'"}], "[", "t", "]"}]}], "]"}], "+", 
+    RowBox[{"2", "Pi"}]}]}], "]"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"x", "[", "t", "]"}], ",", 
+   RowBox[{"y", "[", "t", "]"}], ",", 
+   RowBox[{
+    SubscriptBox["\[Theta]", "0"], "[", "t", "]"}], ",", 
+   RowBox[{
+    SubscriptBox["\[Theta]", "u1"], "[", "t", "]"}], ",", 
+   RowBox[{
+    SubscriptBox["\[Phi]", "u1"], "[", "t", "]"}], ",", 
+   RowBox[{
+    SubscriptBox["\[Theta]", "u2"], "[", "t", "]"}], ",", 
+   RowBox[{
+    SubscriptBox["\[Phi]", "u2"], "[", "t", "]"}], ",", 
+   RowBox[{
+    SubscriptBox["r", "1"], "[", "t", "]"}], ",", 
+   RowBox[{
+    SubscriptBox["r", "2"], "[", "t", "]"}]}], "}"}]], "Output",
+ CellChangeTimes->{3.6718689553864927`*^9, 3.671895341789708*^9}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"wirowanie", "=", "50"}], ";"}], "\[IndentingNewLine]", 
+  RowBox[{"(*", 
+   RowBox[{
+    RowBox[{"w", "=", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"x", "[", "t", "]"}], "+", 
+        RowBox[{"d", "*", 
+         RowBox[{"Cos", "[", 
+          RowBox[{
+           RowBox[{
+            SubscriptBox["\[Theta]", "u1"], "[", "t", "]"}], "+", 
+           RowBox[{
+            SubscriptBox["\[Theta]", "0"], "[", "t", "]"}]}], "]"}]}]}], ",", 
+       RowBox[{
+        RowBox[{"y", "[", "t", "]"}], "+", 
+        RowBox[{"d", "*", 
+         RowBox[{"Sin", "[", 
+          RowBox[{
+           RowBox[{
+            SubscriptBox["\[Theta]", "u1"], "[", "t", "]"}], "+", 
+           RowBox[{
+            SubscriptBox["\[Theta]", "0"], "[", "t", "]"}]}], "]"}]}]}], ",", 
+       RowBox[{
+        SubscriptBox["\[Theta]", "u2"], "[", "t", "]"}], ",", 
+       RowBox[{
+        SubscriptBox["\[Phi]", "u1"], "[", "t", "]"}], ",", 
+       RowBox[{
+        SubscriptBox["\[Phi]", "u2"], "[", "t", "]"}]}], "}"}]}], ";"}], 
+   "*)"}]}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"w", "=", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"x", "[", "t", "]"}], "+", 
+      RowBox[{"d", "*", 
+       RowBox[{"Cos", "[", 
+        RowBox[{
+         RowBox[{
+          SubscriptBox["\[Theta]", "u1"], "[", "t", "]"}], "+", 
+         RowBox[{
+          SubscriptBox["\[Theta]", "0"], "[", "t", "]"}]}], "]"}]}]}], ",", 
+     RowBox[{
+      RowBox[{"y", "[", "t", "]"}], "+", 
+      RowBox[{"d", "*", 
+       RowBox[{"Sin", "[", 
+        RowBox[{
+         RowBox[{
+          SubscriptBox["\[Theta]", "u1"], "[", "t", "]"}], "+", 
+         RowBox[{
+          SubscriptBox["\[Theta]", "0"], "[", "t", "]"}]}], "]"}]}]}], ",", 
+     RowBox[{
+      SubscriptBox["\[Theta]", "u2"], "[", "t", "]"}], ",", 
+     RowBox[{
+      SubscriptBox["r", "1"], "[", "t", "]"}], ",", 
+     RowBox[{
+      SubscriptBox["r", "2"], "[", "t", "]"}]}], "}"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"wd", "=", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"xd", "[", "t", "]"}], ",", 
+     RowBox[{"yd", "[", "t", "]"}], ",", 
+     RowBox[{"td", "[", "t", "]"}], ",", " ", 
+     RowBox[{
+      SubscriptBox["r", "d1"], "[", "t", "]"}], ",", 
+     RowBox[{
+      SubscriptBox["r", "d2"], "[", "t", "]"}]}], "}"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"M", " ", "=", " ", 
+   RowBox[{"wyliczSterowanie", "[", 
+    RowBox[{"wd", ",", "w", ",", "1"}], "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{"M", "//", "MatrixForm"}]}], "Input",
+ CellChangeTimes->{{3.6718694449934964`*^9, 3.6718694724810686`*^9}, {
+  3.6718698295774937`*^9, 3.6718698352698193`*^9}, {3.671872059863058*^9, 
+  3.671872076962036*^9}, {3.671895349631157*^9, 3.671895510985386*^9}, {
+  3.671895551249689*^9, 3.6718955587581186`*^9}, {3.671895628170089*^9, 
+  3.6718956330343666`*^9}, {3.671895703102374*^9, 3.67189576193874*^9}, {
+  3.6718961008911266`*^9, 3.6718961127398043`*^9}, {3.6718962529928265`*^9, 
+  3.6718962763711634`*^9}, {3.6718963368676233`*^9, 3.671896420795424*^9}, {
+  3.671896471231309*^9, 3.6718964713673167`*^9}, {3.6718965307517133`*^9, 
+  3.671896538399151*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"-", "0.05`"}], " ", 
+  RowBox[{
+   SubscriptBox["r", "1"], "[", "t", "]"}]}]], "Print",
+ CellChangeTimes->{{3.6718963801731005`*^9, 3.6718964210854406`*^9}, 
+   3.6718964725363836`*^9, {3.6718965137217393`*^9, 3.6718965390211864`*^9}}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"w2", " ", "=", " ", 
+   RowBox[{"Solve", "[", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"r2", "\[Equal]", 
+        RowBox[{"0.03", "*", 
+         RowBox[{"Sqrt", "[", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"(", 
+             RowBox[{
+              RowBox[{"(", 
+               RowBox[{"Cos", "[", 
+                RowBox[{
+                 SubscriptBox["\[Phi]", "2"], "[", "t", "]"}], "]"}], ")"}], 
+              "^", "2"}], ")"}], 
+            RowBox[{"(", 
+             RowBox[{
+              RowBox[{"Sin", "[", 
+               RowBox[{
+                SubscriptBox["\[Theta]", "2"], "[", "t", "]"}], "]"}], "^", 
+              "2"}], " ", ")"}]}], "+", 
+           RowBox[{"(", 
+            RowBox[{
+             RowBox[{"Sin", "[", 
+              RowBox[{
+               SubscriptBox["\[Phi]", "2"], "[", "t", "]"}], "]"}], "^", 
+             "2"}], " ", ")"}]}], "]"}]}]}], ",", "  ", 
+       RowBox[{
+        RowBox[{"Tan", "[", 
+         RowBox[{
+          SubscriptBox["\[Theta]", "u2"], "[", "t", "]"}], "]"}], " ", "==", 
+        RowBox[{
+         RowBox[{"(", 
+          RowBox[{"Sin", "[", 
+           RowBox[{
+            SubscriptBox["\[Theta]", "2"], "[", "t", "]"}], "]"}], ")"}], "/", 
+         RowBox[{"(", 
+          RowBox[{
+           RowBox[{"Cos", "[", 
+            RowBox[{
+             SubscriptBox["\[Theta]", "2"], "[", "t", "]"}], "]"}], 
+           RowBox[{"Sin", "[", 
+            RowBox[{
+             SubscriptBox["\[Phi]", "2"], "[", "t", "]"}], "]"}]}], 
+          ")"}]}]}]}], "}"}], ",", " ", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{
+        SubscriptBox["\[Phi]", "2"], "[", "t", "]"}], ",", 
+       RowBox[{
+        SubscriptBox["\[Theta]", "2"], "[", "t", "]"}]}], "}"}]}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{"w2", "[", 
+  RowBox[{"[", "5", "]"}], "]"}]}], "Input",
+ CellChangeTimes->{{3.6718969014549165`*^9, 3.671896911951517*^9}, {
+  3.6718988205736837`*^9, 3.6718988219217606`*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  StyleBox[
+   RowBox[{"Solve", "::", "ifun"}], "MessageName"], 
+  RowBox[{
+  ":", " "}], "\<\"Inverse functions are being used by \
+\[NoBreak]\\!\\(Solve\\)\[NoBreak], so some solutions may not be found; use \
+Reduce for complete solution information. \\!\\(\\*ButtonBox[\\\"\
+\[RightSkeleton]\\\", ButtonStyle->\\\"Link\\\", ButtonFrame->None, \
+ButtonData:>\\\"paclet:ref/message/Solve/ifun\\\", ButtonNote -> \
+\\\"Solve::ifun\\\"]\\)\"\>"}]], "Message", "MSG",
+ CellChangeTimes->{{3.671896904968117*^9, 3.6718969126215553`*^9}, 
+   3.671898823529853*^9}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{
+    RowBox[{
+     SubscriptBox["\[Phi]", "2"], "[", "t", "]"}], "\[Rule]", 
+    RowBox[{
+     RowBox[{"-", "1.`"}], " ", 
+     RowBox[{"ArcCos", "[", 
+      FractionBox[
+       SqrtBox[
+        RowBox[{
+         RowBox[{"-", "9.`"}], "+", 
+         RowBox[{"10000.`", " ", 
+          SuperscriptBox["r2", "2"]}], "-", 
+         RowBox[{"9.`", " ", 
+          SuperscriptBox[
+           RowBox[{"Tan", "[", 
+            RowBox[{
+             SubscriptBox["\[Theta]", "u2"], "[", "t", "]"}], "]"}], "2"]}], 
+         "+", 
+         RowBox[{"10000.`", " ", 
+          SuperscriptBox["r2", "2"], " ", 
+          SuperscriptBox[
+           RowBox[{"Tan", "[", 
+            RowBox[{
+             SubscriptBox["\[Theta]", "u2"], "[", "t", "]"}], "]"}], 
+           "2"]}]}]], 
+       SqrtBox[
+        RowBox[{
+         RowBox[{"-", "9.`"}], "-", 
+         RowBox[{"9.`", " ", 
+          SuperscriptBox[
+           RowBox[{"Tan", "[", 
+            RowBox[{
+             SubscriptBox["\[Theta]", "u2"], "[", "t", "]"}], "]"}], "2"]}], 
+         "+", 
+         RowBox[{"10000.`", " ", 
+          SuperscriptBox["r2", "2"], " ", 
+          SuperscriptBox[
+           RowBox[{"Tan", "[", 
+            RowBox[{
+             SubscriptBox["\[Theta]", "u2"], "[", "t", "]"}], "]"}], 
+           "2"]}]}]]], "]"}]}]}], ",", 
+   RowBox[{
+    RowBox[{
+     SubscriptBox["\[Theta]", "2"], "[", "t", "]"}], "\[Rule]", 
+    RowBox[{
+     RowBox[{"-", "1.`"}], " ", 
+     RowBox[{"ArcSin", "[", 
+      FractionBox[
+       RowBox[{"100.`", " ", "r2", " ", 
+        RowBox[{"Tan", "[", 
+         RowBox[{
+          SubscriptBox["\[Theta]", "u2"], "[", "t", "]"}], "]"}]}], 
+       SqrtBox[
+        RowBox[{"9.`", "\[VeryThinSpace]", "+", 
+         RowBox[{"9.`", " ", 
+          SuperscriptBox[
+           RowBox[{"Tan", "[", 
+            RowBox[{
+             SubscriptBox["\[Theta]", "u2"], "[", "t", "]"}], "]"}], 
+           "2"]}]}]]], "]"}]}]}]}], "}"}]], "Input",
+ CellChangeTimes->{3.6734459025918117`*^9}],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{
+    RowBox[{
+     SubscriptBox["\[Phi]", "2"], "[", "t", "]"}], "\[Rule]", 
+    RowBox[{
+     RowBox[{"-", "1.`"}], " ", 
+     RowBox[{"ArcCos", "[", 
+      FractionBox[
+       SqrtBox[
+        RowBox[{
+         RowBox[{"-", "9.`"}], "+", 
+         RowBox[{"10000.`", " ", 
+          SuperscriptBox["r2", "2"]}], "-", 
+         RowBox[{"9.`", " ", 
+          SuperscriptBox[
+           RowBox[{"Tan", "[", 
+            RowBox[{
+             SubscriptBox["\[Theta]", "u2"], "[", "t", "]"}], "]"}], "2"]}], 
+         "+", 
+         RowBox[{"10000.`", " ", 
+          SuperscriptBox["r2", "2"], " ", 
+          SuperscriptBox[
+           RowBox[{"Tan", "[", 
+            RowBox[{
+             SubscriptBox["\[Theta]", "u2"], "[", "t", "]"}], "]"}], 
+           "2"]}]}]], 
+       SqrtBox[
+        RowBox[{
+         RowBox[{"-", "9.`"}], "-", 
+         RowBox[{"9.`", " ", 
+          SuperscriptBox[
+           RowBox[{"Tan", "[", 
+            RowBox[{
+             SubscriptBox["\[Theta]", "u2"], "[", "t", "]"}], "]"}], "2"]}], 
+         "+", 
+         RowBox[{"10000.`", " ", 
+          SuperscriptBox["r2", "2"], " ", 
+          SuperscriptBox[
+           RowBox[{"Tan", "[", 
+            RowBox[{
+             SubscriptBox["\[Theta]", "u2"], "[", "t", "]"}], "]"}], 
+           "2"]}]}]]], "]"}]}]}], ",", 
+   RowBox[{
+    RowBox[{
+     SubscriptBox["\[Theta]", "2"], "[", "t", "]"}], "\[Rule]", 
+    RowBox[{
+     RowBox[{"-", "1.`"}], " ", 
+     RowBox[{"ArcSin", "[", 
+      FractionBox[
+       RowBox[{"100.`", " ", "r2", " ", 
+        RowBox[{"Tan", "[", 
+         RowBox[{
+          SubscriptBox["\[Theta]", "u2"], "[", "t", "]"}], "]"}]}], 
+       SqrtBox[
+        RowBox[{"9.`", "\[VeryThinSpace]", "+", 
+         RowBox[{"9.`", " ", 
+          SuperscriptBox[
+           RowBox[{"Tan", "[", 
+            RowBox[{
+             SubscriptBox["\[Theta]", "u2"], "[", "t", "]"}], "]"}], 
+           "2"]}]}]]], "]"}]}]}]}], "}"}]], "Output",
+ CellChangeTimes->{3.673445902617813*^9}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"tosolve", "//", "MatrixForm"}]], "Input",
+ CellChangeTimes->{{3.673444466940697*^9, 3.673444473050047*^9}}],
+
+Cell[BoxData[
+ TagBox[
+  RowBox[{"(", "\[NoBreak]", 
+   TagBox[GridBox[{
+      {
+       RowBox[{
+        RowBox[{
+         RowBox[{
+          RowBox[{"Derivative", "[", "1", "]"}], "[", "x", "]"}], "[", "t", 
+         "]"}], "\[Equal]", 
+        RowBox[{
+         RowBox[{"0.03`", " ", 
+          RowBox[{"Cos", "[", 
+           RowBox[{
+            SubscriptBox["\[Theta]", "0"], "[", "t", "]"}], "]"}], " ", 
+          RowBox[{"Cos", "[", 
+           RowBox[{
+            SubscriptBox["\[Phi]", "1"], "[", "t", "]"}], "]"}], " ", 
+          RowBox[{"If", "[", 
+           RowBox[{
+            RowBox[{
+             RowBox[{"Mod", "[", 
+              RowBox[{
+               RowBox[{
+                RowBox[{"-", 
+                 FractionBox["\[Pi]", "2"]}], "+", 
+                RowBox[{
+                 TagBox[
+                  RowBox[{"InterpolatingFunction", "[", 
+                   RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"{", 
+                    RowBox[{"0.`", ",", "50.`"}], "}"}], "}"}], 
+                    ",", "\<\"<>\"\>"}], "]"}],
+                  False,
+                  Editable->False], "[", "t", "]"}]}], ",", 
+               RowBox[{"2", " ", "\[Pi]"}]}], "]"}], "<", "\[Pi]"}], ",", 
+            RowBox[{"-", 
+             RowBox[{
+              RowBox[{
+               RowBox[{"Derivative", "[", "1", "]"}], "[", "theta15", "]"}], 
+              "[", "t", "]"}]}], ",", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"Derivative", "[", "1", "]"}], "[", "theta15", "]"}], 
+             "[", "t", "]"}]}], "]"}]}], "+", 
+         RowBox[{"0.03`", " ", 
+          RowBox[{"Sin", "[", 
+           RowBox[{
+            SubscriptBox["\[Theta]", "0"], "[", "t", "]"}], "]"}], " ", 
+          RowBox[{"Which", "[", 
+           RowBox[{
+            RowBox[{
+             RowBox[{
+              RowBox[{"Mod", "[", 
+               RowBox[{
+                RowBox[{
+                 RowBox[{"-", 
+                  FractionBox["\[Pi]", "2"]}], "+", 
+                 RowBox[{
+                  TagBox[
+                   RowBox[{"InterpolatingFunction", "[", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"{", 
+                    RowBox[{"0.`", ",", "50.`"}], "}"}], "}"}], 
+                    ",", "\<\"<>\"\>"}], "]"}],
+                   False,
+                   Editable->False], "[", "t", "]"}]}], ",", 
+                RowBox[{"2", " ", "\[Pi]"}]}], "]"}], "<", 
+              "3.1405926535897932`"}], "&&", 
+             RowBox[{
+              RowBox[{"Mod", "[", 
+               RowBox[{
+                RowBox[{
+                 RowBox[{"-", 
+                  FractionBox["\[Pi]", "2"]}], "+", 
+                 RowBox[{
+                  TagBox[
+                   RowBox[{"InterpolatingFunction", "[", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"{", 
+                    RowBox[{"0.`", ",", "50.`"}], "}"}], "}"}], 
+                    ",", "\<\"<>\"\>"}], "]"}],
+                   False,
+                   Editable->False], "[", "t", "]"}]}], ",", 
+                RowBox[{"2", " ", "\[Pi]"}]}], "]"}], ">", "0.001`"}]}], ",", 
+            RowBox[{"0.`", "\[VeryThinSpace]", "-", 
+             RowBox[{
+              RowBox[{
+               RowBox[{"Derivative", "[", "1", "]"}], "[", "phi15", "]"}], 
+              "[", "t", "]"}]}], ",", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"thetau1", "[", "t", "]"}], ">", 
+              RowBox[{"\[Pi]", "+", "0.001`"}]}], "&&", 
+             RowBox[{
+              RowBox[{"thetau1", "[", "t", "]"}], "<", 
+              RowBox[{
+               RowBox[{"2", " ", "\[Pi]"}], "-", "0.001`"}]}]}], ",", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"Derivative", "[", "1", "]"}], "[", "phi15", "]"}], "[",
+              "t", "]"}], ",", "True", ",", "0"}], "]"}]}], "+", 
+         RowBox[{"0.03`", " ", 
+          RowBox[{"(", 
+           RowBox[{
+            RowBox[{
+             RowBox[{"Sin", "[", 
+              RowBox[{
+               SubscriptBox["\[Theta]", "0"], "[", "t", "]"}], "]"}], " ", 
+             RowBox[{"Sin", "[", 
+              RowBox[{
+               SubscriptBox["\[Theta]", "1"], "[", "t", "]"}], "]"}]}], "-", 
+            RowBox[{
+             RowBox[{"Cos", "[", 
+              RowBox[{
+               SubscriptBox["\[Theta]", "0"], "[", "t", "]"}], "]"}], " ", 
+             RowBox[{"Cos", "[", 
+              RowBox[{
+               SubscriptBox["\[Theta]", "1"], "[", "t", "]"}], "]"}], " ", 
+             RowBox[{"Sin", "[", 
+              RowBox[{
+               SubscriptBox["\[Phi]", "1"], "[", "t", "]"}], "]"}]}]}], ")"}],
+           " ", 
+          RowBox[{
+           TagBox[
+            RowBox[{"InterpolatingFunction", "[", 
+             RowBox[{
+              RowBox[{"{", 
+               RowBox[{"{", 
+                RowBox[{"0.`", ",", "50.`"}], "}"}], "}"}], 
+              ",", "\<\"<>\"\>"}], "]"}],
+            False,
+            Editable->False], "[", "t", "]"}]}]}]}]},
+      {
+       RowBox[{
+        RowBox[{
+         RowBox[{
+          RowBox[{"Derivative", "[", "1", "]"}], "[", "y", "]"}], "[", "t", 
+         "]"}], "\[Equal]", 
+        RowBox[{
+         RowBox[{"0.03`", " ", 
+          RowBox[{"Cos", "[", 
+           RowBox[{
+            SubscriptBox["\[Phi]", "1"], "[", "t", "]"}], "]"}], " ", 
+          RowBox[{"If", "[", 
+           RowBox[{
+            RowBox[{
+             RowBox[{"Mod", "[", 
+              RowBox[{
+               RowBox[{
+                RowBox[{"-", 
+                 FractionBox["\[Pi]", "2"]}], "+", 
+                RowBox[{
+                 TagBox[
+                  RowBox[{"InterpolatingFunction", "[", 
+                   RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"{", 
+                    RowBox[{"0.`", ",", "50.`"}], "}"}], "}"}], 
+                    ",", "\<\"<>\"\>"}], "]"}],
+                  False,
+                  Editable->False], "[", "t", "]"}]}], ",", 
+               RowBox[{"2", " ", "\[Pi]"}]}], "]"}], "<", "\[Pi]"}], ",", 
+            RowBox[{"-", 
+             RowBox[{
+              RowBox[{
+               RowBox[{"Derivative", "[", "1", "]"}], "[", "theta15", "]"}], 
+              "[", "t", "]"}]}], ",", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"Derivative", "[", "1", "]"}], "[", "theta15", "]"}], 
+             "[", "t", "]"}]}], "]"}], " ", 
+          RowBox[{"Sin", "[", 
+           RowBox[{
+            SubscriptBox["\[Theta]", "0"], "[", "t", "]"}], "]"}]}], "-", 
+         RowBox[{"0.03`", " ", 
+          RowBox[{"Cos", "[", 
+           RowBox[{
+            SubscriptBox["\[Theta]", "0"], "[", "t", "]"}], "]"}], " ", 
+          RowBox[{"Which", "[", 
+           RowBox[{
+            RowBox[{
+             RowBox[{
+              RowBox[{"Mod", "[", 
+               RowBox[{
+                RowBox[{
+                 RowBox[{"-", 
+                  FractionBox["\[Pi]", "2"]}], "+", 
+                 RowBox[{
+                  TagBox[
+                   RowBox[{"InterpolatingFunction", "[", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"{", 
+                    RowBox[{"0.`", ",", "50.`"}], "}"}], "}"}], 
+                    ",", "\<\"<>\"\>"}], "]"}],
+                   False,
+                   Editable->False], "[", "t", "]"}]}], ",", 
+                RowBox[{"2", " ", "\[Pi]"}]}], "]"}], "<", 
+              "3.1405926535897932`"}], "&&", 
+             RowBox[{
+              RowBox[{"Mod", "[", 
+               RowBox[{
+                RowBox[{
+                 RowBox[{"-", 
+                  FractionBox["\[Pi]", "2"]}], "+", 
+                 RowBox[{
+                  TagBox[
+                   RowBox[{"InterpolatingFunction", "[", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"{", 
+                    RowBox[{"0.`", ",", "50.`"}], "}"}], "}"}], 
+                    ",", "\<\"<>\"\>"}], "]"}],
+                   False,
+                   Editable->False], "[", "t", "]"}]}], ",", 
+                RowBox[{"2", " ", "\[Pi]"}]}], "]"}], ">", "0.001`"}]}], ",", 
+            RowBox[{"0.`", "\[VeryThinSpace]", "-", 
+             RowBox[{
+              RowBox[{
+               RowBox[{"Derivative", "[", "1", "]"}], "[", "phi15", "]"}], 
+              "[", "t", "]"}]}], ",", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"thetau1", "[", "t", "]"}], ">", 
+              RowBox[{"\[Pi]", "+", "0.001`"}]}], "&&", 
+             RowBox[{
+              RowBox[{"thetau1", "[", "t", "]"}], "<", 
+              RowBox[{
+               RowBox[{"2", " ", "\[Pi]"}], "-", "0.001`"}]}]}], ",", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"Derivative", "[", "1", "]"}], "[", "phi15", "]"}], "[",
+              "t", "]"}], ",", "True", ",", "0"}], "]"}]}], "-", 
+         RowBox[{"0.03`", " ", 
+          RowBox[{"(", 
+           RowBox[{
+            RowBox[{
+             RowBox[{"Cos", "[", 
+              RowBox[{
+               SubscriptBox["\[Theta]", "0"], "[", "t", "]"}], "]"}], " ", 
+             RowBox[{"Sin", "[", 
+              RowBox[{
+               SubscriptBox["\[Theta]", "1"], "[", "t", "]"}], "]"}]}], "+", 
+            RowBox[{
+             RowBox[{"Cos", "[", 
+              RowBox[{
+               SubscriptBox["\[Theta]", "1"], "[", "t", "]"}], "]"}], " ", 
+             RowBox[{"Sin", "[", 
+              RowBox[{
+               SubscriptBox["\[Theta]", "0"], "[", "t", "]"}], "]"}], " ", 
+             RowBox[{"Sin", "[", 
+              RowBox[{
+               SubscriptBox["\[Phi]", "1"], "[", "t", "]"}], "]"}]}]}], ")"}],
+           " ", 
+          RowBox[{
+           TagBox[
+            RowBox[{"InterpolatingFunction", "[", 
+             RowBox[{
+              RowBox[{"{", 
+               RowBox[{"{", 
+                RowBox[{"0.`", ",", "50.`"}], "}"}], "}"}], 
+              ",", "\<\"<>\"\>"}], "]"}],
+            False,
+            Editable->False], "[", "t", "]"}]}]}]}]},
+      {
+       RowBox[{
+        RowBox[{
+         RowBox[{
+          RowBox[{"Derivative", "[", "1", "]"}], "[", 
+          SubscriptBox["\[Theta]", "0"], "]"}], "[", "t", "]"}], "\[Equal]", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"-", "0.15`"}], " ", 
+          RowBox[{"Cos", "[", 
+           RowBox[{
+            SubscriptBox["\[Phi]", "1"], "[", "t", "]"}], "]"}], " ", 
+          RowBox[{"If", "[", 
+           RowBox[{
+            RowBox[{
+             RowBox[{"Mod", "[", 
+              RowBox[{
+               RowBox[{
+                RowBox[{"-", 
+                 FractionBox["\[Pi]", "2"]}], "+", 
+                RowBox[{
+                 TagBox[
+                  RowBox[{"InterpolatingFunction", "[", 
+                   RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"{", 
+                    RowBox[{"0.`", ",", "50.`"}], "}"}], "}"}], 
+                    ",", "\<\"<>\"\>"}], "]"}],
+                  False,
+                  Editable->False], "[", "t", "]"}]}], ",", 
+               RowBox[{"2", " ", "\[Pi]"}]}], "]"}], "<", "\[Pi]"}], ",", 
+            RowBox[{"-", 
+             RowBox[{
+              RowBox[{
+               RowBox[{"Derivative", "[", "1", "]"}], "[", "theta15", "]"}], 
+              "[", "t", "]"}]}], ",", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"Derivative", "[", "1", "]"}], "[", "theta15", "]"}], 
+             "[", "t", "]"}]}], "]"}]}], "+", 
+         RowBox[{"0.15`", " ", 
+          RowBox[{"Cos", "[", 
+           RowBox[{
+            SubscriptBox["\[Phi]", "2"], "[", "t", "]"}], "]"}], " ", 
+          RowBox[{"If", "[", 
+           RowBox[{
+            RowBox[{
+             RowBox[{"Mod", "[", 
+              RowBox[{
+               RowBox[{
+                RowBox[{"-", 
+                 FractionBox["\[Pi]", "2"]}], "+", 
+                RowBox[{
+                 TagBox[
+                  RowBox[{"InterpolatingFunction", "[", 
+                   RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"{", 
+                    RowBox[{"0.`", ",", "50.`"}], "}"}], "}"}], 
+                    ",", "\<\"<>\"\>"}], "]"}],
+                  False,
+                  Editable->False], "[", "t", "]"}]}], ",", 
+               RowBox[{"2", " ", "\[Pi]"}]}], "]"}], "<", "\[Pi]"}], ",", 
+            RowBox[{"0.`", "\[VeryThinSpace]", "-", 
+             RowBox[{
+              RowBox[{
+               RowBox[{"Derivative", "[", "1", "]"}], "[", "theta25", "]"}], 
+              "[", "t", "]"}]}], ",", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"Derivative", "[", "1", "]"}], "[", "theta25", "]"}], 
+             "[", "t", "]"}]}], "]"}]}], "-", 
+         RowBox[{"0.15`", " ", 
+          RowBox[{"Cot", "[", 
+           RowBox[{
+            SubscriptBox["\[Theta]", "2"], "[", "t", "]"}], "]"}], " ", 
+          RowBox[{"Sin", "[", 
+           RowBox[{
+            SubscriptBox["\[Phi]", "2"], "[", "t", "]"}], "]"}], " ", 
+          RowBox[{"Which", "[", 
+           RowBox[{
+            RowBox[{
+             RowBox[{
+              RowBox[{"Mod", "[", 
+               RowBox[{
+                RowBox[{
+                 RowBox[{"-", 
+                  FractionBox["\[Pi]", "2"]}], "+", 
+                 RowBox[{
+                  TagBox[
+                   RowBox[{"InterpolatingFunction", "[", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"{", 
+                    RowBox[{"0.`", ",", "50.`"}], "}"}], "}"}], 
+                    ",", "\<\"<>\"\>"}], "]"}],
+                   False,
+                   Editable->False], "[", "t", "]"}]}], ",", 
+                RowBox[{"2", " ", "\[Pi]"}]}], "]"}], "<", 
+              "3.1405926535897932`"}], "&&", 
+             RowBox[{
+              RowBox[{"Mod", "[", 
+               RowBox[{
+                RowBox[{
+                 RowBox[{"-", 
+                  FractionBox["\[Pi]", "2"]}], "+", 
+                 RowBox[{
+                  TagBox[
+                   RowBox[{"InterpolatingFunction", "[", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"{", 
+                    RowBox[{"0.`", ",", "50.`"}], "}"}], "}"}], 
+                    ",", "\<\"<>\"\>"}], "]"}],
+                   False,
+                   Editable->False], "[", "t", "]"}]}], ",", 
+                RowBox[{"2", " ", "\[Pi]"}]}], "]"}], ">", "0.001`"}]}], ",", 
+            RowBox[{"0.`", "\[VeryThinSpace]", "-", 
+             RowBox[{
+              RowBox[{
+               RowBox[{"Derivative", "[", "1", "]"}], "[", "phi15", "]"}], 
+              "[", "t", "]"}]}], ",", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"thetau1", "[", "t", "]"}], ">", 
+              RowBox[{"\[Pi]", "+", "0.001`"}]}], "&&", 
+             RowBox[{
+              RowBox[{"thetau1", "[", "t", "]"}], "<", 
+              RowBox[{
+               RowBox[{"2", " ", "\[Pi]"}], "-", "0.001`"}]}]}], ",", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"Derivative", "[", "1", "]"}], "[", "phi15", "]"}], "[",
+              "t", "]"}], ",", "True", ",", "0"}], "]"}]}], "+", 
+         RowBox[{"0.15`", " ", 
+          RowBox[{"Cot", "[", 
+           RowBox[{
+            SubscriptBox["\[Theta]", "2"], "[", "t", "]"}], "]"}], " ", 
+          RowBox[{"Sin", "[", 
+           RowBox[{
+            SubscriptBox["\[Phi]", "2"], "[", "t", "]"}], "]"}], " ", 
+          RowBox[{"Which", "[", 
+           RowBox[{
+            RowBox[{
+             RowBox[{
+              RowBox[{"Mod", "[", 
+               RowBox[{
+                RowBox[{
+                 RowBox[{"-", 
+                  FractionBox["\[Pi]", "2"]}], "+", 
+                 RowBox[{
+                  TagBox[
+                   RowBox[{"InterpolatingFunction", "[", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"{", 
+                    RowBox[{"0.`", ",", "50.`"}], "}"}], "}"}], 
+                    ",", "\<\"<>\"\>"}], "]"}],
+                   False,
+                   Editable->False], "[", "t", "]"}]}], ",", 
+                RowBox[{"2", " ", "\[Pi]"}]}], "]"}], "<", 
+              "3.1405926535897932`"}], "&&", 
+             RowBox[{
+              RowBox[{"Mod", "[", 
+               RowBox[{
+                RowBox[{
+                 RowBox[{"-", 
+                  FractionBox["\[Pi]", "2"]}], "+", 
+                 RowBox[{
+                  TagBox[
+                   RowBox[{"InterpolatingFunction", "[", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"{", 
+                    RowBox[{"0.`", ",", "50.`"}], "}"}], "}"}], 
+                    ",", "\<\"<>\"\>"}], "]"}],
+                   False,
+                   Editable->False], "[", "t", "]"}]}], ",", 
+                RowBox[{"2", " ", "\[Pi]"}]}], "]"}], ">", "0.001`"}]}], ",", 
+            RowBox[{"0.`", "\[VeryThinSpace]", "-", 
+             RowBox[{
+              RowBox[{
+               RowBox[{"Derivative", "[", "1", "]"}], "[", "phi25", "]"}], 
+              "[", "t", "]"}]}], ",", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"thetau2", "[", "t", "]"}], ">", 
+              RowBox[{"\[Pi]", "+", "0.001`"}]}], "&&", 
+             RowBox[{
+              RowBox[{"thetau2", "[", "t", "]"}], "<", 
+              RowBox[{
+               RowBox[{"2", " ", "\[Pi]"}], "-", "0.001`"}]}]}], ",", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"Derivative", "[", "1", "]"}], "[", "phi25", "]"}], "[",
+              "t", "]"}], ",", "True", ",", "0"}], "]"}]}], "+", 
+         RowBox[{"0.15`", " ", 
+          RowBox[{"(", 
+           RowBox[{
+            RowBox[{
+             RowBox[{"Cos", "[", 
+              RowBox[{
+               SubscriptBox["\[Theta]", "1"], "[", "t", "]"}], "]"}], " ", 
+             RowBox[{"Sin", "[", 
+              RowBox[{
+               SubscriptBox["\[Phi]", "1"], "[", "t", "]"}], "]"}]}], "-", 
+            RowBox[{
+             RowBox[{"Cot", "[", 
+              RowBox[{
+               SubscriptBox["\[Theta]", "2"], "[", "t", "]"}], "]"}], " ", 
+             RowBox[{"Sin", "[", 
+              RowBox[{
+               SubscriptBox["\[Theta]", "1"], "[", "t", "]"}], "]"}], " ", 
+             RowBox[{"Sin", "[", 
+              RowBox[{
+               SubscriptBox["\[Phi]", "2"], "[", "t", "]"}], "]"}]}]}], ")"}],
+           " ", 
+          RowBox[{
+           TagBox[
+            RowBox[{"InterpolatingFunction", "[", 
+             RowBox[{
+              RowBox[{"{", 
+               RowBox[{"{", 
+                RowBox[{"0.`", ",", "50.`"}], "}"}], "}"}], 
+              ",", "\<\"<>\"\>"}], "]"}],
+            False,
+            Editable->False], "[", "t", "]"}]}]}]}]},
+      {
+       RowBox[{
+        RowBox[{
+         RowBox[{
+          RowBox[{"Derivative", "[", "1", "]"}], "[", 
+          SubscriptBox["\[Phi]", "1"], "]"}], "[", "t", "]"}], "\[Equal]", 
+        RowBox[{"Which", "[", 
+         RowBox[{
+          RowBox[{
+           RowBox[{
+            RowBox[{"Mod", "[", 
+             RowBox[{
+              RowBox[{
+               RowBox[{"-", 
+                FractionBox["\[Pi]", "2"]}], "+", 
+               RowBox[{
+                TagBox[
+                 RowBox[{"InterpolatingFunction", "[", 
+                  RowBox[{
+                   RowBox[{"{", 
+                    RowBox[{"{", 
+                    RowBox[{"0.`", ",", "50.`"}], "}"}], "}"}], 
+                   ",", "\<\"<>\"\>"}], "]"}],
+                 False,
+                 Editable->False], "[", "t", "]"}]}], ",", 
+              RowBox[{"2", " ", "\[Pi]"}]}], "]"}], "<", 
+            "3.1405926535897932`"}], "&&", 
+           RowBox[{
+            RowBox[{"Mod", "[", 
+             RowBox[{
+              RowBox[{
+               RowBox[{"-", 
+                FractionBox["\[Pi]", "2"]}], "+", 
+               RowBox[{
+                TagBox[
+                 RowBox[{"InterpolatingFunction", "[", 
+                  RowBox[{
+                   RowBox[{"{", 
+                    RowBox[{"{", 
+                    RowBox[{"0.`", ",", "50.`"}], "}"}], "}"}], 
+                   ",", "\<\"<>\"\>"}], "]"}],
+                 False,
+                 Editable->False], "[", "t", "]"}]}], ",", 
+              RowBox[{"2", " ", "\[Pi]"}]}], "]"}], ">", "0.001`"}]}], ",", 
+          RowBox[{"0.`", "\[VeryThinSpace]", "-", 
+           RowBox[{
+            RowBox[{
+             RowBox[{"Derivative", "[", "1", "]"}], "[", "phi15", "]"}], "[", 
+            "t", "]"}]}], ",", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"thetau1", "[", "t", "]"}], ">", 
+            RowBox[{"\[Pi]", "+", "0.001`"}]}], "&&", 
+           RowBox[{
+            RowBox[{"thetau1", "[", "t", "]"}], "<", 
+            RowBox[{
+             RowBox[{"2", " ", "\[Pi]"}], "-", "0.001`"}]}]}], ",", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"Derivative", "[", "1", "]"}], "[", "phi15", "]"}], "[", 
+           "t", "]"}], ",", "True", ",", "0"}], "]"}]}]},
+      {
+       RowBox[{
+        RowBox[{
+         RowBox[{
+          RowBox[{"Derivative", "[", "1", "]"}], "[", 
+          SubscriptBox["\[Theta]", "1"], "]"}], "[", "t", "]"}], "\[Equal]", 
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{
+           RowBox[{"Mod", "[", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"-", 
+               FractionBox["\[Pi]", "2"]}], "+", 
+              RowBox[{
+               TagBox[
+                RowBox[{"InterpolatingFunction", "[", 
+                 RowBox[{
+                  RowBox[{"{", 
+                   RowBox[{"{", 
+                    RowBox[{"0.`", ",", "50.`"}], "}"}], "}"}], 
+                  ",", "\<\"<>\"\>"}], "]"}],
+                False,
+                Editable->False], "[", "t", "]"}]}], ",", 
+             RowBox[{"2", " ", "\[Pi]"}]}], "]"}], "<", "\[Pi]"}], ",", 
+          RowBox[{"-", 
+           RowBox[{
+            RowBox[{
+             RowBox[{"Derivative", "[", "1", "]"}], "[", "theta15", "]"}], 
+            "[", "t", "]"}]}], ",", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"Derivative", "[", "1", "]"}], "[", "theta15", "]"}], "[",
+            "t", "]"}]}], "]"}]}]},
+      {
+       RowBox[{
+        RowBox[{
+         RowBox[{
+          RowBox[{"Derivative", "[", "1", "]"}], "[", 
+          SubscriptBox["\[Psi]", "1"], "]"}], "[", "t", "]"}], "\[Equal]", 
+        RowBox[{
+         TagBox[
+          RowBox[{"InterpolatingFunction", "[", 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{"{", 
+              RowBox[{"0.`", ",", "50.`"}], "}"}], "}"}], ",", "\<\"<>\"\>"}],
+            "]"}],
+          False,
+          Editable->False], "[", "t", "]"}]}]},
+      {
+       RowBox[{
+        RowBox[{
+         RowBox[{
+          RowBox[{"Derivative", "[", "1", "]"}], "[", 
+          SubscriptBox["\[Phi]", "2"], "]"}], "[", "t", "]"}], "\[Equal]", 
+        RowBox[{"Which", "[", 
+         RowBox[{
+          RowBox[{
+           RowBox[{
+            RowBox[{"Mod", "[", 
+             RowBox[{
+              RowBox[{
+               RowBox[{"-", 
+                FractionBox["\[Pi]", "2"]}], "+", 
+               RowBox[{
+                TagBox[
+                 RowBox[{"InterpolatingFunction", "[", 
+                  RowBox[{
+                   RowBox[{"{", 
+                    RowBox[{"{", 
+                    RowBox[{"0.`", ",", "50.`"}], "}"}], "}"}], 
+                   ",", "\<\"<>\"\>"}], "]"}],
+                 False,
+                 Editable->False], "[", "t", "]"}]}], ",", 
+              RowBox[{"2", " ", "\[Pi]"}]}], "]"}], "<", 
+            "3.1405926535897932`"}], "&&", 
+           RowBox[{
+            RowBox[{"Mod", "[", 
+             RowBox[{
+              RowBox[{
+               RowBox[{"-", 
+                FractionBox["\[Pi]", "2"]}], "+", 
+               RowBox[{
+                TagBox[
+                 RowBox[{"InterpolatingFunction", "[", 
+                  RowBox[{
+                   RowBox[{"{", 
+                    RowBox[{"{", 
+                    RowBox[{"0.`", ",", "50.`"}], "}"}], "}"}], 
+                   ",", "\<\"<>\"\>"}], "]"}],
+                 False,
+                 Editable->False], "[", "t", "]"}]}], ",", 
+              RowBox[{"2", " ", "\[Pi]"}]}], "]"}], ">", "0.001`"}]}], ",", 
+          RowBox[{"0.`", "\[VeryThinSpace]", "-", 
+           RowBox[{
+            RowBox[{
+             RowBox[{"Derivative", "[", "1", "]"}], "[", "phi25", "]"}], "[", 
+            "t", "]"}]}], ",", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"thetau2", "[", "t", "]"}], ">", 
+            RowBox[{"\[Pi]", "+", "0.001`"}]}], "&&", 
+           RowBox[{
+            RowBox[{"thetau2", "[", "t", "]"}], "<", 
+            RowBox[{
+             RowBox[{"2", " ", "\[Pi]"}], "-", "0.001`"}]}]}], ",", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"Derivative", "[", "1", "]"}], "[", "phi25", "]"}], "[", 
+           "t", "]"}], ",", "True", ",", "0"}], "]"}]}]},
+      {
+       RowBox[{
+        RowBox[{
+         RowBox[{
+          RowBox[{"Derivative", "[", "1", "]"}], "[", 
+          SubscriptBox["\[Theta]", "2"], "]"}], "[", "t", "]"}], "\[Equal]", 
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{
+           RowBox[{"Mod", "[", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"-", 
+               FractionBox["\[Pi]", "2"]}], "+", 
+              RowBox[{
+               TagBox[
+                RowBox[{"InterpolatingFunction", "[", 
+                 RowBox[{
+                  RowBox[{"{", 
+                   RowBox[{"{", 
+                    RowBox[{"0.`", ",", "50.`"}], "}"}], "}"}], 
+                  ",", "\<\"<>\"\>"}], "]"}],
+                False,
+                Editable->False], "[", "t", "]"}]}], ",", 
+             RowBox[{"2", " ", "\[Pi]"}]}], "]"}], "<", "\[Pi]"}], ",", 
+          RowBox[{"0.`", "\[VeryThinSpace]", "-", 
+           RowBox[{
+            RowBox[{
+             RowBox[{"Derivative", "[", "1", "]"}], "[", "theta25", "]"}], 
+            "[", "t", "]"}]}], ",", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"Derivative", "[", "1", "]"}], "[", "theta25", "]"}], "[",
+            "t", "]"}]}], "]"}]}]},
+      {
+       RowBox[{
+        RowBox[{
+         RowBox[{
+          RowBox[{"Derivative", "[", "1", "]"}], "[", 
+          SubscriptBox["\[Psi]", "2"], "]"}], "[", "t", "]"}], "\[Equal]", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"Csc", "[", 
+           RowBox[{
+            SubscriptBox["\[Theta]", "2"], "[", "t", "]"}], "]"}], " ", 
+          RowBox[{"Which", "[", 
+           RowBox[{
+            RowBox[{
+             RowBox[{
+              RowBox[{"Mod", "[", 
+               RowBox[{
+                RowBox[{
+                 RowBox[{"-", 
+                  FractionBox["\[Pi]", "2"]}], "+", 
+                 RowBox[{
+                  TagBox[
+                   RowBox[{"InterpolatingFunction", "[", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"{", 
+                    RowBox[{"0.`", ",", "50.`"}], "}"}], "}"}], 
+                    ",", "\<\"<>\"\>"}], "]"}],
+                   False,
+                   Editable->False], "[", "t", "]"}]}], ",", 
+                RowBox[{"2", " ", "\[Pi]"}]}], "]"}], "<", 
+              "3.1405926535897932`"}], "&&", 
+             RowBox[{
+              RowBox[{"Mod", "[", 
+               RowBox[{
+                RowBox[{
+                 RowBox[{"-", 
+                  FractionBox["\[Pi]", "2"]}], "+", 
+                 RowBox[{
+                  TagBox[
+                   RowBox[{"InterpolatingFunction", "[", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"{", 
+                    RowBox[{"0.`", ",", "50.`"}], "}"}], "}"}], 
+                    ",", "\<\"<>\"\>"}], "]"}],
+                   False,
+                   Editable->False], "[", "t", "]"}]}], ",", 
+                RowBox[{"2", " ", "\[Pi]"}]}], "]"}], ">", "0.001`"}]}], ",", 
+            RowBox[{"0.`", "\[VeryThinSpace]", "-", 
+             RowBox[{
+              RowBox[{
+               RowBox[{"Derivative", "[", "1", "]"}], "[", "phi15", "]"}], 
+              "[", "t", "]"}]}], ",", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"thetau1", "[", "t", "]"}], ">", 
+              RowBox[{"\[Pi]", "+", "0.001`"}]}], "&&", 
+             RowBox[{
+              RowBox[{"thetau1", "[", "t", "]"}], "<", 
+              RowBox[{
+               RowBox[{"2", " ", "\[Pi]"}], "-", "0.001`"}]}]}], ",", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"Derivative", "[", "1", "]"}], "[", "phi15", "]"}], "[",
+              "t", "]"}], ",", "True", ",", "0"}], "]"}]}], "-", 
+         RowBox[{
+          RowBox[{"Csc", "[", 
+           RowBox[{
+            SubscriptBox["\[Theta]", "2"], "[", "t", "]"}], "]"}], " ", 
+          RowBox[{"Which", "[", 
+           RowBox[{
+            RowBox[{
+             RowBox[{
+              RowBox[{"Mod", "[", 
+               RowBox[{
+                RowBox[{
+                 RowBox[{"-", 
+                  FractionBox["\[Pi]", "2"]}], "+", 
+                 RowBox[{
+                  TagBox[
+                   RowBox[{"InterpolatingFunction", "[", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"{", 
+                    RowBox[{"0.`", ",", "50.`"}], "}"}], "}"}], 
+                    ",", "\<\"<>\"\>"}], "]"}],
+                   False,
+                   Editable->False], "[", "t", "]"}]}], ",", 
+                RowBox[{"2", " ", "\[Pi]"}]}], "]"}], "<", 
+              "3.1405926535897932`"}], "&&", 
+             RowBox[{
+              RowBox[{"Mod", "[", 
+               RowBox[{
+                RowBox[{
+                 RowBox[{"-", 
+                  FractionBox["\[Pi]", "2"]}], "+", 
+                 RowBox[{
+                  TagBox[
+                   RowBox[{"InterpolatingFunction", "[", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"{", 
+                    RowBox[{"0.`", ",", "50.`"}], "}"}], "}"}], 
+                    ",", "\<\"<>\"\>"}], "]"}],
+                   False,
+                   Editable->False], "[", "t", "]"}]}], ",", 
+                RowBox[{"2", " ", "\[Pi]"}]}], "]"}], ">", "0.001`"}]}], ",", 
+            RowBox[{"0.`", "\[VeryThinSpace]", "-", 
+             RowBox[{
+              RowBox[{
+               RowBox[{"Derivative", "[", "1", "]"}], "[", "phi25", "]"}], 
+              "[", "t", "]"}]}], ",", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"thetau2", "[", "t", "]"}], ">", 
+              RowBox[{"\[Pi]", "+", "0.001`"}]}], "&&", 
+             RowBox[{
+              RowBox[{"thetau2", "[", "t", "]"}], "<", 
+              RowBox[{
+               RowBox[{"2", " ", "\[Pi]"}], "-", "0.001`"}]}]}], ",", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"Derivative", "[", "1", "]"}], "[", "phi25", "]"}], "[",
+              "t", "]"}], ",", "True", ",", "0"}], "]"}]}], "+", 
+         RowBox[{
+          RowBox[{"Csc", "[", 
+           RowBox[{
+            SubscriptBox["\[Theta]", "2"], "[", "t", "]"}], "]"}], " ", 
+          RowBox[{"Sin", "[", 
+           RowBox[{
+            SubscriptBox["\[Theta]", "1"], "[", "t", "]"}], "]"}], " ", 
+          RowBox[{
+           TagBox[
+            RowBox[{"InterpolatingFunction", "[", 
+             RowBox[{
+              RowBox[{"{", 
+               RowBox[{"{", 
+                RowBox[{"0.`", ",", "50.`"}], "}"}], "}"}], 
+              ",", "\<\"<>\"\>"}], "]"}],
+            False,
+            Editable->False], "[", "t", "]"}]}]}]}]},
+      {
+       RowBox[{
+        RowBox[{"x", "[", "0", "]"}], "\[Equal]", "0"}]},
+      {
+       RowBox[{
+        RowBox[{"y", "[", "0", "]"}], "\[Equal]", "0.1`"}]},
+      {
+       RowBox[{
+        RowBox[{
+         SubscriptBox["\[Theta]", "0"], "[", "0", "]"}], "\[Equal]", 
+        RowBox[{"-", "0.4`"}]}]},
+      {
+       RowBox[{
+        RowBox[{
+         SubscriptBox["\[Phi]", "1"], "[", "0", "]"}], "\[Equal]", 
+        RowBox[{"-", "0.6890987081495328`"}]}]},
+      {
+       RowBox[{
+        RowBox[{
+         SubscriptBox["\[Theta]", "1"], "[", "0", "]"}], "\[Equal]", 
+        RowBox[{
+         RowBox[{"-", "0.6890987081495328`"}], " ", 
+         RowBox[{
+         "Null", "\[LeftDoubleBracket]", "1", "\[RightDoubleBracket]"}]}]}]},
+      {
+       RowBox[{
+        RowBox[{
+         SubscriptBox["\[Psi]", "1"], "[", "0", "]"}], "\[Equal]", "0.`"}]},
+      {
+       RowBox[{
+        RowBox[{
+         SubscriptBox["\[Phi]", "2"], "[", "0", "]"}], "\[Equal]", 
+        RowBox[{"-", "0.6890987081495328`"}]}]},
+      {
+       RowBox[{
+        RowBox[{
+         SubscriptBox["\[Theta]", "2"], "[", "0", "]"}], "\[Equal]", 
+        RowBox[{"-", "0.26262064182521755`"}]}]},
+      {
+       RowBox[{
+        RowBox[{
+         SubscriptBox["\[Psi]", "2"], "[", "0", "]"}], "\[Equal]", "0.4`"}]}
+     },
+     GridBoxAlignment->{
+      "Columns" -> {{Center}}, "ColumnsIndexed" -> {}, "Rows" -> {{Baseline}},
+        "RowsIndexed" -> {}},
+     GridBoxSpacings->{"Columns" -> {
+         Offset[0.27999999999999997`], {
+          Offset[0.5599999999999999]}, 
+         Offset[0.27999999999999997`]}, "ColumnsIndexed" -> {}, "Rows" -> {
+         Offset[0.2], {
+          Offset[0.4]}, 
+         Offset[0.2]}, "RowsIndexed" -> {}}],
+    Column], "\[NoBreak]", ")"}],
+  Function[BoxForm`e$, 
+   MatrixForm[BoxForm`e$]]]], "Output",
+ CellChangeTimes->{
+  3.673444473408067*^9, 3.6734452416480083`*^9, 3.6734454728222303`*^9, 
+   3.6734458497997923`*^9, {3.6734459010867257`*^9, 3.6734459041479006`*^9}}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData["model"], "Input",
+ CellChangeTimes->{{3.6734516534777436`*^9, 3.6734516561288953`*^9}}],
+
+Cell[BoxData["\<\"psi\"\>"], "Output",
+ CellChangeTimes->{3.6734516568369355`*^9}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"D", "[", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"x", "[", "t", "]"}], "*", 
+    RowBox[{"y", "[", "t", "]"}]}], ",", "t"}], "]"}]], "Input",
+ CellChangeTimes->{{3.6735135966169786`*^9, 3.6735136060105157`*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"y", "[", "t", "]"}], " ", 
+   RowBox[{
+    SuperscriptBox["x", "\[Prime]",
+     MultilineFunction->None], "[", "t", "]"}]}], "+", 
+  RowBox[{
+   RowBox[{"x", "[", "t", "]"}], " ", 
+   RowBox[{
+    SuperscriptBox["y", "\[Prime]",
+     MultilineFunction->None], "[", "t", "]"}]}]}]], "Output",
+ CellChangeTimes->{3.6735136068975663`*^9}]
+}, Open  ]]
+},
+WindowSize->{1264, 972},
+WindowMargins->{{-1271, Automatic}, {Automatic, 47}},
+Magnification->1.100000023841858,
+FrontEndVersion->"9.0 for Microsoft Windows (64-bit) (November 20, 2012)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[557, 20, 12363, 312, 713, "Input"],
+Cell[12923, 334, 128, 2, 32, "Input"],
+Cell[13054, 338, 125, 2, 32, "Input"],
+Cell[CellGroupData[{
+Cell[13204, 344, 717, 25, 32, "Input"],
+Cell[13924, 371, 673, 19, 33, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[14634, 395, 3227, 88, 133, "Input"],
+Cell[17864, 485, 270, 6, 24, "Print"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[18171, 496, 2033, 59, 73, "Input"],
+Cell[20207, 557, 583, 12, 23, "Message"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[20827, 574, 2041, 63, 73, "Input"],
+Cell[22871, 639, 2040, 63, 73, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[24948, 707, 131, 2, 32, "Input"],
+Cell[25082, 711, 33825, 901, 408, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[58944, 1617, 101, 1, 41, "Input"],
+Cell[59048, 1620, 82, 1, 42, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[59167, 1626, 231, 6, 41, "Input"],
+Cell[59401, 1634, 382, 12, 42, "Output"]
+}, Open  ]]
+}
+]
+*)
+
+(* End of internal cache information *)
