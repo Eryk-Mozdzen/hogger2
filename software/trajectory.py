@@ -15,19 +15,42 @@ publisher = context.socket(zmq.PUB)
 publisher.connect("tcp://localhost:7000")
 
 fig = plt.figure()
-grid = gridspec.GridSpec(17, 3)
+grid = gridspec.GridSpec(18, 3)
 ax = plt.subplot(grid[0:10, :])
 
 time_0 = time.time()
 
-def periodic():
-    data = {
-        'controller_continue': None
-    }
-    publisher.send_json(data)
+motors_active = False
+controller_active = False
 
-timer = fig.canvas.new_timer(interval=20)
+def periodic():
+    if motors_active:
+        data = {
+            'manual_motor': [
+                -200,
+                +200,
+            ],
+        }
+        publisher.send_json(data)
+    if motors_active and not controller_active:
+        data = {
+            'manual_servo': [
+                0.04015949507360143,
+                0,
+                -0.058555490748248465,
+                0,
+            ],
+        }
+        publisher.send_json(data)
+    if controller_active:
+        data = {
+            'controller_continue': None
+        }
+        publisher.send_json(data)
+
+timer = fig.canvas.new_timer(interval=100)
 timer.add_callback(periodic)
+timer.start()
 
 def reset_ekf(event):
     data = {'reset': None}
@@ -36,10 +59,12 @@ def reset_ekf(event):
 def write_trajectory(event):
     data = {
         'trajectory_write': {
-            'generator': 'lemniscate',
+            'generator': 'circle',
             'params': [
-                2,
-                10,
+                0,
+                0,
+                1,
+                20,
             ],
         },
     }
@@ -47,7 +72,7 @@ def write_trajectory(event):
 
 def read_trajectory(event):
     data = {
-        'trajectory_read': None,
+        'trajectory_read': 20,
     }
     publisher.send_json(data)
     readed_x.clear()
@@ -55,13 +80,22 @@ def read_trajectory(event):
     readed.set_xdata(readed_x)
     readed.set_ydata(readed_y)
 
+def start_motors(event):
+    global motors_active
+    global time_0
+    motors_active = True
+
 def start_tracking(event):
+    global controller_active
     global time_0
     time_0 = time.time()
-    timer.start()
+    controller_active = True
 
 def stop_tracking(event):
-    timer.stop()
+    global motors_active
+    global controller_active
+    motors_active = False
+    controller_active = False
 
 button_reset_ax = plt.subplot(grid[12, 1])
 button_reset = Button(button_reset_ax, 'reset')
@@ -75,11 +109,15 @@ button_read_ax = plt.subplot(grid[14, 1])
 button_read = Button(button_read_ax, 'read trajectory')
 button_read.on_clicked(read_trajectory)
 
-button_start_ax = plt.subplot(grid[15, 1])
-button_start = Button(button_start_ax, 'start')
-button_start.on_clicked(start_tracking)
+button_start_motors_ax = plt.subplot(grid[15, 1])
+button_start_motors = Button(button_start_motors_ax, 'start motors')
+button_start_motors.on_clicked(start_motors)
 
-button_stop_ax = plt.subplot(grid[16, 1])
+button_start_tracking_ax = plt.subplot(grid[16, 1])
+button_start_tracking = Button(button_start_tracking_ax, 'start tracking')
+button_start_tracking.on_clicked(start_tracking)
+
+button_stop_ax = plt.subplot(grid[17, 1])
 button_stop = Button(button_stop_ax, 'stop')
 button_stop.on_clicked(stop_tracking)
 

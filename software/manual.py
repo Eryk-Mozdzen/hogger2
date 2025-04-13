@@ -33,21 +33,27 @@ try:
         a2 = numpy.arcsin(numpy.clip(v2/(-W*R), -1., 1.))
 
         data = {
-            'manual': [
+            'manual_servo': [
                 a1,
                 0,
-                -W if joystick.get_axis(2)>0 else 0,
                 a2,
                 0,
+            ],
+        }
+        print(data)
+        publisher.send_json(data)
+
+        data = {
+            'manual_motor': [
+                -W if joystick.get_axis(2)>0 else 0,
                 +W if joystick.get_axis(2)>0 else 0,
             ],
         }
-
         print(data)
+        publisher.send_json(data)
+
         print([round(joystick.get_axis(i), 2) for i in range(joystick.get_numaxes())])
         print([joystick.get_button(i) for i in range(joystick.get_numbuttons())])
-
-        publisher.send_json(data)
 
         offset[0] +=(0.05 if joystick.get_button(0) else 0)
         offset[0] -=(0.05 if joystick.get_button(3) else 0)

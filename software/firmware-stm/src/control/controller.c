@@ -7,23 +7,23 @@
 #include "generated/estimator.h"
 #include "utils/task.h"
 
-#define DEG2RAD            (PI / 180.f)
-#define RAD2DEG            (180.f / PI)
-#define CONTROLLER_K1      2.f
-#define CONTROLLER_K2      3.f
-#define INTEGRAL_DIM       5
-#define GENERATOR_PARAMS   10
-#define TRAJECTORY_READ_DT 0.1f
-#define TRAJECTORY_READ_T  10.f
-#define MOTOR1_VEL         -300.f
-#define MOTOR2_VEL         +300.f
-#define GIMBAL_MAX         (10.f * DEG2RAD)
+#define DEG2RAD             (PI / 180.f)
+#define RAD2DEG             (180.f / PI)
+#define CONTROLLER_K1       5.f
+#define CONTROLLER_K2       10.f
+#define INTEGRAL_DIM        6
+#define GENERATOR_PARAMS    10
+#define TRAJECTORY_READ_NUM 100
+#define MOTOR1_VEL          -200.f
+#define MOTOR2_VEL          +200.f
+#define GIMBAL_MAX          (2.f * DEG2RAD)
 
 #define CLAMP(val, min, max) (((val) > (max)) ? (max) : (((val) < (min)) ? (min) : (val)))
 
 typedef enum {
     INTEGRAL_IDX_PHI1,
     INTEGRAL_IDX_THETA1,
+    INTEGRAL_IDX_PHI2,
     INTEGRAL_IDX_THETA2,
     INTEGRAL_IDX_ETA3,
     INTEGRAL_IDX_ETA5,
@@ -36,6 +36,7 @@ typedef struct {
     float generator_params[GENERATOR_PARAMS];
 
     bool read_started;
+    uint32_t read_step;
     float read_time;
 } trajectory_t;
 
@@ -82,7 +83,7 @@ static void generator_circle(float *hd, float *d_hd, float *d2_hd, const float t
 
     hd[0] = x + r * cos(w * t);
     hd[1] = y + r * sin(w * t);
-    hd[2] = w * t + PI / 2 - PI / 4; // very important -pi/4 !!!
+    hd[2] = w * t + PI / 2 + PI / 4; // very important pi/4 !!!
     hd[3] = MOTOR1_VEL * t;
     hd[4] = MOTOR2_VEL * t;
 
@@ -112,8 +113,8 @@ static void generator_lemniscate(float *hd, float *d_hd, float *d2_hd, const flo
                   2 * a * w * pow(sin(t * w), 2) * pow(cos(t * w), 2) /
                       pow(pow(sin(t * w), 2) + 1, 2),
               -a * w * sin(t * w) / (pow(sin(t * w), 2) + 1) -
-                  2 * a * w * sin(t * w) * pow(cos(t * w), 2) / pow(pow(sin(t * w), 2) + 1, 2)) -
-        PI / 4); // very important -pi/4 !!!
+                  2 * a * w * sin(t * w) * pow(cos(t * w), 2) / pow(pow(sin(t * w), 2) + 1, 2)) +
+        PI / 4); // very important pi/4 !!!
     hd[3] = MOTOR1_VEL * t;
     hd[4] = MOTOR2_VEL * t;
 
@@ -144,19 +145,21 @@ static void trajectory_read_loop() {
 
     static uint8_t buffer[2048];
 
+    const float t = trajectory.read_time * trajectory.read_step / TRAJECTORY_READ_NUM;
+
     mpack_t response;
     mpack_create_empty(&response, buffer, sizeof(buffer));
 
     cmp_write_str(&response.cmp, "trajectory", 10);
     cmp_write_map(&response.cmp, 2);
     cmp_write_str(&response.cmp, "time", 4);
-    cmp_write_float(&response.cmp, trajectory.read_time);
+    cmp_write_float(&response.cmp, t);
     cmp_write_str(&response.cmp, "node", 4);
     cmp_write_array(&response.cmp, 15);
 
     float node[15] = {0};
     if(trajectory.generator) {
-        trajectory.generator(&node[0], &node[5], &node[10], trajectory.read_time);
+        trajectory.generator(&node[0], &node[5], &node[10], t);
     }
     for(uint32_t i = 0; i < 15; i++) {
         cmp_write_float(&response.cmp, node[i]);
@@ -164,9 +167,9 @@ static void trajectory_read_loop() {
 
     stream_transmit(&response);
 
-    trajectory.read_time += TRAJECTORY_READ_DT;
+    trajectory.read_step++;
 
-    if(trajectory.read_time >= TRAJECTORY_READ_T) {
+    if(trajectory.read_step >= TRAJECTORY_READ_NUM) {
         trajectory.read_started = false;
     }
 }
@@ -174,8 +177,12 @@ static void trajectory_read_loop() {
 static void trajectory_read_start(mpack_t *mpack) {
     (void)mpack;
 
+    if(!mpack_read_float32(mpack, &trajectory.read_time)) {
+        return;
+    }
+
     trajectory.read_started = true;
-    trajectory.read_time = 0;
+    trajectory.read_step = 0;
 }
 
 static void trajectory_write(mpack_t *mpack) {
@@ -263,7 +270,10 @@ static void controller_loop() {
     float theta2;
     servos_get_position(&phi1, &theta1, &phi2, &theta2);
 
-    controller.h[0] = ESTIMATOR_GET_POS_X();
+    phi1 -= (+0.04015949507360143);
+    phi2 -= (-0.058555490748248465),
+
+        controller.h[0] = ESTIMATOR_GET_POS_X();
     controller.h[1] = ESTIMATOR_GET_POS_Y();
     controller.h[2] = ESTIMATOR_GET_POS_THETA();
     controller.h[3] = controller.hd[3];
@@ -286,8 +296,8 @@ static void controller_loop() {
         phi1,
         theta1,
         controller.hd[3],
-        phi2 + 0.05f * expf(-10000.f * phi2 * phi2),       // for non-zero values of phi_2
-        theta2 + 0.05f * expf(-10000.f * theta2 * theta2), // for non-zero values of theta_2
+        phi2 + 0.01f * expf(-100000.f * phi2 * phi2),       // for non-zero values of phi_2
+        theta2 + 0.01f * expf(-100000.f * theta2 * theta2), // for non-zero values of theta_2
         controller.hd[4],
     };
 
@@ -304,6 +314,7 @@ static void controller_loop() {
 
     integrator.input[INTEGRAL_IDX_PHI1] = eta[0];
     integrator.input[INTEGRAL_IDX_THETA1] = eta[1];
+    integrator.input[INTEGRAL_IDX_PHI2] = eta[0] + sinf(theta1) * eta[2] - sinf(theta2) * eta[4];
     integrator.input[INTEGRAL_IDX_THETA2] = eta[3];
     integrator.input[INTEGRAL_IDX_ETA3] = u[2];
     integrator.input[INTEGRAL_IDX_ETA5] = u[4];
@@ -311,6 +322,7 @@ static void controller_loop() {
     float min[INTEGRAL_DIM] = {0};
     min[INTEGRAL_IDX_PHI1] = -GIMBAL_MAX;
     min[INTEGRAL_IDX_THETA1] = -GIMBAL_MAX;
+    min[INTEGRAL_IDX_PHI2] = -GIMBAL_MAX;
     min[INTEGRAL_IDX_THETA2] = -GIMBAL_MAX;
     min[INTEGRAL_IDX_ETA3] = MOTOR1_VEL;
     min[INTEGRAL_IDX_ETA5] = MOTOR2_VEL;
@@ -318,6 +330,7 @@ static void controller_loop() {
     float max[INTEGRAL_DIM] = {0};
     max[INTEGRAL_IDX_PHI1] = GIMBAL_MAX;
     max[INTEGRAL_IDX_THETA1] = GIMBAL_MAX;
+    max[INTEGRAL_IDX_PHI2] = GIMBAL_MAX;
     max[INTEGRAL_IDX_THETA2] = GIMBAL_MAX;
     max[INTEGRAL_IDX_ETA3] = MOTOR1_VEL;
     max[INTEGRAL_IDX_ETA5] = MOTOR2_VEL;
@@ -325,16 +338,18 @@ static void controller_loop() {
     for(uint32_t i = 0; i < INTEGRAL_DIM; i++) {
         integrator.integral[i] += 0.5f * (integrator.input[i] + integrator.prev[i]) * dt;
         integrator.integral[i] = CLAMP(integrator.integral[i], min[i], max[i]);
-        integrator.prev[i] = integrator.integral[i];
+        integrator.prev[i] = integrator.input[i];
     }
 
-    const float setpoint_phi1 = integrator.integral[INTEGRAL_IDX_PHI1];
-    const float setpoint_theta1 = integrator.integral[INTEGRAL_IDX_THETA1];
-    const float setpoint_theta2 = integrator.integral[INTEGRAL_IDX_THETA2];
-    const float setpoint_phi2 = setpoint_phi1 + sinf(setpoint_theta1) - sinf(setpoint_theta2);
+    const float out_phi1 = integrator.integral[INTEGRAL_IDX_PHI1];
+    const float out_theta1 = integrator.integral[INTEGRAL_IDX_THETA1];
+    const float out_phi2 = integrator.integral[INTEGRAL_IDX_PHI2];
+    const float out_theta2 = integrator.integral[INTEGRAL_IDX_THETA2];
 
-    motors_set_velocity(MOTOR1_VEL, MOTOR2_VEL);
-    servos_set_position(setpoint_phi1, setpoint_theta1, setpoint_phi2, setpoint_theta2);
+    const float smooth = 0.5f * (tanhf(2.f * controller.time - 2.f) + 1.f);
+
+    servos_set_position(smooth * out_phi1 + (+0.04015949507360143), smooth * out_theta1,
+                        smooth * out_phi2 + (-0.058555490748248465), smooth * out_theta2);
 }
 
 static void trajectory_serialize(cmp_ctx_t *cmp, void *context) {

@@ -43,10 +43,10 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         LiveChart::Config config;
         config.title = "motor 1";
         config.yLabel = "[rad/s]";
-        config.yMin = 0;
-        config.yMax = 600;
+        config.yMin = -500;
+        config.yMax = 500;
         config.yPrecision = 0;
-        config.yTick = 50;
+        config.yTick = 100;
 
         motor1 = new LiveChart(config, this);
         motor1->addSeries("vel", QPen(Qt::black, 2, Qt::SolidLine));
@@ -60,10 +60,10 @@ Window::Window(QWidget *parent) : QWidget(parent) {
         LiveChart::Config config;
         config.title = "motor 2";
         config.yLabel = "[rad/s]";
-        config.yMin = 0;
-        config.yMax = 600;
+        config.yMin = -500;
+        config.yMax = 500;
         config.yPrecision = 0;
-        config.yTick = 50;
+        config.yTick = 100;
 
         motor2 = new LiveChart(config, this);
         motor2->addSeries("vel", QPen(Qt::black, 2, Qt::SolidLine));
@@ -109,7 +109,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
     {
         LiveChart::Config config;
         config.title = "trajectory";
-        config.yLabel = "nie wiem";
+        config.yLabel = "";
         config.yMin = -10;
         config.yMax = 10;
         config.yPrecision = 0;
