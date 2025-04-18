@@ -1,33 +1,33 @@
 #include "Circle.hpp"
 
-Circle::Circle(const double x, const double y, const double R, const double T) : TrajectoryGenerator{5, 3}, x{x}, y{y}, R{R}, w{2*pi/T} {
+Circle::Circle(const double x, const double y, const double R, const double T) : TrajectoryGenerator{3, 4}, x{x}, y{y}, R{R}, w{2*pi/T} {
 
 }
 
 Eigen::VectorX<double> Circle::value(const double &t) const {
-    Eigen::Vector<double, 5*3> trajectory;
+    Eigen::Vector<double, 3*4> trajectory;
 
-    trajectory.segment(0, 5) = Eigen::Vector<double, 5>{
+    trajectory.segment(0, 3) = Eigen::Vector3d{
         x + R*cos(w*t),
         y + R*sin(w*t),
-        w*t + pi/2 - pi/4, // very important -pi/4 !!!
-        -300*t,
-        +300*t,
+        w*t + pi/2 + pi/4, // very important pi/4 !!!
     };
 
-    trajectory.segment(5, 5) = Eigen::Vector<double, 5>{
+    trajectory.segment(3, 3) = Eigen::Vector3d{
         -R*w*sin(w*t),
         R*w*cos(w*t),
         w,
-        -300,
-        +300,
     };
 
-    trajectory.segment(10, 5) = Eigen::Vector<double, 5>{
+    trajectory.segment(6, 3) = Eigen::Vector3d{
         -R*w*w*cos(w*t),
         -R*w*w*sin(w*t),
         0,
-        0,
+    };
+
+    trajectory.segment(9, 3) = Eigen::Vector3d{
+        R*w*w*w*sin(w*t),
+        -R*w*w*w*cos(w*t),
         0,
     };
 
