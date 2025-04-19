@@ -7,6 +7,8 @@
 #include "control/robot_parameters.h"
 #include "controllers/JPTD.hpp"
 
+#define MOTOR_VEL 300
+
 JPTD::OutputFunction::OutputFunction() {
     this->DeclareVectorInputPort("q", 9);
     this->DeclareVectorInputPort("eta3", 1);
@@ -68,17 +70,17 @@ void JPTD::FeedbackControl::eval(const drake::systems::Context<double> &context,
     };
 
     const float hd[] = {
-        static_cast<float>(trajectory[0]), static_cast<float>(trajectory[1]),
-        static_cast<float>(trajectory[2]), static_cast<float>(-300 * t),
-        static_cast<float>(+300 * t),
+        static_cast<float>(trajectory[0]),  static_cast<float>(trajectory[1]),
+        static_cast<float>(trajectory[2]),  static_cast<float>(-MOTOR_VEL * t),
+        static_cast<float>(+MOTOR_VEL * t),
     };
 
     const float d_hd[] = {
         static_cast<float>(trajectory[3]),
         static_cast<float>(trajectory[4]),
         static_cast<float>(trajectory[5]),
-        -300,
-        +300,
+        -MOTOR_VEL,
+        +MOTOR_VEL,
     };
 
     const float d2_hd[] = {
@@ -172,10 +174,10 @@ JPTD::JPTD(const double k1, const double k2) {
     // auto integrator1 = builder.AddSystem<drake::systems::Integrator>(1);
     // auto integrator2 = builder.AddSystem<drake::systems::Integrator>(1);
     auto integrator3 =
-        builder.AddSystem<drake::systems::Integrator>(Eigen::Vector<double, 1>{-200});
+        builder.AddSystem<drake::systems::Integrator>(Eigen::Vector<double, 1>{-MOTOR_VEL});
     // auto integrator4 = builder.AddSystem<drake::systems::Integrator>(1);
     auto integrator5 =
-        builder.AddSystem<drake::systems::Integrator>(Eigen::Vector<double, 1>{+200});
+        builder.AddSystem<drake::systems::Integrator>(Eigen::Vector<double, 1>{+MOTOR_VEL});
     auto mux = builder.AddSystem<drake::systems::Multiplexer>(5);
 
     builder.ExportInput(feedback->GetInputPort("hd"), "hd");

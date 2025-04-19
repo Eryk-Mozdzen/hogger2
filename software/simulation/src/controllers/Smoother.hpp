@@ -2,10 +2,6 @@
 
 #include <drake/systems/framework/leaf_system.h>
 
-static double sech(double x) {
-    return 1.0 / std::cosh(x);
-}
-
 class Smoother : public drake::systems::LeafSystem<double> {
     static constexpr double pi = 3.14159265359;
 
@@ -18,12 +14,11 @@ class Smoother : public drake::systems::LeafSystem<double> {
 
 	void eval(const drake::systems::Context<double> &context, drake::systems::BasicVector<double> *output) const {
         const double t = context.get_time();
-        const double a1 = 3;
-        const double a2 = 1;
-        const double s0 = 0.5*(std::tanh(a1*t - a1*a2) + 1);
-        const double s1 = 0.5*a1*sech(a1*a2 - a1*t)*sech(a1*a2 - a1*t);
-        const double s2 = a1*a1*std::tanh(a1*a2 - a1*t)*sech(a1*a2 - a1*t)*sech(a1*a2 - a1*t);
-        const double s3 = a1*a1*a1*sech(a1*(t - a2))*sech(a1*(t - a2))*(2*std::tanh(a1*(t - a2))*std::tanh(a1*(t - a2)) - sech(a1*(t - a2)*sech(a1*(t - a2))));
+        const double T = 2;
+        const double s0 = (t>=T) ? 1 : pow(t, 4)*(35*pow(T, 3) - 84*pow(T, 2)*t + 70*T*pow(t, 2) - 20*pow(t, 3))/pow(T, 7);
+        const double s1 = (t>=T) ? 0 : 140*pow(t, 3)*(pow(T, 3) - 3*pow(T, 2)*t + 3*T*pow(t, 2) - pow(t, 3))/pow(T, 7);
+        const double s2 = (t>=T) ? 0 : 420*pow(t, 2)*(pow(T, 3) - 4*pow(T, 2)*t + 5*T*pow(t, 2) - 2*pow(t, 3))/pow(T, 7);
+        const double s3 = (t>=T) ? 0 : 840*t*(pow(T, 3) - 6*pow(T, 2)*t + 10*T*pow(t, 2) - 5*pow(t, 3))/pow(T, 7);
 
         const Eigen::VectorXd u = this->GetInputPort("u").Eval(context);
         const Eigen::VectorXd u0 = u.segment(0, 3);

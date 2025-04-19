@@ -10,7 +10,7 @@
 int main() {
 	drake::systems::DiagramBuilder<double> builder;
 
-	auto generator = builder.AddSystem<Lemniscate>(1, 10);
+	auto generator = builder.AddSystem<Lemniscate>(2, 10);
 	auto smoother = builder.AddSystem<Smoother>(0, 0, 0);
 	auto controller = builder.AddSystem<JPTD>(5, 10);
 	auto model = builder.AddSystem<Model>(0, 0, 0);
