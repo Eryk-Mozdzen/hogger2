@@ -15,6 +15,7 @@ extern SPI_HandleTypeDef hspi3;
 static volatile uint32_t ready;
 static uint8_t buffer_tx[32];
 static uint8_t buffer_rx[32];
+static uint32_t last = 0;
 static float velocity[2];
 
 static void pmw3901_write(const uint8_t address, const uint8_t value) {
@@ -195,19 +196,29 @@ static void process() {
         motion[i] = buffer_rx[2 * i + 1];
     }
 
+    const uint8_t data_ready = motion[0];
     const int16_t delta_x = (((int16_t)motion[2]) << 8) | motion[1];
     const int16_t delta_y = (((int16_t)motion[4]) << 8) | motion[3];
 
-    const float tmp[2] = {
-        -delta_y / (0.02f * PMW3901_FOCAL_LENGTH),
-        -delta_x / (0.02f * PMW3901_FOCAL_LENGTH),
-    };
+    if(data_ready & 0b10000000) {
+        const uint32_t time = task_timebase();
+        const float dt = (time - last) * 0.000001f;
+        last = time;
 
-    if((fabs(tmp[0]) < 100.f) && (fabs(tmp[1]) < 100.f)) {
-        velocity[0] = tmp[0];
-        velocity[1] = tmp[1];
+        const float vel[2] = {
+            -delta_y / (dt * PMW3901_FOCAL_LENGTH),
+            -delta_x / (dt * PMW3901_FOCAL_LENGTH),
+        };
 
-        ESTIMATOR_CORRECT_FLOW(velocity);
+        if((fabs(vel[0]) < 50.f) && (fabs(vel[1]) < 50.f)) {
+            velocity[0] = vel[0];
+            velocity[1] = vel[1];
+
+            ESTIMATOR_CORRECT_FLOW(velocity);
+        } else {
+            velocity[0] = NAN;
+            velocity[1] = NAN;
+        }
     } else {
         velocity[0] = NAN;
         velocity[1] = NAN;
@@ -223,6 +234,6 @@ static void serialize(cmp_ctx_t *cmp, void *context) {
 }
 
 TASK_REGISTER_INIT(init)
-TASK_REGISTER_PERIODIC(transmit, 20000)
+TASK_REGISTER_PERIODIC(transmit, 1000)
 TASK_REGISTER_INTERRUPT(process, &ready)
 TELEMETRY_REGISTER("optical_flow", serialize, NULL)
