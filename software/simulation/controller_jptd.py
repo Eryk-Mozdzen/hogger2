@@ -38,18 +38,6 @@ eta = sp.Matrix([
     sp.Function('eta_5')(t),
 ])
 
-#G = sp.Matrix([
-#    [ R*sp.sin(theta), R*sp.cos(theta)*sp.cos(phi1),  R*(sp.sin(theta)*sp.sin(theta1) - sp.cos(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
-#    [-R*sp.cos(theta), R*sp.sin(theta)*sp.cos(phi1), -R*(sp.cos(theta)*sp.sin(theta1) + sp.sin(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
-#    [0, -R*sp.cos(phi1)/(2*L), R*sp.sin(phi1)*sp.cos(theta1)/(2*L), R*sp.cos(phi2)/(2*L), -R*sp.sin(phi2)*sp.cos(theta2)/(2*L)],
-#    [1, 0, 0, 0, 0],
-#    [0, 1, 0, 0, 0],
-#    [0, 0, 1, 0, 0],
-#    [1, 0, sp.sin(theta1), 0, -sp.sin(theta2)],
-#    [0, 0, 0, 1, 0],
-#    [0, 0, 0, 0, 1],
-#])
-
 G = sp.Matrix([
     [0, 0,  R*(sp.sin(theta)*sp.sin(theta1) - sp.cos(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
     [0, 0, -R*(sp.cos(theta)*sp.sin(theta1) + sp.sin(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
@@ -69,14 +57,6 @@ h = sp.Matrix([
     psi1,
     psi2,
 ])
-
-#u = sp.Matrix([
-#    eta[0].diff(t),
-#    eta[1].diff(t),
-#    eta[2].diff(t),
-#    eta[3].diff(t),
-#    eta[4].diff(t),
-#])
 
 u = sp.Matrix([
     eta[0],
@@ -176,26 +156,26 @@ hd = sp.Matrix([
 v = hd.diff(t, 2) - K1*(h.diff(t) - hd.diff(t)) - K2*(h - hd)
 
 v = v.subs([
-    (h[0].diff(t), sp.Symbol('d_h[0]')),
-    (h[1].diff(t), sp.Symbol('d_h[1]')),
-    (h[2].diff(t), sp.Symbol('d_h[2]')),
-    (h[3].diff(t), sp.Symbol('d_h[3]')),
-    (h[4].diff(t), sp.Symbol('d_h[4]')),
+    (h[0].diff(t), sp.Symbol('h[5]')),
+    (h[1].diff(t), sp.Symbol('h[6]')),
+    (h[2].diff(t), sp.Symbol('h[7]')),
+    (h[3].diff(t), sp.Symbol('h[8]')),
+    (h[4].diff(t), sp.Symbol('h[9]')),
     (h[0], sp.Symbol('h[0]')),
     (h[1], sp.Symbol('h[1]')),
     (h[2], sp.Symbol('h[2]')),
     (h[3], sp.Symbol('h[3]')),
     (h[4], sp.Symbol('h[4]')),
-    (hd[0].diff(t, 2), sp.Symbol('d2_hd[0]')),
-    (hd[1].diff(t, 2), sp.Symbol('d2_hd[1]')),
-    (hd[2].diff(t, 2), sp.Symbol('d2_hd[2]')),
-    (hd[3].diff(t, 2), sp.Symbol('d2_hd[3]')),
-    (hd[4].diff(t, 2), sp.Symbol('d2_hd[4]')),
-    (hd[0].diff(t), sp.Symbol('d_hd[0]')),
-    (hd[1].diff(t), sp.Symbol('d_hd[1]')),
-    (hd[2].diff(t), sp.Symbol('d_hd[2]')),
-    (hd[3].diff(t), sp.Symbol('d_hd[3]')),
-    (hd[4].diff(t), sp.Symbol('d_hd[4]')),
+    (hd[0].diff(t, 2), sp.Symbol('hd[10]')),
+    (hd[1].diff(t, 2), sp.Symbol('hd[11]')),
+    (hd[2].diff(t, 2), sp.Symbol('hd[12]')),
+    (hd[3].diff(t, 2), sp.Symbol('hd[13]')),
+    (hd[4].diff(t, 2), sp.Symbol('hd[14]')),
+    (hd[0].diff(t), sp.Symbol('hd[5]')),
+    (hd[1].diff(t), sp.Symbol('hd[6]')),
+    (hd[2].diff(t), sp.Symbol('hd[7]')),
+    (hd[3].diff(t), sp.Symbol('hd[8]')),
+    (hd[4].diff(t), sp.Symbol('hd[9]')),
     (hd[0], sp.Symbol('hd[0]')),
     (hd[1], sp.Symbol('hd[1]')),
     (hd[2], sp.Symbol('hd[2]')),
@@ -203,6 +183,73 @@ v = v.subs([
     (hd[4], sp.Symbol('hd[4]')),
 ])
 
-source.add_function(v, 'v', 'feedback_v(float *v, const float *K1, const float *K2, const float *h, const float *d_h, const float *hd, const float *d_hd, const float *d2_hd)')
+source.add_function(v, 'v', 'feedback_v(float *v, const float *K1, const float *K2, const float *h, const float *hd)')
+
+T = sp.Symbol('T')
+x0 = sp.Symbol('x_0')
+y0 = sp.Symbol('y_0')
+theta0 = sp.Symbol('theta_0')
+
+s = (t**4)*(35*(T**3) - 84*(T**2)*t + 70*T*(t**2) - 20*(t**3))/(T**7)
+
+u0 = sp.Matrix([
+    sp.Function('u_1')(t),
+    sp.Function('u_2')(t),
+    sp.Function('u_3')(t),
+])
+
+z0 = sp.Matrix([
+    x0 + sp.cos(theta0 - sp.pi/4)*t,
+    y0 + sp.sin(theta0 - sp.pi/4)*t,
+    theta0,
+])
+
+y0 = (1 - s)*z0 + s*u0
+y0[2] = sp.atan2(y0[1].diff(t), y0[0].diff(t)) + sp.pi/4
+
+y = sp.Matrix([
+    y0[0],
+    y0[1],
+    y0[2],
+    y0[0].diff(t),
+    y0[1].diff(t),
+    y0[2].diff(t),
+    y0[0].diff(t, 2),
+    y0[1].diff(t, 2),
+    y0[2].diff(t, 2),
+    0,
+    0,
+    0,
+])
+
+y = y.subs([
+    (u0[0].diff(t, 3), sp.Symbol('u[9]')),
+    (u0[1].diff(t, 3), sp.Symbol('u[10]')),
+    (u0[2].diff(t, 3), sp.Symbol('u[11]')),
+    (u0[0].diff(t, 2), sp.Symbol('u[6]')),
+    (u0[1].diff(t, 2), sp.Symbol('u[7]')),
+    (u0[2].diff(t, 2), sp.Symbol('u[8]')),
+    (u0[0].diff(t), sp.Symbol('u[3]')),
+    (u0[1].diff(t), sp.Symbol('u[4]')),
+    (u0[2].diff(t), sp.Symbol('u[5]')),
+    (u0[0], sp.Symbol('u[0]')),
+    (u0[1], sp.Symbol('u[1]')),
+    (u0[2], sp.Symbol('u[2]')),
+
+    (y0[0].diff(t, 3), sp.Symbol('y[9]')),
+    (y0[1].diff(t, 3), sp.Symbol('y[10]')),
+    (y0[2].diff(t, 3), sp.Symbol('y[11]')),
+    (y0[0].diff(t, 2), sp.Symbol('y[6]')),
+    (y0[1].diff(t, 2), sp.Symbol('y[7]')),
+    (y0[2].diff(t, 2), sp.Symbol('y[8]')),
+    (y0[0].diff(t), sp.Symbol('y[3]')),
+    (y0[1].diff(t), sp.Symbol('y[4]')),
+    (y0[2].diff(t), sp.Symbol('y[5]')),
+    (y0[0], sp.Symbol('y[0]')),
+    (y0[1], sp.Symbol('y[1]')),
+    (y0[2], sp.Symbol('y[2]')),
+])
+
+source.add_function(y, 'y', 'smooth(float *y, const float x_0, const float y_0, const float theta_0, const float *u, const float T, const float t)')
 
 source.generate('../common/control')

@@ -160,6 +160,7 @@ target_compile_definitions(${TARGET} PRIVATE
     USE_HAL_DRIVER
     STM32H523xx
     ARM_MATH_CM33
+    _XOPEN_SOURCE=500
 )
 
 target_compile_options(${TARGET} PRIVATE

@@ -7,11 +7,11 @@
 
 template<typename T>
 class Sink : public drake::systems::LeafSystem<T> {
-    std::unique_ptr<int> counter;
-    std::unique_ptr<Eigen::MatrixX<T>> data;
+    mutable int counter;
+    mutable Eigen::MatrixX<T> data;
 
 	drake::systems::EventStatus eval(const drake::systems::Context<T> &context) const {
-        Eigen::VectorX<T> row(data->cols());
+        Eigen::VectorX<T> row(data.cols());
 
         row[0] = context.get_time();
 
@@ -23,24 +23,19 @@ class Sink : public drake::systems::LeafSystem<T> {
             start +=signal.size();
         }
 
-        if(*counter>=data->rows()) {
-            data->conservativeResize(2*data->rows(), data->cols());
+        if(counter>=data.rows()) {
+            data.conservativeResize(2*data.rows(), data.cols());
         }
 
-        data->row(*counter) = row;
-        (*counter)++;
+        data.row(counter) = row;
+        counter++;
 
         return drake::systems::EventStatus::Succeeded();
 	}
 
 public:
-	Sink() {
+	Sink() : counter{0}, data{1, 1} {
         this->DeclarePerStepPublishEvent(&Sink::eval);
-
-        counter = std::make_unique<int>();
-        data = std::make_unique<Eigen::MatrixX<T>>(1, 1);
-
-        *counter = 0;
 	}
 
     ~Sink() {
@@ -50,7 +45,7 @@ public:
             file << "," << this->get_input_port(i).get_name();
         }
         file << "\n";
-        file << data->topRows(*counter).format(Eigen::IOFormat(Eigen::StreamPrecision, Eigen::DontAlignCols, ","));
+        file << data.topRows(counter).format(Eigen::IOFormat(Eigen::StreamPrecision, Eigen::DontAlignCols, ","));
     }
 
     void Connect(drake::systems::DiagramBuilder<T>* builder, const drake::systems::OutputPort<T> &signal, const std::string &name) {
@@ -58,7 +53,7 @@ public:
 
         builder->Connect(signal, this->GetInputPort(name));
 
-        data->conservativeResize(data->rows(), data->cols() + signal.size());
+        data.conservativeResize(data.rows(), data.cols() + signal.size());
     }
 
     void Connect(drake::systems::DiagramBuilder<T>* builder, const drake::systems::OutputPort<T> &signal, const std::vector<int> indices, const std::string &name) {

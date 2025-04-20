@@ -9,6 +9,53 @@
 
 #define MOTOR_VEL 300
 
+JPTD::Smoother::Smoother(const double x0, const double y0, const double theta0, const double T)
+    : x0{x0}, y0{y0}, theta0{theta0}, T{T} {
+    this->DeclareVectorInputPort("u", 3 * 4);
+    this->DeclareVectorOutputPort("y", 3 * 4, &Smoother::eval);
+
+    heading = theta0;
+    k = 0;
+}
+
+void JPTD::Smoother::eval(const drake::systems::Context<double> &context,
+                          drake::systems::BasicVector<double> *output) const {
+    const double t = context.get_time();
+
+    const Eigen::VectorXd U = this->GetInputPort("u").Eval(context);
+    const float u[3 * 4] = {
+        static_cast<float>(U[0]), static_cast<float>(U[1]),  static_cast<float>(U[2]),
+        static_cast<float>(U[3]), static_cast<float>(U[4]),  static_cast<float>(U[5]),
+        static_cast<float>(U[6]), static_cast<float>(U[7]),  static_cast<float>(U[8]),
+        static_cast<float>(U[9]), static_cast<float>(U[10]), static_cast<float>(U[11]),
+    };
+
+    float y[3 * 4];
+    if(t < T) {
+        jptd_dynamic_smooth(y, x0, y0, theta0, u, T, t);
+    } else {
+        memcpy(y, u, sizeof(y));
+    }
+
+    const double same = std::abs(heading - (y[2] + 2 * (k + 0) * pi));
+    const double more = std::abs(heading - (y[2] + 2 * (k + 1) * pi));
+    const double less = std::abs(heading - (y[2] + 2 * (k - 1) * pi));
+
+    if(more < same && more < less) {
+        k++;
+    } else if(less < same && less < more) {
+        k--;
+    }
+    y[2] += 2 * k * pi;
+    heading = y[2];
+
+    const Eigen::Vector<double, 3 * 4> Y{
+        y[0], y[1], y[2], y[3], y[4], y[5], y[6], y[7], y[8], y[9], y[10], y[11],
+    };
+
+    output->SetFromVector(Y);
+}
+
 JPTD::OutputFunction::OutputFunction() {
     this->DeclareVectorInputPort("q", 9);
     this->DeclareVectorInputPort("eta3", 1);
@@ -61,29 +108,22 @@ void JPTD::FeedbackControl::eval(const drake::systems::Context<double> &context,
 
     const float h[] = {
         static_cast<float>(state[0]), static_cast<float>(state[1]), static_cast<float>(state[2]),
-        static_cast<float>(state[3]), static_cast<float>(state[4]),
-    };
-
-    const float d_h[] = {
-        static_cast<float>(state[5]), static_cast<float>(state[6]), static_cast<float>(state[7]),
-        static_cast<float>(state[8]), static_cast<float>(state[9]),
+        static_cast<float>(state[3]), static_cast<float>(state[4]), static_cast<float>(state[5]),
+        static_cast<float>(state[6]), static_cast<float>(state[7]), static_cast<float>(state[8]),
+        static_cast<float>(state[9]),
     };
 
     const float hd[] = {
-        static_cast<float>(trajectory[0]),  static_cast<float>(trajectory[1]),
-        static_cast<float>(trajectory[2]),  static_cast<float>(-MOTOR_VEL * t),
+        static_cast<float>(trajectory[0]),
+        static_cast<float>(trajectory[1]),
+        static_cast<float>(trajectory[2]),
+        static_cast<float>(-MOTOR_VEL * t),
         static_cast<float>(+MOTOR_VEL * t),
-    };
-
-    const float d_hd[] = {
         static_cast<float>(trajectory[3]),
         static_cast<float>(trajectory[4]),
         static_cast<float>(trajectory[5]),
         -MOTOR_VEL,
         +MOTOR_VEL,
-    };
-
-    const float d2_hd[] = {
         static_cast<float>(trajectory[6]),
         static_cast<float>(trajectory[7]),
         static_cast<float>(trajectory[8]),
@@ -104,9 +144,9 @@ void JPTD::FeedbackControl::eval(const drake::systems::Context<double> &context,
     };
 
     float v[5];
-    jptd_dynamic_feedback_v(v, K1, K2, h, d_h, hd, d_hd, d2_hd);
+    jptd_dynamic_feedback_v(v, K1, K2, h, hd);
 
-    Eigen::Vector<double, 5> V{
+    const Eigen::Vector<double, 5> V{
         v[0], v[1], v[2], v[3], v[4],
     };
 
@@ -116,10 +156,7 @@ void JPTD::FeedbackControl::eval(const drake::systems::Context<double> &context,
 JPTD::DynamicDecoupling::DynamicDecoupling() {
     this->DeclareVectorInputPort("v", 5);
     this->DeclareVectorInputPort("q", 9);
-    // this->DeclareVectorInputPort("eta1", 1);
-    // this->DeclareVectorInputPort("eta2", 1);
     this->DeclareVectorInputPort("eta3", 1);
-    // this->DeclareVectorInputPort("eta4", 1);
     this->DeclareVectorInputPort("eta5", 1);
     this->DeclareVectorOutputPort("u", 5, &DynamicDecoupling::eval);
 }
@@ -128,10 +165,7 @@ void JPTD::DynamicDecoupling::eval(const drake::systems::Context<double> &contex
                                    drake::systems::BasicVector<double> *output) const {
     const auto &V = this->GetInputPort("v").Eval(context);
     const auto &Q = this->GetInputPort("q").Eval(context);
-    // const auto &N1 = this->GetInputPort("eta1").Eval(context);
-    // const auto &N2 = this->GetInputPort("eta2").Eval(context);
     const auto &N3 = this->GetInputPort("eta3").Eval(context);
-    // const auto &N4 = this->GetInputPort("eta4").Eval(context);
     const auto &N5 = this->GetInputPort("eta5").Eval(context);
 
     const float v[] = {
@@ -145,11 +179,6 @@ void JPTD::DynamicDecoupling::eval(const drake::systems::Context<double> &contex
         static_cast<float>(Q[6]), static_cast<float>(Q[7]), static_cast<float>(Q[8]),
     };
 
-    // const float eta[] = {
-    //     static_cast<float>(N1[0]), static_cast<float>(N2[0]), static_cast<float>(N3[0]),
-    //     static_cast<float>(N4[0]), static_cast<float>(N5[0]),
-    // };
-
     const float eta[] = {
         0, 0, static_cast<float>(N3[0]), 0, static_cast<float>(N5[0]),
     };
@@ -157,35 +186,40 @@ void JPTD::DynamicDecoupling::eval(const drake::systems::Context<double> &contex
     float u[5];
     jptd_dynamic_linearize_u(u, v, eta, q);
 
-    Eigen::Vector<double, 5> U{
+    const Eigen::Vector<double, 5> U{
         u[0], u[1], u[2], u[3], u[4],
     };
 
     output->SetFromVector(U);
 }
 
-JPTD::JPTD(const double k1, const double k2) {
+JPTD::JPTD(const double x0,
+           const double y0,
+           const double theta0,
+           const double T,
+           const double k1,
+           const double k2) {
     drake::systems::DiagramBuilder<double> builder;
 
+    auto smoother = builder.AddSystem<Smoother>(x0, y0, theta0, T);
     auto output = builder.AddSystem<OutputFunction>();
     auto feedback = builder.AddSystem<FeedbackControl>(k1, k2);
     auto decoupling = builder.AddSystem<DynamicDecoupling>();
     auto demux = builder.AddSystem<drake::systems::Demultiplexer>(5);
-    // auto integrator1 = builder.AddSystem<drake::systems::Integrator>(1);
-    // auto integrator2 = builder.AddSystem<drake::systems::Integrator>(1);
     auto integrator3 =
         builder.AddSystem<drake::systems::Integrator>(Eigen::Vector<double, 1>{-MOTOR_VEL});
-    // auto integrator4 = builder.AddSystem<drake::systems::Integrator>(1);
     auto integrator5 =
         builder.AddSystem<drake::systems::Integrator>(Eigen::Vector<double, 1>{+MOTOR_VEL});
     auto mux = builder.AddSystem<drake::systems::Multiplexer>(5);
 
-    builder.ExportInput(feedback->GetInputPort("hd"), "hd");
+    builder.ExportInput(smoother->get_input_port(), "hd");
     builder.ExportInput(output->GetInputPort("q"), "q");
     builder.ExportOutput(mux->get_output_port(), "eta");
+    builder.ExportOutput(smoother->get_output_port(), "h_ref");
 
     builder.ConnectInput("q", decoupling->GetInputPort("q"));
 
+    builder.Connect(smoother->get_output_port(), feedback->GetInputPort("hd"));
     builder.Connect(output->GetOutputPort("h"), feedback->GetInputPort("h"));
     builder.Connect(feedback->GetOutputPort("v"), decoupling->GetInputPort("v"));
     builder.Connect(decoupling->GetOutputPort("u"), demux->get_input_port());
@@ -202,22 +236,6 @@ JPTD::JPTD(const double k1, const double k2) {
     builder.Connect(integrator3->get_output_port(), output->GetInputPort("eta3"));
     builder.Connect(integrator5->get_output_port(), output->GetInputPort("eta5"));
 
-    // builder.Connect(demux->get_output_port(0), integrator1->get_input_port());
-    // builder.Connect(demux->get_output_port(1), integrator2->get_input_port());
-    // builder.Connect(demux->get_output_port(2), integrator3->get_input_port());
-    // builder.Connect(demux->get_output_port(3), integrator4->get_input_port());
-    // builder.Connect(demux->get_output_port(4), integrator5->get_input_port());
-    // builder.Connect(integrator1->get_output_port(), mux->get_input_port(0));
-    // builder.Connect(integrator2->get_output_port(), mux->get_input_port(1));
-    // builder.Connect(integrator3->get_output_port(), mux->get_input_port(2));
-    // builder.Connect(integrator4->get_output_port(), mux->get_input_port(3));
-    // builder.Connect(integrator5->get_output_port(), mux->get_input_port(4));
-    // builder.Connect(integrator1->get_output_port(), decoupling->GetInputPort("eta1"));
-    // builder.Connect(integrator2->get_output_port(), decoupling->GetInputPort("eta2"));
-    // builder.Connect(integrator3->get_output_port(), decoupling->GetInputPort("eta3"));
-    // builder.Connect(integrator4->get_output_port(), decoupling->GetInputPort("eta4"));
-    // builder.Connect(integrator5->get_output_port(), decoupling->GetInputPort("eta5"));
-
     builder.BuildInto(this);
 }
 
@@ -227,6 +245,10 @@ const drake::systems::InputPort<double> &JPTD::get_state_input_port() const {
 
 const drake::systems::InputPort<double> &JPTD::get_trajectory_input_port() const {
     return GetInputPort("hd");
+}
+
+const drake::systems::OutputPort<double> &JPTD::get_reference_output_port() const {
+    return GetOutputPort("h_ref");
 }
 
 const drake::systems::OutputPort<double> &JPTD::get_control_output_port() const {
