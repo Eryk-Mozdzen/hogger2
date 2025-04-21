@@ -1,4 +1,5 @@
 #include "actuate/dynamixel.h"
+#include "com/config.h"
 #include "com/stream.h"
 #include "com/telemetry.h"
 #include "utils/task.h"
@@ -22,6 +23,8 @@ static dynamixel_servo_t *servo_1_x = NULL;
 static dynamixel_servo_t *servo_1_y = NULL;
 static dynamixel_servo_t *servo_2_x = NULL;
 static dynamixel_servo_t *servo_2_y = NULL;
+
+static float offset[4] = {0};
 
 static float validate(const float position) {
     if(isnan(position)) {
@@ -47,17 +50,17 @@ void servos_set_position(const float phi_1,
                          const float theta_1,
                          const float phi_2,
                          const float theta_2) {
-    servo_1_x->goal = validate(phi_1);
-    servo_1_y->goal = validate(theta_1);
-    servo_2_x->goal = validate(phi_2);
-    servo_2_y->goal = validate(theta_2);
+    servo_1_x->goal = validate(phi_1 + offset[0]);
+    servo_1_y->goal = validate(theta_1 + offset[1]);
+    servo_2_x->goal = validate(phi_2 + offset[2]);
+    servo_2_y->goal = validate(theta_2 + offset[3]);
 }
 
 void servos_get_position(float *phi_1, float *theta_1, float *phi_2, float *theta_2) {
-    *phi_1 = servo_1_x->position;
-    *theta_1 = servo_1_y->position;
-    *phi_2 = servo_2_x->position;
-    *theta_2 = servo_2_y->position;
+    *phi_1 = servo_1_x->position - offset[0];
+    *theta_1 = servo_1_y->position - offset[1];
+    *phi_2 = servo_2_x->position - offset[2];
+    *theta_2 = servo_2_y->position - offset[3];
 }
 
 static void isr_transmit(UART_HandleTypeDef *huart) {
@@ -118,3 +121,4 @@ static void blink(mpack_t *mpack) {
 TASK_REGISTER_INIT(init)
 TASK_REGISTER_PERIODIC(loop, 100)
 STREAM_REGISTER("blink", blink);
+CONFIG_REGISTER("servo_offset", offset, 4)

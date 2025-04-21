@@ -240,9 +240,11 @@ bool mpack_read_float32_array(mpack_t *mpack, float *values, const uint32_t size
         return false;
     }
 
-    memset(values, 0, size * sizeof(float));
+    for(uint32_t i = 0; i < size; i++) {
+        values[i] = 0;
+    }
 
-    for(uint8_t i = 0; i < array_size; i++) {
+    for(uint32_t i = 0; i < array_size; i++) {
         float val = 0;
         if(!mpack_read_float32(mpack, &val)) {
             return false;

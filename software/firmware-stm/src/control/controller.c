@@ -291,9 +291,6 @@ static void controller_loop() {
     float theta2;
     servos_get_position(&phi1, &theta1, &phi2, &theta2);
 
-    phi1 -= (+0.04015949507360143);
-    phi2 -= (-0.058555490748248465);
-
     if(controller.time < CONTROLLER_T) {
         jptd_dynamic_smooth(controller.href, smoother.x0, smoother.y0, smoother.theta0,
                             controller.hd, CONTROLLER_T, controller.time);
@@ -406,8 +403,7 @@ static void controller_loop() {
     const float out_phi2 = integrator.integral[INTEGRAL_IDX_PHI2];
     const float out_theta2 = integrator.integral[INTEGRAL_IDX_THETA2];
 
-    servos_set_position(out_phi1 + (+0.04015949507360143), out_theta1,
-                        out_phi2 + (-0.058555490748248465), out_theta2);
+    servos_set_position(out_phi1, out_theta1, out_phi2, out_theta2);
 }
 
 static void trajectory_serialize(cmp_ctx_t *cmp, void *context) {

@@ -99,22 +99,19 @@ static void load() {
             return;
         }
 
-        uint32_t array_size = 0;
-        if(!cmp_read_array(&config.cmp, &array_size)) {
-            return;
-        }
+        for(uint32_t k = 0; k < count; k++) {
+            if(strncmp(registered[k].name, key, key_size) == 0) {
+                mpack_t copy;
+                mpack_copy(&copy, &config);
 
-        for(uint8_t j = 0; j < array_size; j++) {
-            float val = 0;
-            if(!cmp_read_float(&config.cmp, &val)) {
-                return;
-            }
-
-            for(uint32_t k = 0; k < count; k++) {
-                if((strncmp(registered[k].name, key, key_size) == 0) && (j < registered[k].dim)) {
-                    registered[k].vector[j] = val;
+                if(!mpack_read_float32_array(&copy, registered[k].vector, registered[k].dim)) {
+                    return;
                 }
             }
+        }
+
+        if(!mpack_read_float32_array(&config, NULL, 0)) {
+            return;
         }
     }
 }
