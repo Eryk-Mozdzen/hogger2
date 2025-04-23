@@ -35,9 +35,9 @@ def periodic():
     if motors_active and not controller_active:
         data = {
             'manual_servo': [
-                0.04015949507360143,
                 0,
-                -0.058555490748248465,
+                0,
+                0,
                 0,
             ],
         }
@@ -96,6 +96,11 @@ def stop_tracking(event):
     global controller_active
     motors_active = False
     controller_active = False
+    for _ in range(10):
+        data = {
+            'stop': None,
+        }
+        publisher.send_json(data)
 
 button_reset_ax = plt.subplot(grid[12, 1])
 button_reset = Button(button_reset_ax, 'reset')

@@ -159,9 +159,9 @@ void Window::receive(const QJsonDocument &json) {
     accel->append("z", time, accel_["out"].toArray()[2].toDouble());
 
     const QJsonObject trajectory_ = telemetry["trajectory"].toObject();
-    trajectory->append("pos", time, trajectory_["hd"].toArray()[0].toDouble());
-    trajectory->append("vel", time, trajectory_["d_hd"].toArray()[0].toDouble());
-    trajectory->append("acc", time, trajectory_["d2_hd"].toArray()[0].toDouble());
+    trajectory->append("pos", time, trajectory_["href"].toArray()[0].toDouble());
+    trajectory->append("vel", time, trajectory_["href"].toArray()[3].toDouble());
+    trajectory->append("acc", time, trajectory_["href"].toArray()[6].toDouble());
 
     LiveChart::synchronize(time);
 }

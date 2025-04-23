@@ -425,7 +425,7 @@ static void trajectory_serialize(cmp_ctx_t *cmp, void *context) {
 static void controller_serialize(cmp_ctx_t *cmp, void *context) {
     (void)context;
 
-    cmp_write_map(cmp, 5);
+    cmp_write_map(cmp, 4);
 
     cmp_write_str(cmp, "started", 7);
     cmp_write_bool(cmp, controller.started);
