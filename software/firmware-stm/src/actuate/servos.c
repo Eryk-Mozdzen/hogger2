@@ -1,3 +1,6 @@
+#include <stm32h5xx_hal.h>
+#include <string.h>
+
 #include "actuate/dynamixel.h"
 #include "com/config.h"
 #include "com/stream.h"
@@ -69,21 +72,36 @@ static void isr_transmit(UART_HandleTypeDef *huart) {
 }
 
 static void serialize(cmp_ctx_t *cmp, void *context) {
-    const dynamixel_servo_t *servo = context;
+    (void)NULL;
 
-    const uint8_t valid = ((HAL_GetTick() - servo->timestamp) <= 500);
+    const char *names[4] = {
+        "phi_1",
+        "theta_1",
+        "phi_2",
+        "theta_2",
+    };
 
-    cmp_write_map(cmp, 5);
-    cmp_write_str(cmp, "pos_ref", 7);
-    cmp_write_float(cmp, servo->goal);
-    cmp_write_str(cmp, "pos", 3);
-    cmp_write_float(cmp, valid ? servo->position : NAN);
-    cmp_write_str(cmp, "vel", 3);
-    cmp_write_float(cmp, valid ? servo->velocity : NAN);
-    cmp_write_str(cmp, "load", 4);
-    cmp_write_float(cmp, valid ? servo->load : NAN);
-    cmp_write_str(cmp, "temp", 4);
-    cmp_write_float(cmp, valid ? servo->temperature : NAN);
+    const dynamixel_servo_t *servos[4] = {
+        servo_1_x,
+        servo_1_y,
+        servo_2_x,
+        servo_2_y,
+    };
+
+    cmp_write_map(cmp, 4);
+
+    for(uint32_t i = 0; i < 4; i++) {
+        cmp_write_str(cmp, names[i], strlen(names[i]));
+        cmp_write_map(cmp, 4);
+        cmp_write_str(cmp, "pos_ref", 7);
+        cmp_write_float(cmp, servos[i]->goal - offset[i]);
+        cmp_write_str(cmp, "pos", 3);
+        cmp_write_float(cmp, servos[i]->valid ? servos[i]->position - offset[i] : NAN);
+        cmp_write_str(cmp, "vel", 3);
+        cmp_write_float(cmp, servos[i]->valid ? servos[i]->velocity : NAN);
+        cmp_write_str(cmp, "load", 4);
+        cmp_write_float(cmp, servos[i]->valid ? servos[i]->load : NAN);
+    }
 }
 
 static void init() {
@@ -92,15 +110,11 @@ static void init() {
 
     dynamixel_init(&dynamixel1);
     dynamixel_init(&dynamixel2);
+
     servo_1_x = dynamixel_register(&dynamixel1, 0x00, DYNAMIXEL_DIRECTION_NORMAL);
     servo_1_y = dynamixel_register(&dynamixel1, 0x01, DYNAMIXEL_DIRECTION_NORMAL);
     servo_2_x = dynamixel_register(&dynamixel2, 0x03, DYNAMIXEL_DIRECTION_NORMAL);
     servo_2_y = dynamixel_register(&dynamixel2, 0x02, DYNAMIXEL_DIRECTION_REVERSE);
-
-    telemetry_register("servo_1_x", serialize, servo_1_x);
-    telemetry_register("servo_1_y", serialize, servo_1_y);
-    telemetry_register("servo_2_x", serialize, servo_2_x);
-    telemetry_register("servo_2_y", serialize, servo_2_y);
 }
 
 static void loop() {
@@ -120,5 +134,6 @@ static void blink(mpack_t *mpack) {
 
 TASK_REGISTER_INIT(init)
 TASK_REGISTER_PERIODIC(loop, 100)
+TELEMETRY_REGISTER("servos", serialize, NULL)
 STREAM_REGISTER("blink", blink);
 CONFIG_REGISTER("servo_offset", offset, 4)
