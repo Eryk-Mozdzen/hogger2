@@ -19,6 +19,7 @@ class Function:
             'Pow': [
                 (lambda base, exponent: exponent==2, lambda base, exponent: '((%s)*(%s))' % (base, base)),
                 (lambda base, exponent: exponent==-1, lambda base, exponent: '(1.f/(%s))' % (base)),
+                (lambda base, exponent: exponent==0.5, lambda base, exponent: 'sqrtf(%s)' % (base)),
                 (lambda base, exponent: True, lambda base, exponent: 'powf(%s, %s)' % (base, exponent))
             ],
         }

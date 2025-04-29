@@ -3,12 +3,9 @@ import sympy as sp
 x = sp.Symbol('x')
 y = sp.Symbol('y')
 theta = sp.Symbol('theta')
-phi1 = sp.Symbol('phi_1')
-theta1 = sp.Symbol('theta_1')
-psi1 = sp.Symbol('psi_1')
-phi2 = sp.Symbol('phi_2')
-theta2 = sp.Symbol('theta_2')
-psi2 = sp.Symbol('psi_2')
+phi12d = sp.Symbol('phi_12d')
+theta12d = sp.Symbol('theta_12d')
+omegad = sp.Symbol('omega_d')
 
 R = sp.Symbol('R')
 L = sp.Symbol('L')
@@ -17,35 +14,19 @@ q = sp.Matrix([
     x,
     y,
     theta,
-    phi1,
-    theta1,
-    psi1,
-    phi2,
-    theta2,
-    psi2,
 ])
 
-eta = sp.Matrix([
-    sp.Symbol('eta_1'),
-    sp.Symbol('eta_2'),
-    sp.Symbol('eta_3'),
-    sp.Symbol('eta_4'),
-    sp.Symbol('eta_5'),
+u = sp.Matrix([
+    phi12d,
+    theta12d,
+    omegad,
 ])
 
-G = sp.Matrix([
-    [ R*sp.sin(theta), R*sp.cos(theta)*sp.cos(phi1),  R*(sp.sin(theta)*sp.sin(theta1) - sp.cos(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
-    [-R*sp.cos(theta), R*sp.sin(theta)*sp.cos(phi1), -R*(sp.cos(theta)*sp.sin(theta1) + sp.sin(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
-    [0, -R*sp.cos(phi1)/(2*L), R*sp.sin(phi1)*sp.cos(theta1)/(2*L), R*sp.cos(phi2)/(2*L), -R*sp.sin(phi2)*sp.cos(theta2)/(2*L)],
-    [1, 0, 0, 0, 0],
-    [0, 1, 0, 0, 0],
-    [0, 0, 1, 0, 0],
-    [1, 0, sp.sin(theta1), 0, -sp.sin(theta2)],
-    [0, 0, 0, 1, 0],
-    [0, 0, 0, 0, 1],
+dynamics = sp.Matrix([
+    [R*omegad*(sp.cos(theta)*sp.cos(theta12d)*sp.sin(phi12d) + sp.sin(theta)*sp.sin(theta12d))],
+    [R*omegad*(sp.sin(theta)*sp.cos(theta12d)*sp.sin(phi12d) - sp.cos(theta)*sp.sin(theta12d))],
+    [0],
 ])
-
-dynamics = G*eta
 
 dynamics = sp.simplify(dynamics)
 
@@ -87,21 +68,21 @@ with open(f'{here}/src/Model.cpp', 'w') as file:
 Model::Model(const double x0, const double y0, const double theta0) {
 '''
     )
-    file.write('    this->DeclareContinuousState({x0, y0, theta0, +0.0472104532, -0.0471579290, 0, -0.0472104532, +0.0471579290, 0});\n')
-    file.write('    this->DeclareVectorInputPort("eta", 5);\n')
-    file.write('    this->DeclareVectorOutputPort("q", 9, &Model::eval, {this->all_state_ticket()});\n')
+    file.write('    this->DeclareContinuousState({x0, y0, theta0});\n')
+    file.write('    this->DeclareVectorInputPort("u", 3);\n')
+    file.write('    this->DeclareVectorOutputPort("q", 3, &Model::eval, {this->all_state_ticket()});\n')
     file.write(
 '''}
 
 void Model::DoCalcTimeDerivatives(const drake::systems::Context<double> &context, drake::systems::ContinuousState<double> *derivatives) const {
 '''
     )
-    file.write('    const Eigen::Vector<double, 5> eta = this->GetInputPort("eta").Eval(context);\n')
-    file.write('    const Eigen::Vector<double, 9> q = context.get_continuous_state_vector().CopyToVector();\n')
+    file.write('    const Eigen::Vector<double, 3> u = this->GetInputPort("u").Eval(context);\n')
+    file.write('    const Eigen::Vector<double, 3> q = context.get_continuous_state_vector().CopyToVector();\n')
     file.write('\n')
-    for i, s in enumerate(eta):
+    for i, s in enumerate(u):
         if s in list(dynamics.free_symbols):
-            file.write(f'    const double {sp.ccode(s)} = eta[{i}];\n')
+            file.write(f'    const double {sp.ccode(s)} = u[{i}];\n')
     file.write('\n')
     for i, s in enumerate(q):
         if s in list(dynamics.free_symbols):
@@ -117,7 +98,7 @@ void Model::eval(const drake::systems::Context<double> &context, drake::systems:
 }
 
 const drake::systems::InputPort<double> & Model::get_control_input_port() const {
-    return GetInputPort("eta");
+    return GetInputPort("u");
 }
 
 const drake::systems::OutputPort<double> & Model::get_state_output_port() const {

@@ -66,8 +66,13 @@ void motors_set_velocity(const float psi1_dot, const float psi2_dot) {
 }
 
 void motors_get_velocity(float *psi1_dot, float *psi2_dot) {
-    *psi1_dot = motor1.vel;
-    *psi2_dot = motor2.vel;
+    if(psi1_dot) {
+        *psi1_dot = motor1.vel;
+    }
+
+    if(psi2_dot) {
+        *psi2_dot = motor2.vel;
+    }
 }
 
 static void init() {

@@ -4,11 +4,8 @@ x = sp.Symbol('x')
 y = sp.Symbol('y')
 theta = sp.Symbol('theta')
 phi1 = sp.Symbol('phi_1')
-theta1 = sp.Symbol('theta_1')
-psi1 = sp.Symbol('psi_1')
 phi2 = sp.Symbol('phi_2')
-theta2 = sp.Symbol('theta_2')
-psi2 = sp.Symbol('psi_2')
+psi = sp.Symbol('psi')
 
 R = sp.Symbol('R')
 L = sp.Symbol('L')
@@ -18,31 +15,23 @@ q = sp.Matrix([
     y,
     theta,
     phi1,
-    theta1,
-    psi1,
     phi2,
-    theta2,
-    psi2,
+    psi,
 ])
 
 eta = sp.Matrix([
     sp.Symbol('eta_1'),
     sp.Symbol('eta_2'),
     sp.Symbol('eta_3'),
-    sp.Symbol('eta_4'),
-    sp.Symbol('eta_5'),
 ])
 
 G = sp.Matrix([
-    [ R*sp.sin(theta), R*sp.cos(theta)*sp.cos(phi1),  R*(sp.sin(theta)*sp.sin(theta1) - sp.cos(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
-    [-R*sp.cos(theta), R*sp.sin(theta)*sp.cos(phi1), -R*(sp.cos(theta)*sp.sin(theta1) + sp.sin(theta)*sp.sin(phi1)*sp.cos(theta1)), 0, 0],
-    [0, -R*sp.cos(phi1)/(2*L), R*sp.sin(phi1)*sp.cos(theta1)/(2*L), R*sp.cos(phi2)/(2*L), -R*sp.sin(phi2)*sp.cos(theta2)/(2*L)],
-    [1, 0, 0, 0, 0],
-    [0, 1, 0, 0, 0],
-    [0, 0, 1, 0, 0],
-    [1, 0, sp.sin(theta1), 0, -sp.sin(theta2)],
-    [0, 0, 0, 1, 0],
-    [0, 0, 0, 0, 1],
+    [ R*sp.sin(theta), 0, -R*sp.cos(theta)*sp.sin(phi1)],
+    [-R*sp.cos(theta), 0, -R*sp.sin(theta)*sp.sin(phi1)],
+    [0, 0, R*sp.sin(phi1)/(2*L) + R*sp.sin(phi2)/(2*L)],
+    [1, 0, 0],
+    [0, 1, 0],
+    [0, 0, 1],
 ])
 
 dynamics = G*eta
@@ -87,17 +76,17 @@ with open(f'{here}/src/Model.cpp', 'w') as file:
 Model::Model(const double x0, const double y0, const double theta0) {
 '''
     )
-    file.write('    this->DeclareContinuousState({x0, y0, theta0, +0.0472104532, -0.0471579290, 0, -0.0472104532, +0.0471579290, 0});\n')
-    file.write('    this->DeclareVectorInputPort("eta", 5);\n')
-    file.write('    this->DeclareVectorOutputPort("q", 9, &Model::eval, {this->all_state_ticket()});\n')
+    file.write('    this->DeclareContinuousState({x0, y0, theta0, 0, 0, 0});\n')
+    file.write('    this->DeclareVectorInputPort("eta", 3);\n')
+    file.write('    this->DeclareVectorOutputPort("q", 6, &Model::eval, {this->all_state_ticket()});\n')
     file.write(
 '''}
 
 void Model::DoCalcTimeDerivatives(const drake::systems::Context<double> &context, drake::systems::ContinuousState<double> *derivatives) const {
 '''
     )
-    file.write('    const Eigen::Vector<double, 5> eta = this->GetInputPort("eta").Eval(context);\n')
-    file.write('    const Eigen::Vector<double, 9> q = context.get_continuous_state_vector().CopyToVector();\n')
+    file.write('    const Eigen::Vector<double, 3> eta = this->GetInputPort("eta").Eval(context);\n')
+    file.write('    const Eigen::Vector<double, 6> q = context.get_continuous_state_vector().CopyToVector();\n')
     file.write('\n')
     for i, s in enumerate(eta):
         if s in list(dynamics.free_symbols):

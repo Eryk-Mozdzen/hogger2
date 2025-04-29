@@ -1,16 +1,16 @@
 #include <drake/systems/framework/diagram_builder.h>
 #include <drake/systems/analysis/simulator.h>
 
-#include "generators/Circle.hpp"
-#include "controllers/JPTD.hpp"
+#include "generators/Lemniscate.hpp"
+#include "controllers/JPTDDynamic.hpp"
 #include "Model.hpp"
 #include "Sink.hpp"
 
 int main() {
 	drake::systems::DiagramBuilder<double> builder;
 
-	auto generator = builder.AddSystem<Circle>(0, 0, 2, 10);
-	auto controller = builder.AddSystem<JPTD>(0, 0, 0, 2, 5, 10);
+	auto generator = builder.AddSystem<Lemniscate>(1, 10);
+	auto controller = builder.AddSystem<JPTDDynamic>(5, 10);
 	auto model = builder.AddSystem<Model>(0, 0, 0);
 	auto sink = builder.AddSystem<Sink>();
 
@@ -19,8 +19,7 @@ int main() {
 	builder.Connect(controller->get_control_output_port(), model->get_control_input_port());
 
 	sink->Connect(&builder, model->get_state_output_port(), {0, 1, 2, 3, 4, 6, 7}, "x,y,theta,phi1,theta1,phi2,theta2");
-	sink->Connect(&builder, controller->get_control_output_port(), "eta1,eta2,eta3,eta4,eta5");
-	sink->Connect(&builder, controller->get_reference_output_port(), {0, 1, 2}, "xs,ys,thetas");
+	sink->Connect(&builder, controller->get_control_output_port(), {0, 1, 3}, "eta1,eta2,eta4");
 	sink->Connect(&builder, generator->get_output_port(), {0, 1, 2}, "xd,yd,thetad");
 
 	auto diagram = builder.Build();

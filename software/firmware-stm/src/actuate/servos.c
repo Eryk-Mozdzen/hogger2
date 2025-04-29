@@ -60,10 +60,21 @@ void servos_set_position(const float phi_1,
 }
 
 void servos_get_position(float *phi_1, float *theta_1, float *phi_2, float *theta_2) {
-    *phi_1 = servo_1_x->position - offset[0];
-    *theta_1 = servo_1_y->position - offset[1];
-    *phi_2 = servo_2_x->position - offset[2];
-    *theta_2 = servo_2_y->position - offset[3];
+    if(phi_1) {
+        *phi_1 = servo_1_x->position - offset[0];
+    }
+
+    if(theta_1) {
+        *theta_1 = servo_1_y->position - offset[1];
+    }
+
+    if(phi_2) {
+        *phi_2 = servo_2_x->position - offset[2];
+    }
+
+    if(theta_2) {
+        *theta_2 = servo_2_y->position - offset[3];
+    }
 }
 
 static void isr_transmit(UART_HandleTypeDef *huart) {

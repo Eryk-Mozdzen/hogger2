@@ -176,16 +176,15 @@ def update(frame):
             translated = rotated + np.array([x, y])
             estimated.set_xy(translated)
 
-        x = telemetry['trajectory']['hd'][0]
-        y = telemetry['trajectory']['hd'][1]
-        theta = telemetry['trajectory']['hd'][2]
+        x = telemetry['trajectory'][0]
+        y = telemetry['trajectory'][1]
+        theta = telemetry['trajectory'][2]
 
-        if x and y and theta:
-            c, s = np.cos(theta), np.sin(theta)
-            rotation_matrix = np.array([[c, -s], [s, c]])
-            rotated = np.dot(base_triangle, rotation_matrix.T)
-            translated = rotated + np.array([x, y])
-            reference.set_xy(translated)
+        c, s = np.cos(theta), np.sin(theta)
+        rotation_matrix = np.array([[c, -s], [s, c]])
+        rotated = np.dot(base_triangle, rotation_matrix.T)
+        translated = rotated + np.array([x, y])
+        reference.set_xy(translated)
 
     if trajectory:
         readed_x.append(trajectory['node'][0])

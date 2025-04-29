@@ -103,6 +103,16 @@ try:
                     config['config']['servo_offset'][2] -=numpy.deg2rad(0.1)
                     publisher.send_json(config)
 
+                if joystick.get_button(0):
+                    config['config']['servo_offset'][0] -=numpy.deg2rad(0.1)
+                    config['config']['servo_offset'][2] +=numpy.deg2rad(0.1)
+                    publisher.send_json(config)
+
+                if joystick.get_button(3):
+                    config['config']['servo_offset'][0] +=numpy.deg2rad(0.1)
+                    config['config']['servo_offset'][2] -=numpy.deg2rad(0.1)
+                    publisher.send_json(config)
+
         time.sleep(0.05)
 
 except KeyboardInterrupt:

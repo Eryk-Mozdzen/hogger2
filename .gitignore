@@ -31,3 +31,7 @@ software/simulation/src/Model.hpp
 software/simulation/src/Model.cpp
 software/common/control/jptd_dynamic.h
 software/common/control/jptd_dynamic.c
+software/common/control/jptd_dynamic_1d.h
+software/common/control/jptd_dynamic_1d.c
+software/common/control/naive.h
+software/common/control/naive.c

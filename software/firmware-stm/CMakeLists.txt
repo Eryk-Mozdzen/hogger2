@@ -116,6 +116,8 @@ add_executable(${TARGET}
 
     "generated/estimator.c"
     "../common/control/jptd_dynamic.c"
+    "../common/control/jptd_dynamic_1d.c"
+    "../common/control/naive.c"
 
 	"src/main.c"
     "src/utils/task.c"
@@ -136,7 +138,12 @@ add_executable(${TARGET}
     "src/control/blink.c"
     "src/control/watchdog.c"
     "src/control/manual.c"
-    "src/control/controller.c"
+    "src/control/trajectory.c"
+    "src/control/integrator.c"
+
+    "src/control/controller_jptd_dynamic.c"
+    #"src/control/controller_jptd_dynamic_1d.c"
+    #"src/control/controller_naive.c"
 
     "../common/lrcp/stream.c"
     "../common/lrcp/frame.c"
