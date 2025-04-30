@@ -71,7 +71,7 @@ void JPTDDynamic::FeedbackControl::eval(const drake::systems::Context<double> &c
     const float hd[] = {
         static_cast<float>(trajectory[0]),
         static_cast<float>(trajectory[1]),
-        static_cast<float>(trajectory[2]),
+        static_cast<float>(trajectory[2] + M_PI/4),
         static_cast<float>(-MOTOR_VEL * t),
         static_cast<float>(+MOTOR_VEL * t),
         static_cast<float>(trajectory[3]),

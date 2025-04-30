@@ -115,6 +115,7 @@ add_executable(${TARGET}
     "CMSIS-DSP/Source/FastMathFunctions/FastMathFunctions.c"
 
     "generated/estimator.c"
+    "../common/control/generators.c"
     "../common/control/jptd_dynamic.c"
     "../common/control/jptd_dynamic_1d.c"
     "../common/control/naive.c"

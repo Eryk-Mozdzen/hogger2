@@ -29,6 +29,8 @@ __pycache__
 .ipynb_checkpoints
 software/simulation/src/Model.hpp
 software/simulation/src/Model.cpp
+software/common/control/generators.h
+software/common/control/generators.c
 software/common/control/jptd_dynamic.h
 software/common/control/jptd_dynamic.c
 software/common/control/jptd_dynamic_1d.h

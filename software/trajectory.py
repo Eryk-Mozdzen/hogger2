@@ -61,8 +61,6 @@ def write_trajectory(event):
         'trajectory_write': {
             'generator': 'circle',
             'params': [
-                0,
-                0,
                 1,
                 20,
             ],

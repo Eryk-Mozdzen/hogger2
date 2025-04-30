@@ -7,7 +7,7 @@
 #include "control/robot_parameters.h"
 #include "controllers/JPTDDynamic1D.hpp"
 
-#define MOTOR_VEL 300
+#define MOTOR_VEL -200
 
 JPTDDynamic1D::OutputFunction::OutputFunction() {
     this->DeclareVectorInputPort("q", 6);
@@ -23,16 +23,22 @@ void JPTDDynamic1D::OutputFunction::eval(const drake::systems::Context<double> &
 
     const double theta = q[2];
     const double phi_1 = q[3];
+    const double phi_2 = q[4];
 
     Eigen::Vector<double, 6> h;
 
+    const float sin_theta = sin(theta);
+    const float cos_theta = cos(theta);
+
     h.segment(0, 3) = Eigen::Vector<double, 3>{
-        q[0], q[1], q[5],
+        q[0] + ROBOT_PARAMETER_D*cos_theta,
+        q[1] + ROBOT_PARAMETER_D*sin_theta,
+        q[5],
     };
 
     h.segment(3, 3) = Eigen::Vector<double, 3>{
-        ROBOT_PARAMETER_R * ( - cos(theta) * sin(phi_1)) * eta_3,
-        -ROBOT_PARAMETER_R * ( + sin(theta) * sin(phi_1)) * eta_3,
+        ROBOT_PARAMETER_R * ( - cos(theta) * sin(phi_1)) * eta_3  - ROBOT_PARAMETER_D*((1.0/2.0)*ROBOT_PARAMETER_R*eta_3*(sin(phi_1) + sin(phi_2))/ROBOT_PARAMETER_L)*sin_theta,
+        -ROBOT_PARAMETER_R * ( + sin(theta) * sin(phi_1)) * eta_3 + ROBOT_PARAMETER_D*((1.0/2.0)*ROBOT_PARAMETER_R*eta_3*(sin(phi_1) + sin(phi_2))/ROBOT_PARAMETER_L)*cos_theta,
         eta_3,
     };
 
@@ -51,6 +57,9 @@ void JPTDDynamic1D::FeedbackControl::eval(const drake::systems::Context<double> 
     const Eigen::VectorXd state = this->GetInputPort("h").Eval(context);
     const Eigen::VectorXd trajectory = this->GetInputPort("hd").Eval(context);
 
+    const float sin_theta_ref = sin(trajectory[2]);
+    const float cos_theta_ref = cos(trajectory[2]);
+
     const float h[] = {
         static_cast<float>(state[0]),
         static_cast<float>(state[1]),
@@ -61,14 +70,14 @@ void JPTDDynamic1D::FeedbackControl::eval(const drake::systems::Context<double> 
     };
 
     const float hd[] = {
-        static_cast<float>(trajectory[0]),
-        static_cast<float>(trajectory[1]),
+        static_cast<float>(trajectory[0] + ROBOT_PARAMETER_D*cos_theta_ref),
+        static_cast<float>(trajectory[1] + ROBOT_PARAMETER_D*sin_theta_ref),
         static_cast<float>(MOTOR_VEL * t),
-        static_cast<float>(trajectory[3]),
-        static_cast<float>(trajectory[4]),
+        static_cast<float>(trajectory[3] - ROBOT_PARAMETER_D*trajectory[5]*sin_theta_ref),
+        static_cast<float>(trajectory[4] + ROBOT_PARAMETER_D*trajectory[5]*cos_theta_ref),
         MOTOR_VEL,
-        static_cast<float>(trajectory[6]),
-        static_cast<float>(trajectory[7]),
+        static_cast<float>(trajectory[6] - ROBOT_PARAMETER_D*(trajectory[8]*sin_theta_ref + trajectory[5]*trajectory[5]*cos_theta_ref)),
+        static_cast<float>(trajectory[7] + ROBOT_PARAMETER_D*(trajectory[8]*cos_theta_ref - trajectory[5]*trajectory[5]*sin_theta_ref)),
         0,
     };
 

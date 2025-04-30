@@ -14,6 +14,7 @@ add_executable(${PROJECT_NAME}
 	"src/controllers/Naive.cpp"
 	"src/Model.cpp"
 
+	"../common/control/generators.c"
 	"../common/control/jptd_dynamic.c"
 	"../common/control/jptd_dynamic_1d.c"
 	"../common/control/naive.c"

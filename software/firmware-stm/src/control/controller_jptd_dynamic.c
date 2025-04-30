@@ -1,3 +1,5 @@
+#include <math.h>
+
 #include "actuate/motors.h"
 #include "actuate/servos.h"
 #include "com/stream.h"
@@ -94,15 +96,6 @@ static void loop() {
         return;
     }
 
-    trajectory_t trajectory;
-    trajectory_get(&trajectory, controller.time);
-
-    float phi1;
-    float theta1;
-    float phi2;
-    float theta2;
-    servos_get_position(&phi1, &theta1, &phi2, &theta2);
-
     controller.h[0] = ESTIMATOR_GET_POS_X();
     controller.h[1] = ESTIMATOR_GET_POS_Y();
     controller.h[2] = ESTIMATOR_GET_POS_THETA();
@@ -114,9 +107,12 @@ static void loop() {
     controller.h[8] = MOTOR1_VEL;
     controller.h[9] = MOTOR2_VEL;
 
+    trajectory_t trajectory;
+    trajectory_get(&trajectory, controller.time);
+
     controller.hd[0] = TRAJECTORY_GET_X(&trajectory);
     controller.hd[1] = TRAJECTORY_GET_Y(&trajectory);
-    controller.hd[2] = TRAJECTORY_GET_THETA(&trajectory);
+    controller.hd[2] = TRAJECTORY_GET_THETA(&trajectory) + M_PI/4;
     controller.hd[3] = MOTOR1_VEL * controller.time;
     controller.hd[4] = MOTOR2_VEL * controller.time;
     controller.hd[5] = TRAJECTORY_GET_D_X(&trajectory);
@@ -132,6 +128,12 @@ static void loop() {
 
     float v[5];
     jptd_dynamic_feedback_v(v, K1, K2, controller.h, controller.hd);
+
+    float phi1;
+    float theta1;
+    float phi2;
+    float theta2;
+    servos_get_position(&phi1, &theta1, &phi2, &theta2);
 
     controller.q[0] = ESTIMATOR_GET_POS_X();
     controller.q[1] = ESTIMATOR_GET_POS_Y();
