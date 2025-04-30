@@ -40,7 +40,7 @@ static void generator_circle(float *hd, const float t) {
 
     hd[0] = x + r * cos(w * t);
     hd[1] = y + r * sin(w * t);
-    hd[2] = w * t + M_PI / 2 + M_PI / 4; // very important pi/4 !!!
+    hd[2] = w * t + M_PI / 2;
 
     hd[3] = -r * w * sin(w * t);
     hd[4] = r * w * cos(w * t);
@@ -62,14 +62,12 @@ static void generator_lemniscate(float *hd, const float t) {
 
     hd[0] = a * cos(t * w) / (pow(sin(t * w), 2) + 1);
     hd[1] = a * sin(t * w) * cos(t * w) / (pow(sin(t * w), 2) + 1);
-    hd[2] = angle_fix(
-        atan2(-a * w * pow(sin(t * w), 2) / (pow(sin(t * w), 2) + 1) +
-                  a * w * pow(cos(t * w), 2) / (pow(sin(t * w), 2) + 1) -
-                  2 * a * w * pow(sin(t * w), 2) * pow(cos(t * w), 2) /
-                      pow(pow(sin(t * w), 2) + 1, 2),
-              -a * w * sin(t * w) / (pow(sin(t * w), 2) + 1) -
-                  2 * a * w * sin(t * w) * pow(cos(t * w), 2) / pow(pow(sin(t * w), 2) + 1, 2)) +
-        M_PI / 4); // very important pi/4 !!!
+    hd[2] = angle_fix(atan2(
+        -a * w * pow(sin(t * w), 2) / (pow(sin(t * w), 2) + 1) +
+            a * w * pow(cos(t * w), 2) / (pow(sin(t * w), 2) + 1) -
+            2 * a * w * pow(sin(t * w), 2) * pow(cos(t * w), 2) / pow(pow(sin(t * w), 2) + 1, 2),
+        -a * w * sin(t * w) / (pow(sin(t * w), 2) + 1) -
+            2 * a * w * sin(t * w) * pow(cos(t * w), 2) / pow(pow(sin(t * w), 2) + 1, 2)));
 
     hd[3] = a * w * (pow(sin(t * w), 2) - 3) * sin(t * w) / pow(pow(sin(t * w), 2) + 1, 2);
     hd[4] = a * w * (1 - 3 * pow(sin(t * w), 2)) / pow(pow(sin(t * w), 2) + 1, 2);

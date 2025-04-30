@@ -1,17 +1,19 @@
 #include "actuate/motors.h"
 #include "actuate/servos.h"
 #include "com/stream.h"
+#include "com/telemetry.h"
 #include "control/integrator.h"
 #include "control/jptd_dynamic_1d.h"
+#include "control/robot_parameters.h"
 #include "control/trajectory.h"
 #include "control/watchdog.h"
 #include "generated/estimator.h"
 #include "utils/task.h"
 
-#define CONTROLLER_K1 5.f
-#define CONTROLLER_K2 10.f
-#define MOTOR_VEL     -300.f
-#define GIMBAL_MAX    (5.f * M_PI / 180.f)
+#define CONTROLLER_K1 2.f
+#define CONTROLLER_K2 4.f
+#define MOTOR_VEL     -200.f
+#define GIMBAL_MAX    (3.f * M_PI / 180.f)
 
 typedef enum {
     INTEGRAL_IDX_PHI1,
@@ -76,32 +78,38 @@ static void loop() {
         return;
     }
 
+    const float sin_theta = sinf(ESTIMATOR_GET_POS_THETA());
+    const float cos_theta = cosf(ESTIMATOR_GET_POS_THETA());
+
+    controller.h[0] = ESTIMATOR_GET_POS_X() + ROBOT_PARAMETER_D*cos_theta;
+    controller.h[1] = ESTIMATOR_GET_POS_Y() + ROBOT_PARAMETER_D*sin_theta;
+    controller.h[2] = MOTOR_VEL * controller.time;
+    controller.h[3] = ESTIMATOR_GET_VEL_X() - ROBOT_PARAMETER_D*ESTIMATOR_GET_VEL_THETA()*sin_theta;
+    controller.h[4] = ESTIMATOR_GET_VEL_Y() + ROBOT_PARAMETER_D*ESTIMATOR_GET_VEL_THETA()*cos_theta;
+    controller.h[5] = MOTOR_VEL;
+
     trajectory_t trajectory;
     trajectory_get(&trajectory, controller.time);
 
-    float phi1;
-    float phi2;
-    servos_get_position(&phi1, NULL, &phi2, NULL);
+    const float sin_theta_ref = sinf(TRAJECTORY_GET_THETA(&trajectory));
+    const float cos_theta_ref = cosf(TRAJECTORY_GET_THETA(&trajectory));
 
-    controller.h[0] = ESTIMATOR_GET_POS_X();
-    controller.h[1] = ESTIMATOR_GET_POS_Y();
-    controller.h[2] = MOTOR_VEL * controller.time;
-    controller.h[3] = ESTIMATOR_GET_VEL_X();
-    controller.h[4] = ESTIMATOR_GET_VEL_Y();
-    controller.h[5] = MOTOR_VEL;
-
-    controller.hd[0] = TRAJECTORY_GET_X(&trajectory);
-    controller.hd[1] = TRAJECTORY_GET_Y(&trajectory);
+    controller.hd[0] = TRAJECTORY_GET_X(&trajectory) + ROBOT_PARAMETER_D*cos_theta_ref;
+    controller.hd[1] = TRAJECTORY_GET_Y(&trajectory) + ROBOT_PARAMETER_D*sin_theta_ref;
     controller.hd[2] = MOTOR_VEL * controller.time;
-    controller.hd[3] = TRAJECTORY_GET_D_X(&trajectory);
-    controller.hd[4] = TRAJECTORY_GET_D_Y(&trajectory);
+    controller.hd[3] = TRAJECTORY_GET_D_X(&trajectory) - ROBOT_PARAMETER_D*TRAJECTORY_GET_D_THETA(&trajectory)*sin_theta_ref;
+    controller.hd[4] = TRAJECTORY_GET_D_Y(&trajectory) + ROBOT_PARAMETER_D*TRAJECTORY_GET_D_THETA(&trajectory)*cos_theta_ref;
     controller.hd[5] = MOTOR_VEL;
-    controller.hd[6] = TRAJECTORY_GET_D2_X(&trajectory);
-    controller.hd[7] = TRAJECTORY_GET_D2_Y(&trajectory);
+    controller.hd[6] = TRAJECTORY_GET_D2_X(&trajectory) - ROBOT_PARAMETER_D*(TRAJECTORY_GET_D2_THETA(&trajectory)*sin_theta_ref + TRAJECTORY_GET_D_THETA(&trajectory)*TRAJECTORY_GET_D_THETA(&trajectory)*cos_theta_ref);
+    controller.hd[7] = TRAJECTORY_GET_D2_Y(&trajectory) + ROBOT_PARAMETER_D*(TRAJECTORY_GET_D2_THETA(&trajectory)*cos_theta_ref - TRAJECTORY_GET_D_THETA(&trajectory)*TRAJECTORY_GET_D_THETA(&trajectory)*sin_theta_ref);
     controller.hd[8] = 0;
 
     float v[3];
     jptd_dynamic_1d_feedback_v(v, K1, K2, controller.h, controller.hd);
+
+    float phi1;
+    float phi2;
+    servos_get_position(&phi1, NULL, &phi2, NULL);
 
     controller.q[0] = ESTIMATOR_GET_POS_X();
     controller.q[1] = ESTIMATOR_GET_POS_Y();
@@ -131,7 +139,18 @@ static void loop() {
                         integrator_get(&integrator, INTEGRAL_IDX_PHI2), 0);
 }
 
+static void serialize(cmp_ctx_t *cmp, void *context) {
+    (void)context;
+
+    cmp_write_map(cmp, 2);
+    cmp_write_str(cmp, "started", 7);
+    cmp_write_bool(cmp, controller.started);
+    cmp_write_str(cmp, "time", 4);
+    cmp_write_bool(cmp, controller.time);
+}
+
 STREAM_REGISTER("controller_continue", ok)
 WATCHDOG_REGISTER(abort)
 TASK_REGISTER_INIT(init)
 TASK_REGISTER_PERIODIC(loop, 1000)
+TELEMETRY_REGISTER("controller", serialize, NULL)

@@ -1,6 +1,7 @@
 #include "actuate/motors.h"
 #include "actuate/servos.h"
 #include "com/stream.h"
+#include "com/telemetry.h"
 #include "control/naive.h"
 #include "control/trajectory.h"
 #include "control/watchdog.h"
@@ -69,6 +70,17 @@ static void loop() {
     servos_set_position(phi12d, theta12d, phi12d, theta12d);
 }
 
+static void serialize(cmp_ctx_t *cmp, void *context) {
+    (void)context;
+
+    cmp_write_map(cmp, 2);
+    cmp_write_str(cmp, "started", 7);
+    cmp_write_bool(cmp, controller.started);
+    cmp_write_str(cmp, "time", 4);
+    cmp_write_bool(cmp, controller.time);
+}
+
 STREAM_REGISTER("controller_continue", ok)
 WATCHDOG_REGISTER(abort)
 TASK_REGISTER_PERIODIC(loop, 10000)
+TELEMETRY_REGISTER("controller", serialize, NULL)

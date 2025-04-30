@@ -1,6 +1,7 @@
 #include "actuate/motors.h"
 #include "actuate/servos.h"
 #include "com/stream.h"
+#include "com/telemetry.h"
 #include "control/integrator.h"
 #include "control/jptd_dynamic.h"
 #include "control/trajectory.h"
@@ -31,13 +32,19 @@ typedef struct {
 } controller_t;
 
 static const float K1[25] = {
-    CONTROLLER_K1, 0, 0, 0, 0, 0, CONTROLLER_K1, 0, 0, 0, 0, 0, CONTROLLER_K1, 0, 0, 0, 0, 0,
-    CONTROLLER_K1, 0, 0, 0, 0, 0, CONTROLLER_K1,
+    CONTROLLER_K1, 0, 0, 0, 0,
+    0, CONTROLLER_K1, 0, 0, 0,
+    0, 0, CONTROLLER_K1, 0, 0,
+    0, 0, 0, CONTROLLER_K1, 0,
+    0, 0, 0, 0, CONTROLLER_K1,
 };
 
 static const float K2[25] = {
-    CONTROLLER_K2, 0, 0, 0, 0, 0, CONTROLLER_K2, 0, 0, 0, 0, 0, CONTROLLER_K2, 0, 0, 0, 0, 0,
-    CONTROLLER_K2, 0, 0, 0, 0, 0, CONTROLLER_K2,
+    CONTROLLER_K2, 0, 0, 0, 0,
+    0, CONTROLLER_K2, 0, 0, 0,
+    0, 0, CONTROLLER_K2, 0, 0,
+    0, 0, 0, CONTROLLER_K2, 0,
+    0, 0, 0, 0, CONTROLLER_K2,
 };
 
 static integrator_element_t integrator_elements[4];
@@ -160,7 +167,18 @@ static void loop() {
                         integrator_get(&integrator, INTEGRAL_IDX_THETA2));
 }
 
+static void serialize(cmp_ctx_t *cmp, void *context) {
+    (void)context;
+
+    cmp_write_map(cmp, 2);
+    cmp_write_str(cmp, "started", 7);
+    cmp_write_bool(cmp, controller.started);
+    cmp_write_str(cmp, "time", 4);
+    cmp_write_bool(cmp, controller.time);
+}
+
 STREAM_REGISTER("controller_continue", ok)
 WATCHDOG_REGISTER(abort)
 TASK_REGISTER_INIT(init)
 TASK_REGISTER_PERIODIC(loop, 1000)
+TELEMETRY_REGISTER("controller", serialize, NULL)
