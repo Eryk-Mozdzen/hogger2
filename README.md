@@ -3,7 +3,7 @@
 Hogger^2 is mobile robot with two HOG ([Hemispherical Omnidirectional Gimbaled](https://en.wikipedia.org/wiki/Hemispherical_omnidirectional_gimbaled_wheel)) wheels.
 
 - kinematic models were derived by Paweł Joniak in his [engineering thesis](https://kcir.pwr.edu.pl/~mucha/Pracki/Pawel_Joniak_praca_magisterska.pdf) (2014)
-- chassis was originally created by Damian Góral in his [master thesis](https://kcir.pwr.edu.pl/~mucha/Pracki/Damian_Goral_praca_inzynierska.pdf) (2017)
+- chassis was originally created by Damian Góral in his [engineering thesis](https://kcir.pwr.edu.pl/~mucha/Pracki/Damian_Goral_praca_inzynierska.pdf) (2017)
 - control algorithms were designed by Paweł Joniak in his [master thesis](https://kcir.pwr.edu.pl/~mucha/Pracki/Pawel_Joniak_praca_magisterska.pdf) (2017)
 - code generation technique was proposed by Jędrzej Boczar in his [master thesis](https://kcir.pwr.edu.pl/~mucha/Pracki/Jedrzej_Boczar_praca_magisterska.pdf) (2019)
 - JSON based communication was proposed by Tomasz Lubelski in his [engineering thesis](https://kcir.pwr.edu.pl/~mucha/Pracki/Tomek_Lubelski_praca_inzynierska.pdf) (2023)

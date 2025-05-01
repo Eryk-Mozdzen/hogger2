@@ -7,7 +7,7 @@
 #include "control/robot_parameters.h"
 #include "controllers/JPTDDynamic.hpp"
 
-#define MOTOR_VEL 300
+#define MOTOR_VEL 200
 
 JPTDDynamic::OutputFunction::OutputFunction() {
     this->DeclareVectorInputPort("q", 9);

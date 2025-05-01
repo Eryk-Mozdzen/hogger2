@@ -13,9 +13,9 @@
 
 #define CONTROLLER_K1 5.f
 #define CONTROLLER_K2 10.f
-#define MOTOR1_VEL    -300.f
-#define MOTOR2_VEL    +300.f
-#define GIMBAL_MAX    (2.5f * M_PI / 180.f)
+#define MOTOR1_VEL    -200.f
+#define MOTOR2_VEL    +200.f
+#define GIMBAL_MAX    (2.f * M_PI / 180.f)
 
 typedef enum {
     INTEGRAL_IDX_PHI1,
@@ -36,7 +36,7 @@ typedef struct {
 static const float K1[25] = {
     CONTROLLER_K1, 0, 0, 0, 0,
     0, CONTROLLER_K1, 0, 0, 0,
-    0, 0, CONTROLLER_K1, 0, 0,
+    0, 0, CONTROLLER_K1*1000, 0, 0,
     0, 0, 0, CONTROLLER_K1, 0,
     0, 0, 0, 0, CONTROLLER_K1,
 };
@@ -44,7 +44,7 @@ static const float K1[25] = {
 static const float K2[25] = {
     CONTROLLER_K2, 0, 0, 0, 0,
     0, CONTROLLER_K2, 0, 0, 0,
-    0, 0, CONTROLLER_K2, 0, 0,
+    0, 0, CONTROLLER_K2*1000, 0, 0,
     0, 0, 0, CONTROLLER_K2, 0,
     0, 0, 0, 0, CONTROLLER_K2,
 };

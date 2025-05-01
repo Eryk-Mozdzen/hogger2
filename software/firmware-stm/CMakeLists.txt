@@ -142,8 +142,8 @@ add_executable(${TARGET}
     "src/control/trajectory.c"
     "src/control/integrator.c"
 
-    #"src/control/controller_jptd_dynamic.c"
-    "src/control/controller_jptd_dynamic_1d.c"
+    "src/control/controller_jptd_dynamic.c"
+    #"src/control/controller_jptd_dynamic_1d.c"
     #"src/control/controller_naive.c"
 
     "../common/lrcp/stream.c"

@@ -92,11 +92,12 @@ h2 = h.diff(t, 2).subs([
 Kdd = h2.jacobian(u)
 P = h2 - Kdd*u
 
-#assert sp.simplify(h2)==sp.simplify(Kdd*u + P), 'Dynamic linearization error: wrong calculation of Kdd and P!'
+Kdd = sp.simplify(Kdd)
+P = sp.simplify(P)
 
-sp.pprint(sp.simplify(Kdd))
+sp.pprint(Kdd)
 sp.pprint(sp.simplify(Kdd.det()))
-sp.pprint(sp.simplify(P))
+sp.pprint(P)
 
 v = sp.Matrix([
     sp.Symbol('v_1'),
@@ -107,8 +108,6 @@ v = sp.Matrix([
 ])
 
 u = Kdd.inv()*(v - P)
-
-#u = sp.simplify(u)
 
 u = u.subs([
     (v[0], sp.Symbol('v[0]')),
