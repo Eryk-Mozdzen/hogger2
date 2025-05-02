@@ -30,23 +30,13 @@ static bool reader(cmp_ctx_t *ctx, void *data, size_t count) {
     return true;
 }
 
-bool mpack_create_from(mpack_t *mpack, const uint8_t *buffer, const uint32_t size) {
+void mpack_create_from(mpack_t *mpack, const uint8_t *buffer, const uint32_t size) {
     mpack->buffer = (uint8_t *)buffer;
     mpack->capacity = size;
     mpack->size = size;
     mpack->position = 0,
 
     cmp_init(&mpack->cmp, mpack, reader, NULL, writer);
-
-    uint32_t map_size = 0;
-    if(!cmp_read_map(&mpack->cmp, &map_size)) {
-        return false;
-    }
-    if(map_size != 1) {
-        return false;
-    }
-
-    return true;
 }
 
 void mpack_create_empty(mpack_t *mpack, uint8_t *buffer, const uint32_t capacity) {
@@ -56,27 +46,42 @@ void mpack_create_empty(mpack_t *mpack, uint8_t *buffer, const uint32_t capacity
     mpack->position = 0;
 
     cmp_init(&mpack->cmp, mpack, reader, NULL, writer);
-
-    cmp_write_map(&mpack->cmp, 1);
 }
 
-void mpack_copy(mpack_t *mpack, mpack_t *other) {
+void mpack_create_copy(mpack_t *mpack, const mpack_t *other) {
     *mpack = *other;
     mpack->cmp.buf = mpack;
 }
 
+bool mpack_read_map(mpack_t *mpack, uint32_t *size) {
+    *size = 0;
+    return cmp_read_map(&mpack->cmp, size);
+}
+
+bool mpack_read_array(mpack_t *mpack, uint32_t *size) {
+    *size = 0;
+    return cmp_read_array(&mpack->cmp, size);
+}
+
 bool mpack_read_bool(mpack_t *mpack, bool *value) {
+    *value = false;
     return cmp_read_bool(&mpack->cmp, value);
 }
 
-bool mpack_read_str(mpack_t *mpack, char *value, const uint32_t size) {
-    uint32_t len = size;
+bool mpack_read_str(mpack_t *mpack, char *value, const uint32_t capacity) {
+    memset(value, '\0', capacity);
+
+    uint32_t len = capacity;
     const bool result = cmp_read_str(&mpack->cmp, value, &len);
-    value[size - 1] = '\0';
+
+    value[capacity - 1] = '\0';
+
     return result;
 }
 
 bool mpack_read_uint32(mpack_t *mpack, uint32_t *value) {
+    *value = 0;
+
     cmp_object_t object;
     if(!cmp_read_object(&mpack->cmp, &object)) {
         return false;
@@ -156,6 +161,8 @@ bool mpack_read_uint32(mpack_t *mpack, uint32_t *value) {
 }
 
 bool mpack_read_float32(mpack_t *mpack, float *value) {
+    *value = 0;
+
     cmp_object_t object;
     if(!cmp_read_object(&mpack->cmp, &object)) {
         return false;
@@ -234,14 +241,20 @@ bool mpack_read_float32(mpack_t *mpack, float *value) {
     return false;
 }
 
-bool mpack_read_float32_array(mpack_t *mpack, float *values, const uint32_t size) {
+bool mpack_read_float32_array(mpack_t *mpack,
+                              float *values,
+                              const uint32_t capacity,
+                              uint32_t *size) {
+    if(values) {
+        memset(values, 0, capacity * sizeof(float));
+    }
+    if(size) {
+        *size = 0;
+    }
+
     uint32_t array_size = 0;
     if(!cmp_read_array(&mpack->cmp, &array_size)) {
         return false;
-    }
-
-    for(uint32_t i = 0; i < size; i++) {
-        values[i] = 0;
     }
 
     for(uint32_t i = 0; i < array_size; i++) {
@@ -249,9 +262,13 @@ bool mpack_read_float32_array(mpack_t *mpack, float *values, const uint32_t size
         if(!mpack_read_float32(mpack, &val)) {
             return false;
         }
-        if(i < size) {
+        if((i < capacity) && values) {
             values[i] = val;
         }
+    }
+
+    if(size) {
+        *size = array_size;
     }
 
     return true;

@@ -98,19 +98,27 @@ static void stream_decode() {
         }
 
         mpack_t mpack;
-        if(mpack_create_from(&mpack, decoded, size)) {
-            char type[32] = {0};
-            uint32_t type_size = sizeof(type);
-            if(!cmp_read_str(&mpack.cmp, type, &type_size)) {
-                return;
-            }
+        mpack_create_from(&mpack, decoded, size);
 
-            for(uint32_t i = 0; i < count; i++) {
-                if((strncmp(type, registered[i].type, type_size) == 0) && registered[i].receiver) {
-                    mpack_t copy;
-                    mpack_copy(&copy, &mpack);
-                    registered[i].receiver(&copy);
-                }
+        uint32_t map_size = 0;
+        if(!mpack_read_map(&mpack, &map_size)) {
+            return;
+        }
+
+        if(map_size != 1) {
+            return;
+        }
+
+        char type[32] = {0};
+        if(!mpack_read_str(&mpack, type, sizeof(type))) {
+            return;
+        }
+
+        for(uint32_t i = 0; i < count; i++) {
+            if((strcmp(type, registered[i].type) == 0) && registered[i].receiver) {
+                mpack_t copy;
+                mpack_create_copy(&copy, &mpack);
+                registered[i].receiver(&copy);
             }
         }
     }

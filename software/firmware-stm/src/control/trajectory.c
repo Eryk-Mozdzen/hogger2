@@ -36,6 +36,7 @@ static void read_loop() {
     mpack_t response;
     mpack_create_empty(&response, buffer, sizeof(buffer));
 
+    cmp_write_map(&response.cmp, 1);
     cmp_write_str(&response.cmp, "trajectory", 10);
     cmp_write_map(&response.cmp, 2);
     cmp_write_str(&response.cmp, "time", 4);
@@ -68,18 +69,17 @@ static void read_start(mpack_t *mpack) {
 
 static void write(mpack_t *mpack) {
     uint32_t map_size = 0;
-    if(!cmp_read_map(&mpack->cmp, &map_size)) {
+    if(!mpack_read_map(mpack, &map_size)) {
         return;
     }
 
     for(uint32_t i = 0; i < map_size; i++) {
         char key[32] = {0};
-        uint32_t key_size = sizeof(key);
-        if(!cmp_read_str(&mpack->cmp, key, &key_size)) {
+        if(!mpack_read_str(mpack, key, sizeof(key))) {
             return;
         }
 
-        if(strncmp(key, "generator", key_size) == 0) {
+        if(strcmp(key, "generator") == 0) {
             char name[32] = {0};
             if(!mpack_read_str(mpack, name, sizeof(name))) {
                 return;
@@ -89,8 +89,8 @@ static void write(mpack_t *mpack) {
             } else if(strcmp(name, "lemniscate") == 0) {
                 generator = generators_lemniscate;
             }
-        } else if(strncmp(key, "params", key_size) == 0) {
-            if(!mpack_read_float32_array(mpack, generator_params, PARAMS_NUM)) {
+        } else if(strcmp(key, "params") == 0) {
+            if(!mpack_read_float32_array(mpack, generator_params, PARAMS_NUM, NULL)) {
                 return;
             }
         }

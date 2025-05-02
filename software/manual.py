@@ -61,57 +61,59 @@ try:
         if datetime.datetime.now() > next_config:
             next_config = datetime.datetime.now() + datetime.timedelta(milliseconds=500)
             data = {
-                'config_req': None,
+                'config_req': [
+                    'servo_offset',
+                ],
             }
             #print(data)
             publisher.send_json(data)
 
-        config = None
+        offset = None
 
         while True:
             try:
                 message = subscriber.recv_json(flags=zmq.NOBLOCK)
                 if 'config' in message:
-                    config = message
+                    if 'servo_offset' in message['config']:
+                        offset = message['config']['servo_offset']
             except zmq.Again:
                 break
 
-        if config:
-            if isinstance(config.get('config'), dict):
-                print(config['config']['servo_offset'])
+        if not offset is None:
+            if len(offset)!=4:
+                offset = [0, 0, 0, 0]
 
-                if not 'servo_offset' in config['config']:
-                    config['config']['servo_offset'] = [0, 0, 0, 0]
+            if joystick.get_hat(0)[1]==1:
+                offset[1] +=numpy.deg2rad(0.1)
+                offset[3] +=numpy.deg2rad(0.1)
+                publisher.send_json({'config': {'servo_offset': offset}})
 
-                if joystick.get_hat(0)[1]==1:
-                    config['config']['servo_offset'][1] +=numpy.deg2rad(0.1)
-                    config['config']['servo_offset'][3] +=numpy.deg2rad(0.1)
-                    publisher.send_json(config)
+            if joystick.get_hat(0)[1]==-1:
+                offset[1] -=numpy.deg2rad(0.1)
+                offset[3] -=numpy.deg2rad(0.1)
+                publisher.send_json({'config': {'servo_offset': offset}})
 
-                if joystick.get_hat(0)[1]==-1:
-                    config['config']['servo_offset'][1] -=numpy.deg2rad(0.1)
-                    config['config']['servo_offset'][3] -=numpy.deg2rad(0.1)
-                    publisher.send_json(config)
+            if joystick.get_button(1):
+                offset[0] +=numpy.deg2rad(0.1)
+                offset[2] +=numpy.deg2rad(0.1)
+                publisher.send_json({'config': {'servo_offset': offset}})
 
-                if joystick.get_button(1):
-                    config['config']['servo_offset'][0] +=numpy.deg2rad(0.1)
-                    config['config']['servo_offset'][2] +=numpy.deg2rad(0.1)
-                    publisher.send_json(config)
+            if joystick.get_button(2):
+                offset[0] -=numpy.deg2rad(0.1)
+                offset[2] -=numpy.deg2rad(0.1)
+                publisher.send_json({'config': {'servo_offset': offset}})
 
-                if joystick.get_button(2):
-                    config['config']['servo_offset'][0] -=numpy.deg2rad(0.1)
-                    config['config']['servo_offset'][2] -=numpy.deg2rad(0.1)
-                    publisher.send_json(config)
+            if joystick.get_button(0):
+                offset[0] -=numpy.deg2rad(0.1)
+                offset[2] +=numpy.deg2rad(0.1)
+                publisher.send_json({'config': {'servo_offset': offset}})
 
-                if joystick.get_button(0):
-                    config['config']['servo_offset'][0] -=numpy.deg2rad(0.1)
-                    config['config']['servo_offset'][2] +=numpy.deg2rad(0.1)
-                    publisher.send_json(config)
+            if joystick.get_button(3):
+                offset[0] +=numpy.deg2rad(0.1)
+                offset[2] -=numpy.deg2rad(0.1)
+                publisher.send_json({'config': {'servo_offset': offset}})
 
-                if joystick.get_button(3):
-                    config['config']['servo_offset'][0] +=numpy.deg2rad(0.1)
-                    config['config']['servo_offset'][2] -=numpy.deg2rad(0.1)
-                    publisher.send_json(config)
+            #print(offset)
 
         time.sleep(0.05)
 

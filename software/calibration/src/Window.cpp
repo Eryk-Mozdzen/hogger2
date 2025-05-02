@@ -19,7 +19,7 @@
 #include "Window.h"
 
 Window::Window(QWidget *parent) : QWidget{parent}, current{nullptr} {
-    config["config"] = QJsonArray();
+    config = QJsonObject();
 
     interfaces.push_back(new Magnetometer());
     interfaces.push_back(new Accelerometer());
@@ -99,26 +99,30 @@ Window::Window(QWidget *parent) : QWidget{parent}, current{nullptr} {
         connect(button_clear, &QPushButton::clicked, [&]() {
             calibration_text->setText("clearing...");
 
-            config["config"] = QJsonArray();
+            {
+                QJsonObject message;
+                message["config_clr"] = QJsonValue::Null;
+                transmit(QJsonDocument(message));
+            }
 
-            QJsonObject json;
-            json["config_clr"] = QJsonValue::Null;
-            transmit(QJsonDocument(json));
+            {
+                QJsonObject message;
+                message["config_req"] = QJsonArray();
+                transmit(QJsonDocument(message));
+            }
         });
 
         connect(button_read, &QPushButton::clicked, [&]() {
             calibration_text->setText("fetching...");
 
-            QJsonObject json;
-            json["config_req"] = QJsonValue::Null;
-            transmit(QJsonDocument(json));
+            QJsonObject message;
+            message["config_req"] = QJsonArray();
+            transmit(QJsonDocument(message));
         });
 
         connect(button_update, &QPushButton::clicked, [&]() {
             if(current) {
-                QJsonObject content = config["config"].toObject();
-                current->update(content);
-                config["config"] = content;
+                current->update(config);
 
                 calibration_text->setText(QJsonDocument(config).toJson(QJsonDocument::Indented));
             } else {
@@ -129,7 +133,17 @@ Window::Window(QWidget *parent) : QWidget{parent}, current{nullptr} {
         connect(button_write, &QPushButton::clicked, [&]() {
             calibration_text->setText("saving...");
 
-            transmit(QJsonDocument(config));
+            {
+                QJsonObject message;
+                message["config"] = config;
+                transmit(QJsonDocument(message));
+            }
+
+            {
+                QJsonObject message;
+                message["config_req"] = QJsonArray();
+                transmit(QJsonDocument(message));
+            }
         });
 
         layout->addWidget(calibration_text);
@@ -209,18 +223,8 @@ void Window::receive(const QJsonDocument &json) {
 
     if(json.object().contains("config")) {
         if(json.object()["config"].isObject()) {
-            const QJsonObject cfg = json.object()["config"].toObject();
 
-            for(auto it = cfg.constBegin(); it != cfg.constEnd(); ++it) {
-                const QString key = it.key();
-                const QJsonValue value = it.value();
-
-                if(cfg.contains(key)) {
-                    QJsonObject c = config["config"].toObject();
-                    c[key] = cfg[key];
-                    config["config"] = c;
-                }
-            }
+            config = json.object()["config"].toObject();
 
             calibration_text->setText(QJsonDocument(config).toJson(QJsonDocument::Indented));
 
