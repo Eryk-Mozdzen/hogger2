@@ -87,7 +87,7 @@ with open(f'{here}/src/Model.cpp', 'w') as file:
 Model::Model(const double x0, const double y0, const double theta0) {
 '''
     )
-    file.write('    this->DeclareContinuousState({x0, y0, theta0, +0.0472104532, -0.0471579290, 0, -0.0472104532, +0.0471579290, 0});\n')
+    file.write('    this->DeclareContinuousState({x0, y0, theta0, 0.38, 0.15, 0, 0.38, 0.15, 0});\n')
     file.write('    this->DeclareVectorInputPort("eta", 5);\n')
     file.write('    this->DeclareVectorOutputPort("q", 9, &Model::eval, {this->all_state_ticket()});\n')
     file.write(

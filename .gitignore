@@ -37,3 +37,5 @@ software/common/control/jptd_dynamic_1d.h
 software/common/control/jptd_dynamic_1d.c
 software/common/control/naive.h
 software/common/control/naive.c
+software/common/control/simplified_static_online.h
+software/common/control/simplified_static_online.c

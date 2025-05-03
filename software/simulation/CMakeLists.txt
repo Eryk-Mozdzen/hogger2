@@ -12,12 +12,14 @@ add_executable(${PROJECT_NAME}
 	"src/controllers/JPTDDynamic.cpp"
 	"src/controllers/JPTDDynamic1D.cpp"
 	"src/controllers/Naive.cpp"
+	"src/controllers/SimplifiedStaticOnline.cpp"
 	"src/Model.cpp"
 
 	"../common/control/generators.c"
 	"../common/control/jptd_dynamic.c"
 	"../common/control/jptd_dynamic_1d.c"
 	"../common/control/naive.c"
+	"../common/control/simplified_static_online.c"
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
