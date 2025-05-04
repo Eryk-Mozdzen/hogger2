@@ -32,7 +32,7 @@ void SimplifiedStaticOnline::SimplifiedStaticOnline::eval(
     };
 
     float eta_full[5];
-    simplified_static_online_feedback(eta_full, K, q_full, hd);
+    simplified_static_online_calculate(eta_full, K, q_full, hd);
 
     const Eigen::Vector<double, 5> eta{
         eta_full[0], eta_full[1], eta_full[2], eta_full[3], eta_full[4],

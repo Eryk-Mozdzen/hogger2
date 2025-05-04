@@ -52,11 +52,11 @@ qu = sp.Matrix([
 G = sp.Matrix([
     [0, sp.cos(theta + thetau1)*ru1, 0, 0, 0],
     [0, sp.sin(theta + thetau1)*ru1, 0, 0, 0],
-    [0, sp.csc(thetau2)*sp.sin(thetau1 - thetau2)*ru1/(2*L), 0, 0, 0],
+    [0, sp.sin(thetau1 - thetau2)*ru1/(2*L*sp.sin(thetau2)), 0, 0, 0],
     [1, 0, 0, 0, 0],
     [0, 1, 0, 0, 0],
     [0, 0, 1, 0, 0],
-    [0, sp.csc(thetau2)*sp.sin(thetau1)*ru1/ru2, 0, 0, 0],
+    [0, sp.sin(thetau1)*ru1/(sp.sin(thetau2)*ru2), 0, 0, 0],
     [0, 0, 0, 1, 0],
     [0, 0, 0, 0, 1],
 ])
@@ -81,50 +81,61 @@ K = sp.Matrix([[sp.Symbol(f'K[{5*i + j}]') for j in range(5)] for i in range(5)]
 
 v = hd.diff(t) - K*(h - hd)
 
+#v = sp.Matrix([
+#    sp.Symbol('v_1'),
+#    sp.Symbol('v_2'),
+#    sp.Symbol('v_3'),
+#    sp.Symbol('v_4'),
+#    sp.Symbol('v_5'),
+#])
+
 etau = (h.jacobian(qu)*G).inv()*v
 
 #sp.pprint(etau)
 
 def sign(theta_u):
+    theta_mod = (theta_u % (2*sp.pi))
     return sp.Piecewise(
-        (+1, (theta_u % sp.pi) < sp.pi/2),
-        (+1, (theta_u % sp.pi) > 3*sp.pi/2),
+        (+1, theta_mod < sp.pi/2),
+        (+1, theta_mod > 3*sp.pi/2),
         (-1, True),
     )
 
-etap_integral = sp.Matrix([
-    sign(thetau1) * sp.acos(sp.sqrt(ru1**2 - R**2) * sp.sqrt(sp.tan(thetau1)**2 + 1) / sp.sqrt(-R**2 - R**2 * sp.tan(thetau1)**2 + ru1**2 * sp.tan(thetau1)**2)),
+g = sp.Matrix([
+    x,
+    y,
+    theta,
+    sign(thetau1) * sp.acos(sp.sqrt(R**2 - ru1**2) * sp.sqrt(sp.tan(thetau1)**2 + 1) / sp.sqrt(R**2 + R**2 * sp.tan(thetau1)**2 - ru1**2 * sp.tan(thetau1)**2)),
     sign(thetau1) * sp.asin(ru1 * sp.tan(thetau1) / (R * sp.sqrt(sp.tan(thetau1)**2 + 1))),
     phiu1,
+    sign(thetau2) * sp.acos(sp.sqrt(R**2 - ru2**2) * sp.sqrt(sp.tan(thetau2)**2 + 1) / sp.sqrt(R**2 + R**2 * sp.tan(thetau2)**2 - ru2**2 * sp.tan(thetau2)**2)),
     sign(thetau2) * sp.asin(ru2 * sp.tan(thetau2) / (R * sp.sqrt(sp.tan(thetau2)**2 + 1))),
     phiu2,
 ])
 
-etap = etap_integral.diff(t)
-
-#sp.pprint(etap)
-
-qu1 = G*etau
-
-etap = etap.subs({
-    (qu[0].diff(t), qu1[0]),
-    (qu[1].diff(t), qu1[1]),
-    (qu[2].diff(t), qu1[2]),
-    (qu[3].diff(t), qu1[3]),
-    (qu[4].diff(t), qu1[4]),
-    (qu[5].diff(t), qu1[5]),
-    (qu[6].diff(t), qu1[6]),
-    (qu[7].diff(t), qu1[7]),
-    (qu[8].diff(t), qu1[8]),
+f = {
+    (x, x),
+    (y, y),
+    (theta, theta),
+    (thetau1, sp.atan2(sp.sin(theta1), sp.cos(theta1)*sp.sin(phi1))),
     (phiu1, psi1),
+    (thetau2, sp.atan2(sp.sin(theta2), sp.cos(theta2)*sp.sin(phi2))),
     (phiu2, psi2),
     (ru1, R * sp.sqrt(sp.cos(phi1)**2 * (sp.sin(theta1)**2 - 1) + 1)),
     (ru2, R * sp.sqrt(sp.cos(phi2)**2 * (sp.sin(theta2)**2 - 1) + 1)),
-    (thetau1, sp.atan2(sp.sin(theta1), sp.cos(theta1)*sp.sin(phi1))),
-    (thetau2, sp.atan2(sp.sin(theta2), sp.cos(theta2)*sp.sin(phi2))),
-})
+}
 
-#sp.pprint(etap)
+qp1 = (g.jacobian(qu)*G*etau).subs(f)
+
+#print(qp1.shape)
+
+etap = sp.Matrix([
+    qp1[3],
+    qp1[4],
+    qp1[5],
+    qp1[7],
+    qp1[8],
+])
 
 etap = etap.subs([
     (qp[0], sp.Symbol('q_full[0]')),
@@ -153,6 +164,6 @@ etap = etap.subs([
 
 source = c_source_gen.Source('simplified_static_online')
 
-source.add_function(etap, 'eta_full', 'feedback(float *eta_full, const float *K, const float *q_full, const float *hd)')
+source.add_function(etap, 'eta_full', 'calculate(float *eta_full, const float *K, const float *q_full, const float *hd)')
 
 source.generate('../common/control')
