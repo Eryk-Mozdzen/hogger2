@@ -81,17 +81,7 @@ K = sp.Matrix([[sp.Symbol(f'K[{5*i + j}]') for j in range(5)] for i in range(5)]
 
 v = hd.diff(t) - K*(h - hd)
 
-#v = sp.Matrix([
-#    sp.Symbol('v_1'),
-#    sp.Symbol('v_2'),
-#    sp.Symbol('v_3'),
-#    sp.Symbol('v_4'),
-#    sp.Symbol('v_5'),
-#])
-
 etau = (h.jacobian(qu)*G).inv()*v
-
-#sp.pprint(etau)
 
 def sign(theta_u):
     theta_mod = (theta_u % (2*sp.pi))
@@ -114,9 +104,6 @@ g = sp.Matrix([
 ])
 
 f = {
-    (x, x),
-    (y, y),
-    (theta, theta),
     (thetau1, sp.atan2(sp.sin(theta1), sp.cos(theta1)*sp.sin(phi1))),
     (phiu1, psi1),
     (thetau2, sp.atan2(sp.sin(theta2), sp.cos(theta2)*sp.sin(phi2))),
@@ -126,8 +113,6 @@ f = {
 }
 
 qp1 = (g.jacobian(qu)*G*etau).subs(f)
-
-#print(qp1.shape)
 
 etap = sp.Matrix([
     qp1[3],

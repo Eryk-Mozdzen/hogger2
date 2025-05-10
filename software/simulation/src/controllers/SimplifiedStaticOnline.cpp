@@ -15,9 +15,11 @@ void SimplifiedStaticOnline::SimplifiedStaticOnline::eval(
     const auto &HD = this->GetInputPort("hd").Eval(context);
 
     const float K[] = {
-        static_cast<float>(k), 0, 0, 0, 0, 0, static_cast<float>(k), 0, 0, 0, 0, 0,
-        static_cast<float>(k), 0, 0, 0, 0, 0, static_cast<float>(k), 0, 0, 0, 0, 0,
-        static_cast<float>(k),
+        static_cast<float>(k), 0, 0, 0, 0,
+        0, static_cast<float>(k), 0, 0, 0,
+        0, 0, static_cast<float>(10*k), 0, 0, // accordingly to Joniak in "dla potomnych"
+        0, 0, 0, static_cast<float>(k), 0,
+        0, 0, 0, 0, static_cast<float>(k),
     };
 
     const float q_full[] = {
