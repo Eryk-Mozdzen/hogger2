@@ -61,7 +61,7 @@ def write_trajectory(event):
         'trajectory_write': {
             'generator': 'circle',
             'params': [
-                1,
+                0.5,
                 20,
             ],
         },
@@ -124,7 +124,7 @@ button_stop_ax = plt.subplot(grid[17, 1])
 button_stop = Button(button_stop_ax, 'stop')
 button_stop.on_clicked(stop_tracking)
 
-size = 0.5
+size = 0.25
 base_triangle = np.array([
     [-0.25*size, -0.35*size],
     [-0.25*size, 0.35*size],
@@ -136,13 +136,13 @@ readed_y = []
 readed, = ax.plot(readed_x, readed_y, 'k--', zorder=1)
 
 reference = Polygon(base_triangle, closed=True, fc='red', ec='black', label='reference pose', zorder=2)
-estimated = Polygon(base_triangle, closed=True, fc='cyan', ec='black', label='estimated pose', zorder=2)
+estimated = Polygon(base_triangle, closed=True, fc='cyan', ec='black', label='estimated pose', zorder=3)
 
 ax.add_patch(reference)
 ax.add_patch(estimated)
 
-ax.set_xlim(-3, 3)
-ax.set_ylim(-3, 3)
+ax.set_xlim(-1.5, 1.5)
+ax.set_ylim(-1.5, 1.5)
 ax.set_aspect('equal')
 ax.grid()
 ax.legend()

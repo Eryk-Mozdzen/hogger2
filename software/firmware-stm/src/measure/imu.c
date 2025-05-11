@@ -114,7 +114,7 @@ static void process() {
         aout[1],
         gout[2],
     };
-    ESTIMATOR_PREDICT(u);
+    estimator_predict(u);
 }
 
 static void serialize_accel(cmp_ctx_t *cmp, void *context) {

@@ -1,6 +1,7 @@
 #include <main.h>
 #include <stdint.h>
 #include <stm32h5xx_hal.h>
+#include <string.h>
 
 #include "com/telemetry.h"
 #include "generated/estimator.h"
@@ -209,7 +210,7 @@ static void process() {
         velocity[0] = vel[0];
         velocity[1] = vel[1];
 
-        ESTIMATOR_CORRECT_FLOW(velocity);
+        estimator_correct_flow(velocity);
     } else {
         velocity[0] = NAN;
         velocity[1] = NAN;

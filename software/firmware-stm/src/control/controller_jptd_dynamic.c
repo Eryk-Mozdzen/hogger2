@@ -1,4 +1,5 @@
 #include <math.h>
+#include <string.h>
 
 #include "actuate/motors.h"
 #include "actuate/servos.h"
@@ -34,19 +35,13 @@ typedef struct {
 } controller_t;
 
 static const float K1[25] = {
-    CONTROLLER_K1, 0, 0, 0, 0,
-    0, CONTROLLER_K1, 0, 0, 0,
-    0, 0, CONTROLLER_K1*1000, 0, 0,
-    0, 0, 0, CONTROLLER_K1, 0,
-    0, 0, 0, 0, CONTROLLER_K1,
+    CONTROLLER_K1, 0, 0, 0, 0, 0, CONTROLLER_K1, 0, 0, 0, 0, 0, CONTROLLER_K1 * 1000, 0, 0, 0, 0, 0,
+    CONTROLLER_K1, 0, 0, 0, 0, 0, CONTROLLER_K1,
 };
 
 static const float K2[25] = {
-    CONTROLLER_K2, 0, 0, 0, 0,
-    0, CONTROLLER_K2, 0, 0, 0,
-    0, 0, CONTROLLER_K2*1000, 0, 0,
-    0, 0, 0, CONTROLLER_K2, 0,
-    0, 0, 0, 0, CONTROLLER_K2,
+    CONTROLLER_K2, 0, 0, 0, 0, 0, CONTROLLER_K2, 0, 0, 0, 0, 0, CONTROLLER_K2 * 1000, 0, 0, 0, 0, 0,
+    CONTROLLER_K2, 0, 0, 0, 0, 0, CONTROLLER_K2,
 };
 
 static integrator_element_t integrator_elements[4];
@@ -96,14 +91,14 @@ static void loop() {
         return;
     }
 
-    controller.h[0] = ESTIMATOR_GET_POS_X();
-    controller.h[1] = ESTIMATOR_GET_POS_Y();
-    controller.h[2] = ESTIMATOR_GET_POS_THETA();
+    controller.h[0] = estimator_state_get_px();
+    controller.h[1] = estimator_state_get_py();
+    controller.h[2] = estimator_state_get_theta();
     controller.h[3] = MOTOR1_VEL * controller.time;
     controller.h[4] = MOTOR2_VEL * controller.time;
-    controller.h[5] = ESTIMATOR_GET_VEL_X();
-    controller.h[6] = ESTIMATOR_GET_VEL_Y();
-    controller.h[7] = ESTIMATOR_GET_VEL_THETA();
+    controller.h[5] = estimator_state_get_vx();
+    controller.h[6] = estimator_state_get_vy();
+    controller.h[7] = estimator_state_get_vtheta();
     controller.h[8] = MOTOR1_VEL;
     controller.h[9] = MOTOR2_VEL;
 
@@ -112,7 +107,7 @@ static void loop() {
 
     controller.hd[0] = TRAJECTORY_GET_X(&trajectory);
     controller.hd[1] = TRAJECTORY_GET_Y(&trajectory);
-    controller.hd[2] = TRAJECTORY_GET_THETA(&trajectory) + M_PI/4;
+    controller.hd[2] = TRAJECTORY_GET_THETA(&trajectory) + M_PI / 4;
     controller.hd[3] = MOTOR1_VEL * controller.time;
     controller.hd[4] = MOTOR2_VEL * controller.time;
     controller.hd[5] = TRAJECTORY_GET_D_X(&trajectory);
@@ -135,9 +130,9 @@ static void loop() {
     float theta2;
     servos_get_position(&phi1, &theta1, &phi2, &theta2);
 
-    controller.q[0] = ESTIMATOR_GET_POS_X();
-    controller.q[1] = ESTIMATOR_GET_POS_Y();
-    controller.q[2] = ESTIMATOR_GET_POS_THETA();
+    controller.q[0] = estimator_state_get_px();
+    controller.q[1] = estimator_state_get_py();
+    controller.q[2] = estimator_state_get_theta();
     controller.q[3] = phi1;
     controller.q[4] = theta1;
     controller.q[5] = MOTOR1_VEL * controller.time;

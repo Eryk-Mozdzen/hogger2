@@ -1,3 +1,6 @@
+#include <math.h>
+#include <string.h>
+
 #include "actuate/motors.h"
 #include "actuate/servos.h"
 #include "com/stream.h"
@@ -57,9 +60,9 @@ static void loop() {
     controller.ref[2] = TRAJECTORY_GET_D_X(&trajectory);
     controller.ref[3] = TRAJECTORY_GET_D_Y(&trajectory);
 
-    controller.q[0] = ESTIMATOR_GET_POS_X();
-    controller.q[1] = ESTIMATOR_GET_POS_Y();
-    controller.q[2] = ESTIMATOR_GET_POS_THETA();
+    controller.q[0] = estimator_state_get_px();
+    controller.q[1] = estimator_state_get_py();
+    controller.q[2] = estimator_state_get_theta();
 
     float gimbal[2];
     naive_feedback(gimbal, MOTOR_VEL, controller.q, controller.ref, CONTROLLER_K);
