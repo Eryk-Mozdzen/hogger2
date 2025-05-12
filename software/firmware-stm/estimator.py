@@ -82,12 +82,12 @@ estimator = ekf.EKF(
         ekf.MeasurementModel(
             name='magnetometer',
             model=h_mag,
-            covariance=10,
+            covariance=1000,
         ),
         ekf.MeasurementModel(
             name='flow',
             model=h_flow,
-            covariance=10,
+            covariance=1000,
         ),
     ],
     [

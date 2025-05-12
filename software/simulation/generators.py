@@ -61,4 +61,29 @@ hd = hd.subs([
 
 source.add_function(hd, 'hd', 'lemniscate(float *hd, const float *params, const float t)')
 
+v = sp.Symbol('v')
+
+x = v*t
+y = 0
+theta = 0
+
+p = sp.Matrix([
+    x,
+    y,
+    theta,
+])
+
+hd = sp.Matrix([
+    p,
+    p.diff(t, 1),
+    p.diff(t, 2),
+    p.diff(t, 3),
+])
+
+hd = hd.subs([
+    (v, sp.Symbol('params[0]')),
+])
+
+source.add_function(hd, 'hd', 'line(float *hd, const float *params, const float t)')
+
 source.generate('../common/control')

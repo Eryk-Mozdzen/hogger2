@@ -59,7 +59,7 @@ def reset_ekf(event):
 def write_trajectory(event):
     data = {
         'trajectory_write': {
-            'generator': 'circle',
+            'generator': 'lemniscate',
             'params': [
                 0.5,
                 20,

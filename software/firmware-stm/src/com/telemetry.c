@@ -48,4 +48,4 @@ static void loop() {
     stream_transmit(&mpack);
 }
 
-TASK_REGISTER_PERIODIC(loop, 20000)
+TASK_REGISTER_PERIODIC(loop, 10000)

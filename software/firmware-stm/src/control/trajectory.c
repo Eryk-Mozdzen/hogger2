@@ -88,6 +88,8 @@ static void write(mpack_t *mpack) {
                 generator = generators_circle;
             } else if(strcmp(name, "lemniscate") == 0) {
                 generator = generators_lemniscate;
+            } else if(strcmp(name, "line") == 0) {
+                generator = generators_line;
             }
         } else if(strcmp(key, "params") == 0) {
             if(!mpack_read_float32_array(mpack, generator_params, PARAMS_NUM, NULL)) {
