@@ -13,6 +13,12 @@ static uint32_t last = 0;
 static void shutdown(mpack_t *mpack) {
     (void)mpack;
 
+    for(uint32_t i = 0; i < count; i++) {
+        if(registered[i]) {
+            registered[i]();
+        }
+    }
+
     motors_set_velocity(0, 0);
     servos_set_position(0, 0, 0, 0);
 }
@@ -22,12 +28,6 @@ static void watchdog() {
 
     if((time - last) >= 1000000) {
         last = time;
-
-        for(uint32_t i = 0; i < count; i++) {
-            if(registered[i]) {
-                registered[i]();
-            }
-        }
 
         shutdown(NULL);
     }

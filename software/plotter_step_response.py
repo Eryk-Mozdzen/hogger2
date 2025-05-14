@@ -40,20 +40,10 @@ data = convert_to_normal_dict(data_raw)
 
 data['timestamp'] = [(t - data['timestamp'][0])*1e-6 for t in data['timestamp']]
 
-plt.figure()
-plt.plot(data['timestamp'], 0.05*np.ones(len(data['estimate']['vel'][2])))
-plt.plot(data['timestamp'], data['estimate']['vel'][2])
-plt.grid()
+print(f'step value: {max(data['controller']['exp_step'])}')
 
-plt.figure()
-plt.plot(data['timestamp'], 0.05*np.ones(len(data['estimate']['vel'][0])))
-plt.plot(data['timestamp'], data['estimate']['vel'][0])
+plt.plot(data['timestamp'], data['controller']['exp_step'], label='step')
+plt.plot(data['timestamp'], data['controller']['exp_response'], label='step response')
 plt.grid()
-
-plt.figure()
-plt.plot(data['timestamp'], 0.05*np.ones(len(data['estimate']['vel'][1])))
-plt.plot(data['timestamp'], data['estimate']['vel'][1])
-plt.grid()
-
 
 plt.show()
