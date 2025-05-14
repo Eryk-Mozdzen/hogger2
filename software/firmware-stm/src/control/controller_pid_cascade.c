@@ -166,7 +166,7 @@ static void loop() {
 #endif
 
 #ifdef EXPERIMENT_OUTER_THETA
-    controller.exp_step = (controller.time > 3) ? M_PI : 0;
+    controller.exp_step = (controller.time > 3) ? 1 : 0;
     controller.exp_response = theta;
 
     const float u_x = pid_calculate(&controller.inner_x, 0, local_vel[0]);
@@ -176,7 +176,7 @@ static void loop() {
 #endif
 
 #ifdef EXPERIMENT_OUTER_X
-    controller.exp_step = (controller.time > 3) ? 0.5 : 0;
+    controller.exp_step = (controller.time > 3) ? 0.5f : 0;
     controller.exp_response = local_pos[0];
 
     const float vel_theta = pid_calculate(&controller.outer_theta, 0, theta);
@@ -188,7 +188,7 @@ static void loop() {
 #endif
 
 #ifdef EXPERIMENT_OUTER_Y
-    controller.exp_step = (controller.time > 3) ? 0.5 : 0;
+    controller.exp_step = (controller.time > 3) ? 0.5f : 0;
     controller.exp_response = local_pos[1];
 
     const float vel_theta = pid_calculate(&controller.outer_theta, 0, theta);
