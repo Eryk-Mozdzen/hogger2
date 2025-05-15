@@ -62,7 +62,7 @@ def write_trajectory(event):
             'generator': 'lemniscate',
             'params': [
                 0.5,
-                20,
+                15,
             ],
         },
     }
@@ -70,7 +70,7 @@ def write_trajectory(event):
 
 def read_trajectory(event):
     data = {
-        'trajectory_read': 20,
+        'trajectory_read': 15,
     }
     publisher.send_json(data)
     readed_x.clear()

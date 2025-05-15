@@ -14,6 +14,7 @@ float moving_average_append(moving_average_t *instance, const float input) {
     instance->buffer[instance->counter] = input;
     instance->sum += instance->buffer[instance->counter];
     instance->counter++;
+    instance->counter %= instance->length;
 
     return (instance->sum / ((float)instance->length));
 }

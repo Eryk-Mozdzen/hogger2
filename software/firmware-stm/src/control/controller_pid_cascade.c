@@ -1,5 +1,4 @@
 #include <math.h>
-#include <string.h>
 
 #include "actuate/servos.h"
 #include "com/stream.h"
@@ -28,8 +27,8 @@ typedef struct {
     float exp_step;
     float exp_response;
 
-    float filter_vel_x_buffer[4];
-    float filter_vel_y_buffer[4];
+    float filter_vel_x_buffer[50];
+    float filter_vel_y_buffer[50];
 
     moving_average_t filter_vel_x;
     moving_average_t filter_vel_y;
@@ -44,16 +43,16 @@ typedef struct {
 } controller_t;
 
 static controller_t controller = {
-    .filter_vel_x = MOVING_AVERAGE_INIT(controller.filter_vel_x_buffer, 4),
-    .filter_vel_y = MOVING_AVERAGE_INIT(controller.filter_vel_y_buffer, 4),
+    .filter_vel_x = MOVING_AVERAGE_INIT(controller.filter_vel_x_buffer, 50),
+    .filter_vel_y = MOVING_AVERAGE_INIT(controller.filter_vel_y_buffer, 50),
 
-    .inner_x = PID_INIT(0.099, 0.24, 0, DEG2RAD(-5), DEG2RAD(5)),
-    .inner_y = PID_INIT(0.099, 0.24, 0, DEG2RAD(-5), DEG2RAD(5)),
-    .inner_theta = PID_INIT(0.029, 0.069, 0, DEG2RAD(-5), DEG2RAD(5)),
+    .inner_x = PID_INIT(0.112, 0.117, 0, DEG2RAD(-4), DEG2RAD(4)),     // CHR 0%
+    .inner_y = PID_INIT(0.029, 0.061, 0, DEG2RAD(-4), DEG2RAD(4)),     // CHR 0%
+    .inner_theta = PID_INIT(0.027, 0.065, 0, DEG2RAD(-4), DEG2RAD(4)), // CHR 0%
 
-    .outer_x = PID_INIT(2, 0, 0, -0.5, 0.5),
-    .outer_y = PID_INIT(2, 0, 0, -0.5, 0.5),
-    .outer_theta = PID_INIT(2, 0, 0, -M_PI, M_PI),
+    .outer_x = PID_INIT(0.980, 0.408, 0, -0.5, 0.5),               // Lambda = 1
+    .outer_y = PID_INIT(2.449, 1.020, 0, -0.5, 0.5),               // Lambda = 1
+    .outer_theta = PID_INIT(2.963, 2.963, 0, -2 * M_PI, 2 * M_PI), // Lambda = 0.25
 };
 
 static void rot2d(const float alpha, const float x, const float y, float *output) {
@@ -96,7 +95,6 @@ static void loop() {
     controller.time = (now - controller.time_start) * 0.000001f;
 
     if(!controller.started) {
-        memset(&controller, 0, sizeof(controller));
         return;
     }
 
@@ -118,7 +116,7 @@ static void loop() {
     rot2d(-theta, estimator_state_get_vx(), estimator_state_get_vy(), local_vel);
 
     local_vel[0] = moving_average_append(&controller.filter_vel_x, local_vel[0]);
-    local_vel[1] = moving_average_append(&controller.filter_vel_x, local_vel[1]);
+    local_vel[1] = moving_average_append(&controller.filter_vel_y, local_vel[1]);
 
 #if !defined(EXPERIMENT_INNER_THETA) && !defined(EXPERIMENT_INNER_X) &&                            \
     !defined(EXPERIMENT_INNER_Y) && !defined(EXPERIMENT_OUTER_THETA) &&                            \
@@ -157,7 +155,7 @@ static void loop() {
 #endif
 
 #ifdef EXPERIMENT_INNER_Y
-    controller.exp_step = (controller.time > 3) ? 0.1f : 0;
+    controller.exp_step = (controller.time > 3) ? 0.05f : 0;
     controller.exp_response = local_vel[1];
 
     const float u_x = 0;
@@ -176,7 +174,7 @@ static void loop() {
 #endif
 
 #ifdef EXPERIMENT_OUTER_X
-    controller.exp_step = (controller.time > 3) ? 0.5f : 0;
+    controller.exp_step = (controller.time > 5) ? 0.5f : 0;
     controller.exp_response = local_pos[0];
 
     const float vel_theta = pid_calculate(&controller.outer_theta, 0, theta);
@@ -188,7 +186,7 @@ static void loop() {
 #endif
 
 #ifdef EXPERIMENT_OUTER_Y
-    controller.exp_step = (controller.time > 3) ? 0.5f : 0;
+    controller.exp_step = (controller.time > 5) ? 1.f : 0;
     controller.exp_response = local_pos[1];
 
     const float vel_theta = pid_calculate(&controller.outer_theta, 0, theta);
@@ -213,7 +211,7 @@ static void serialize(cmp_ctx_t *cmp, void *context) {
     cmp_write_str(cmp, "started", 7);
     cmp_write_bool(cmp, controller.started);
 
-    cmp_write_str(cmp, "exp_step", 9);
+    cmp_write_str(cmp, "exp_step", 8);
     cmp_write_float(cmp, controller.exp_step);
 
     cmp_write_str(cmp, "exp_response", 12);
