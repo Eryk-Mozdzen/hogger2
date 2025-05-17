@@ -51,7 +51,7 @@ if sys.argv[2]=='controller':
     step_start = np.nonzero(data['controller']['exp_step'])[0][0]
     step_value = max(data['controller']['exp_step'])
 
-    duration = 250
+    duration = 400
     time = np.array([t - data['timestamp'][step_start] for t in data['timestamp'][step_start:step_start+duration]])
     response = np.array([s - data['controller']['exp_response'][step_start] for s in data['controller']['exp_response'][step_start:step_start+duration]])
 
@@ -206,7 +206,7 @@ if sys.argv[3]=='integrating':
 
     K = K/step_value
     T = L + T
-    L = float(sys.argv[4])
+    Lambda = float(sys.argv[4])
 
     print('model')
     print(f'    K = {K:7.3f}')
@@ -214,8 +214,8 @@ if sys.argv[3]=='integrating':
 
     print('Lambda Tuning')
     print(f'          Kp         Ki')
-    Kp = (2*L + T)/(K*((L + T)**2))
-    Ti = 2*L + T
+    Kp = (2*Lambda + T)/(K*((Lambda + T)**2))
+    Ti = 2*Lambda + T
     print(f'PI  {Kp:10.3f} {Kp/Ti:10.3f}')
 
 plt.show()
