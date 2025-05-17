@@ -2,7 +2,8 @@
 #include <stdint.h>
 #include <stm32h5xx_hal.h>
 
-#include "motor.h"
+#include "actuate/motor.h"
+#include "control/pid.h"
 
 #define MOTOR_POLE_PAIRS 7
 #define PI               3.141592653589f
@@ -19,14 +20,17 @@
 #define OPEN_LOOP_RAMP_MIN    1000
 #define OPEN_LOOP_RAMP_MAX    200000
 
-#define CLOSED_LOOP_SWITCH    1000
-#define CLOSED_LOOP_PULSE_MIN 0.15f
-#define CLOSED_LOOP_PULSE_MAX 0.8f
-#define CLOSED_LOOP_KP        0.001f
-#define CLOSED_LOOP_KI        0.000001f
+#define CLOSED_LOOP_SWITCH 1000
+
+// #define EXPERIMENT
 
 #define CLAMP(val, min, max) (((val) > (max)) ? (max) : (((val) < (min)) ? (min) : (val)))
-#define DIRECTION(val)       ((val >= 0) ? MOTOR_DIRECTION_CW : MOTOR_DIRECTION_CCW)
+
+#ifndef EXPERIMENT
+#define DIRECTION(val) ((val >= 0) ? MOTOR_DIRECTION_CW : MOTOR_DIRECTION_CCW)
+#else
+#define DIRECTION(val) MOTOR_DIRECTION_CW
+#endif
 
 static const motor_phase_t feedback_src_lookup_cw[6] = {
     MOTOR_PHASE_U, MOTOR_PHASE_W, MOTOR_PHASE_V, MOTOR_PHASE_U, MOTOR_PHASE_W, MOTOR_PHASE_V,
@@ -135,35 +139,12 @@ static bool software_timer(uint32_t *prev, const uint32_t time, const uint32_t p
     return false;
 }
 
-static void pid_init(motor_pid_t *pid) {
-    pid->process = 0;
-    pid->setpoint = 0;
-    pid->value = 0;
-    pid->dt = 1;
-
-    pid->error_integral = 0;
-    pid->error_prev = 0;
-}
-
-static void pid_calculate(motor_pid_t *pid) {
-    const float error = pid->setpoint - pid->process;
-
-    pid->error_integral += 0.5f * pid->dt * (pid->error_prev + error);
-
-    pid->value = pid->kp * error + pid->ki * pid->error_integral;
-
-    pid->error_prev = error;
-}
-
 void motor_init(motor_t *motor) {
     motor->state = MOTOR_STATE_IDLE;
     motor->step = 0;
     motor->pulse = 0;
     motor->vel = 0;
     motor->vel_setpoint = 0;
-
-    motor->pid.kp = CLOSED_LOOP_KP;
-    motor->pid.ki = CLOSED_LOOP_KI;
 
     shutdown(motor);
 }
@@ -188,7 +169,7 @@ void motor_tick(motor_t *motor) {
 
                 state_change(motor, MOTOR_STATE_STARTUP_ALIGN1);
 
-                pid_init(&motor->pid);
+                pid_reset(&motor->pid);
                 __HAL_TIM_SET_COUNTER(motor->commut_timer, 0);
                 __HAL_TIM_SET_AUTORELOAD(motor->commut_timer, 1000);
                 HAL_TIM_Base_Start(motor->commut_timer);
@@ -303,12 +284,11 @@ void motor_commutation_callback(motor_t *motor, const TIM_HandleTypeDef *htim) {
     }
 
     if(motor->state == MOTOR_STATE_RUNNING) {
-        motor->pid.process = fabs(motor->vel);
-        motor->pid.setpoint = fabs(motor->vel_setpoint);
-        motor->pid.dt = __HAL_TIM_GET_AUTORELOAD(motor->commut_timer) * 0.001f;
-        pid_calculate(&motor->pid);
-        motor->pulse = CLAMP(OPEN_LOOP_PULSE + motor->switch_over * motor->pid.value,
-                             CLOSED_LOOP_PULSE_MIN, CLOSED_LOOP_PULSE_MAX);
+#ifndef EXPERIMENT
+        motor->pulse = pid_calculate(&motor->pid, fabs(motor->vel_setpoint), fabs(motor->vel));
+#else
+        motor->pulse = ((HAL_GetTick() - motor->state_start_time) > 5000) ? 0.4f : 0.3f;
+#endif
     }
 
     if((motor->state == MOTOR_STATE_STARTUP_OPEN_LOOP) || (motor->state == MOTOR_STATE_RUNNING)) {

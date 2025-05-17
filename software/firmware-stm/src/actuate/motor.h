@@ -4,6 +4,12 @@
 #include <stdint.h>
 #include <stm32h5xx_hal.h>
 
+#include "control/pid.h"
+
+#define MOTOR_MIN_PULSE       0.15f
+#define MOTOR_MAX_PULSE       0.8f
+#define MOTOR_PID(kp, ki, kd) PID_INIT((kp), (ki), (kd), MOTOR_MIN_PULSE, MOTOR_MAX_PULSE)
+
 typedef enum {
     MOTOR_STATE_IDLE,
     MOTOR_STATE_STARTUP_ALIGN1,
@@ -25,22 +31,11 @@ typedef enum {
 } motor_phase_t;
 
 typedef struct {
-    float kp;
-    float ki;
-    volatile float process;
-    volatile float setpoint;
-    volatile float value;
-    volatile float error_integral;
-    volatile float error_prev;
-    volatile float dt;
-} motor_pid_t;
-
-typedef struct {
     TIM_HandleTypeDef *control_timer;
     TIM_HandleTypeDef *commut_timer;
     uint32_t control_timer_itr;
     ADC_HandleTypeDef *bemf_adc;
-    motor_pid_t pid;
+    pid_t pid;
     motor_state_t state;
     motor_direction_t direction;
     uint32_t state_start_time;
