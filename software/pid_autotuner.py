@@ -86,20 +86,13 @@ if sys.argv[3]=='inertial':
         y[idx] = K*(1 + (T2*np.exp(-t[idx]/T2) - T1*np.exp(-t[idx]/T1))/(T1 - T2))
         return y
 
-    def slope(t):
-        t = t - L
-        idx = t >= 0
-        y = np.zeros_like(t)
-        y[idx] = K*(-np.exp(-t[idx]/T2) + np.exp(-t[idx]/T1))/(T1 - T2)
-        return y
-
-    (K, T1, T2, L), _ = scipy.optimize.curve_fit(model, time, response, p0=[1, 0.1, 0.2, 0.1])
+    (K, T1, T2, L), _ = scipy.optimize.curve_fit(model, time, response, p0=[1, 0.1, 0.2, 0.1], bounds=[0, np.inf])
 
     ideal = model(time, K, T1, T2, L)
 
-    tangent_time = scipy.optimize.minimize_scalar(lambda x: -slope(x), bounds=(0, 10), method='bounded').x
-    tangent_a = slope(tangent_time)
-    tangent_b = model(tangent_time, K, T1, T2, L) - slope(tangent_time)*tangent_time
+    tangent_time = L + T1*T2*np.log(T1/T2)/(T1 - T2)
+    tangent_a = K*(-np.exp(-(tangent_time - L)/T2) + np.exp(-(tangent_time - L)/T1))/(T1 - T2)
+    tangent_b = model(tangent_time, K, T1, T2, L) - tangent_a*tangent_time
     tangent = tangent_a*time + tangent_b
     tangent_idx = (tangent > 0) & (tangent < K)
     tangent_begin = (-tangent_b)/tangent_a
@@ -119,7 +112,7 @@ if sys.argv[3]=='inertial':
     T = tangent_end - tangent_begin
     L = tangent_begin
 
-    print('model')
+    print('graphical parameters')
     print(f'    K = {K:7.3f}')
     print(f'    T = {T:7.3f}')
     print(f'    L = {L:7.3f}')
@@ -181,20 +174,16 @@ if sys.argv[3]=='inertial':
 
 if sys.argv[3]=='integrating':
 
-    def model(t, K, T, L):
-        t = t - L
-        idx = t >= 0
-        y = np.zeros_like(t)
-        y[idx] = K*(t[idx] - T*(1 - np.exp(-t[idx]/T)))
-        return y
+    def model(t, K, T):
+        return K*(t - T*(1 - np.exp(-t/T)))
 
-    (K, T, L), _ = scipy.optimize.curve_fit(model, time, response, p0=[1, 0.1, 0.1])
+    (K, T), _ = scipy.optimize.curve_fit(model, time, response, p0=[1, 0.1], bounds=[0, np.inf])
 
-    ideal = model(time, K, T, L)
+    ideal = model(time, K, T)
 
-    tangent = K*time - K*(L+T)
+    tangent = K*time - K*T
     tangent_idx = tangent > 0
-    tangent_begin = L + T
+    tangent_begin = T
 
     plt.figure('integrating model')
     plt.plot(time, ideal, color='blue')
@@ -205,17 +194,20 @@ if sys.argv[3]=='integrating':
     plt.grid()
 
     K = K/step_value
-    T = L + T
-    Lambda = float(sys.argv[4])
 
     print('model')
     print(f'    K = {K:7.3f}')
     print(f'    T = {T:7.3f}')
 
+    Lambda = float(sys.argv[4])
+
     print('Lambda Tuning')
-    print(f'          Kp         Ki')
+    print(f'          Kp         Ki         Kd')
     Kp = (2*Lambda + T)/(K*((Lambda + T)**2))
     Ti = 2*Lambda + T
-    print(f'PI  {Kp:10.3f} {Kp/Ti:10.3f}')
+    print(f'PI  {Kp:10.3f} {Kp/Ti:10.3f}             oscillations')
+    Kp = 1/(K*T*Lambda)
+    Kd = 1/(K*Lambda)
+    print(f'PD  {Kp:10.3f}            {Kd:10.3f}  no overshoot')
 
 plt.show()
