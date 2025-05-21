@@ -5,7 +5,7 @@
 #include "actuate/motor.h"
 #include "control/pid.h"
 
-#define MOTOR_POLE_PAIRS 7
+#define MOTOR_POLE_PAIRS 6
 #define PI               3.141592653589f
 #define VEL_THRESHOLD    50.f
 #define VEL_PERIOD       20
