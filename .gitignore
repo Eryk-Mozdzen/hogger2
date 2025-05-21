@@ -23,7 +23,7 @@ software/firmware-stm/cubemx/*
 software/firmware-stm/generated
 !software/firmware-stm/cubemx/cubemx.ioc
 
-*.ndjson
+software/*.ndjson
 
 __pycache__
 .ipynb_checkpoints
