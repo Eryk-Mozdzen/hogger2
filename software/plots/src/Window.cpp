@@ -122,6 +122,22 @@ Window::Window(QWidget *parent) : QWidget(parent) {
 
         layout->addWidget(trajectory, 0, 2);
     }
+
+    {
+        LiveChart::Config config;
+        config.title = "velocity";
+        config.yLabel = "";
+        config.yMin = -1;
+        config.yMax = 1;
+        config.yPrecision = 1;
+        config.yTick = 0.1;
+
+        vel = new LiveChart(config, this);
+        vel->addSeries("x", QPen(Qt::red, 1, Qt::SolidLine));
+        vel->addSeries("y", QPen(Qt::green, 1, Qt::SolidLine));
+
+        layout->addWidget(vel, 1, 2);
+    }
 }
 
 void Window::receive(const QJsonDocument &json) {
@@ -153,15 +169,19 @@ void Window::receive(const QJsonDocument &json) {
         optical->append("y", time, optical_[1].toDouble() * fh);
     }
 
-    const QJsonObject accel_ = telemetry["accelerometer"].toObject();
-    accel->append("x", time, accel_["out"].toArray()[0].toDouble());
-    accel->append("y", time, accel_["out"].toArray()[1].toDouble());
-    accel->append("z", time, accel_["out"].toArray()[2].toDouble());
+    const QJsonArray accel_ = telemetry["accelerometer"].toArray();
+    accel->append("x", time, accel_[0].toDouble());
+    accel->append("y", time, accel_[1].toDouble());
+    accel->append("z", time, accel_[2].toDouble());
 
-    const QJsonObject trajectory_ = telemetry["trajectory"].toObject();
-    trajectory->append("pos", time, trajectory_["href"].toArray()[0].toDouble());
-    trajectory->append("vel", time, trajectory_["href"].toArray()[3].toDouble());
-    trajectory->append("acc", time, trajectory_["href"].toArray()[6].toDouble());
+    const QJsonArray trajectory_ = telemetry["trajectory"].toArray();
+    trajectory->append("pos", time, trajectory_[0].toDouble());
+    trajectory->append("vel", time, trajectory_[3].toDouble());
+    trajectory->append("acc", time, trajectory_[6].toDouble());
+
+    const QJsonArray vel_ = telemetry["estimate"]["vel"].toArray();
+    vel->append("x", time, vel_[0].toDouble());
+    vel->append("y", time, vel_[1].toDouble());
 
     LiveChart::synchronize(time);
 }

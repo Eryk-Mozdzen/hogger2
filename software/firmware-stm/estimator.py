@@ -6,8 +6,11 @@ dt = sp.Symbol('dt')
 hf = sp.Symbol('h_f')
 rax, ray = sp.symbols('r_ax r_ay')
 rfx, rfy = sp.symbols('r_fx r_fy')
-theta0 = sp.Symbol('theta0')
-m0 = sp.Symbol('m0')
+theta0 = sp.Symbol('theta_0')
+m0 = sp.Symbol('m_0')
+ax0 = sp.Symbol('a_x0')
+ay0 = sp.Symbol('a_y0')
+wz0 = sp.Symbol('w_z0')
 
 px, py, theta = sp.symbols('px py theta')
 vx, vy, vtheta = sp.symbols('vx vy vtheta')
@@ -17,7 +20,7 @@ mx, my, mz = sp.symbols('m_x m_y m_z')
 
 p = sp.Matrix([px, py])
 v = sp.Matrix([vx, vy])
-a = sp.Matrix([ax, ay, az])
+a = sp.Matrix([ax, ay, 0])
 w = sp.Matrix([0, 0, wz])
 m = sp.Matrix([mx, my, mz])
 ra = sp.Matrix([rax, ray, 0])
@@ -35,7 +38,7 @@ def rot3d(angle):
         [0, 0, 1],
     ])
 
-a_origin = rot3d(theta)*(a - w.cross(w.cross(ra)))
+a_origin = rot3d(theta)*(a - sp.Matrix([ax0, ay0, 0]) - w.cross(w.cross(ra)))
 
 u = sp.Matrix([
     ax,
@@ -46,22 +49,28 @@ u = sp.Matrix([
 f = sp.Matrix([
     p[0] + dt*v[0] + 0.5*(dt**2)*a_origin[0],
     p[1] + dt*v[1] + 0.5*(dt**2)*a_origin[1],
-    theta + dt*wz,
+    theta + dt*(wz - wz0),
     v[0] + dt*a_origin[0],
     v[1] + dt*a_origin[1],
-    wz,
+    wz - wz0,
     m0,
+    ax0,
+    ay0,
+    wz0,
 ])
 
 h_mag = rot3d(-(theta + theta0))*sp.Matrix([
-    0,
     sp.cos(m0),
+    0,
     sp.sin(m0),
 ])
 
+Rf = sp.sqrt(rfx**2 + rfy**2)
+thetaf = sp.atan2(rfy, rfx)
+
 h_flow = (1/hf)*rot2d(-theta)*sp.Matrix([
-    vx - rfy*vtheta,
-    vy + rfx*vtheta,
+    vx - Rf*vtheta*sp.sin(theta + thetaf),
+    vy + Rf*vtheta*sp.cos(theta + thetaf),
 ])
 
 estimator = ekf.EKF(
@@ -76,6 +85,9 @@ estimator = ekf.EKF(
             (vy, 0, 1),
             (vtheta, 0, 1),
             (m0, 0, 1),
+            (ax0, 0, 0.1),
+            (ay0, 0, 0.1),
+            (wz0, 0, 0.01),
         ],
     ),
     [
@@ -87,7 +99,7 @@ estimator = ekf.EKF(
         ekf.MeasurementModel(
             name='flow',
             model=h_flow,
-            covariance=1000,
+            covariance=100000,
         ),
     ],
     [
@@ -95,7 +107,7 @@ estimator = ekf.EKF(
         (hf, 0.065),
         (rax, +0.015),
         (ray, -0.16),
-        (rfx, -0.095),
+        (rfx, -0.09),
         (rfy, -0.13),
         (theta0, 0),
     ],

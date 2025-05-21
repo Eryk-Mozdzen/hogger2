@@ -206,7 +206,7 @@ static void process() {
         -delta_x / (dt * PMW3901_FOCAL_LENGTH),
     };
 
-    if((fabs(vel[0]) < 100.f) && (fabs(vel[1]) < 100.f)) {
+    if((fabs(vel[0]) < 20.f) && (fabs(vel[1]) < 20.f)) {
         velocity[0] = vel[0];
         velocity[1] = vel[1];
 
