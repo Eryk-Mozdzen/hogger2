@@ -5,7 +5,7 @@
 static void serialize(cmp_ctx_t *cmp, void *context) {
     (void)context;
 
-    cmp_write_map(cmp, 6);
+    cmp_write_map(cmp, 3);
     cmp_write_str(cmp, "pos", 3);
     cmp_write_array(cmp, 3);
     cmp_write_float(cmp, estimator_state_get_px());
@@ -18,12 +18,6 @@ static void serialize(cmp_ctx_t *cmp, void *context) {
     cmp_write_float(cmp, estimator_state_get_vtheta());
     cmp_write_str(cmp, "m0", 2);
     cmp_write_float(cmp, estimator_state_get_m0());
-    cmp_write_str(cmp, "ax0", 3);
-    cmp_write_float(cmp, estimator_state_get_ax0());
-    cmp_write_str(cmp, "ay0", 3);
-    cmp_write_float(cmp, estimator_state_get_ay0());
-    cmp_write_str(cmp, "wz0", 3);
-    cmp_write_float(cmp, estimator_state_get_wz0());
 }
 
 static void reset(mpack_t *mpack) {

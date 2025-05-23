@@ -8,21 +8,16 @@ rax, ray = sp.symbols('r_ax r_ay')
 rfx, rfy = sp.symbols('r_fx r_fy')
 theta0 = sp.Symbol('theta_0')
 m0 = sp.Symbol('m_0')
-ax0 = sp.Symbol('a_x0')
-ay0 = sp.Symbol('a_y0')
-wz0 = sp.Symbol('w_z0')
 
 px, py, theta = sp.symbols('px py theta')
-vx, vy, vtheta = sp.symbols('vx vy vtheta')
-wx, wy, wz = sp.symbols('w_x w_y w_z')
-ax, ay, az = sp.symbols('a_x a_y a_z')
+dx, dy, dtheta = sp.symbols('vx vy vtheta')
+wz, dwz = sp.symbols('w_z dw_z')
+ax, ay = sp.symbols('a_x a_y')
 mx, my, mz = sp.symbols('m_x m_y m_z')
 
-p = sp.Matrix([px, py])
-v = sp.Matrix([vx, vy])
 a = sp.Matrix([ax, ay, 0])
 w = sp.Matrix([0, 0, wz])
-m = sp.Matrix([mx, my, mz])
+dw = sp.Matrix([0, 0, dwz])
 ra = sp.Matrix([rax, ray, 0])
 
 def rot2d(angle):
@@ -38,25 +33,23 @@ def rot3d(angle):
         [0, 0, 1],
     ])
 
-a_origin = rot3d(theta)*(a - sp.Matrix([ax0, ay0, 0]) - w.cross(w.cross(ra)))
+a_origin = rot3d(theta)*(a - dw.cross(ra) - w.cross(w.cross(ra)))
 
 u = sp.Matrix([
     ax,
     ay,
     wz,
+    dwz,
 ])
 
 f = sp.Matrix([
-    p[0] + dt*v[0] + 0.5*(dt**2)*a_origin[0],
-    p[1] + dt*v[1] + 0.5*(dt**2)*a_origin[1],
-    theta + dt*(wz - wz0),
-    v[0] + dt*a_origin[0],
-    v[1] + dt*a_origin[1],
-    wz - wz0,
+    px + dt*dx + 0.5*(dt**2)*a_origin[0],
+    py + dt*dy + 0.5*(dt**2)*a_origin[1],
+    theta + dt*wz,
+    dx + dt*a_origin[0],
+    dy + dt*a_origin[1],
+    wz,
     m0,
-    ax0,
-    ay0,
-    wz0,
 ])
 
 h_mag = rot3d(-(theta + theta0))*sp.Matrix([
@@ -65,13 +58,13 @@ h_mag = rot3d(-(theta + theta0))*sp.Matrix([
     sp.sin(m0),
 ])
 
-Rf = sp.sqrt(rfx**2 + rfy**2)
-thetaf = sp.atan2(rfy, rfx)
-
-h_flow = (1/hf)*rot2d(-theta)*sp.Matrix([
-    vx - Rf*vtheta*sp.sin(theta + thetaf),
-    vy + Rf*vtheta*sp.cos(theta + thetaf),
-])
+h_flow = (1/hf)*(rot2d(-theta)*sp.Matrix([
+    dx,
+    dy,
+]) + sp.Matrix([
+    -rfy*dtheta,
+    +rfx*dtheta,
+]))
 
 estimator = ekf.EKF(
     ekf.SystemModel(
@@ -81,13 +74,10 @@ estimator = ekf.EKF(
             (px, 0, 1),
             (py, 0, 1),
             (theta, 0, 1),
-            (vx, 0, 1),
-            (vy, 0, 1),
-            (vtheta, 0, 1),
+            (dx, 0, 1),
+            (dy, 0, 1),
+            (dtheta, 0, 1),
             (m0, 0, 1),
-            (ax0, 0, 0.1),
-            (ay0, 0, 0.1),
-            (wz0, 0, 0.01),
         ],
     ),
     [
@@ -104,10 +94,10 @@ estimator = ekf.EKF(
     ],
     [
         (dt, 0.001),
-        (hf, 0.065),
+        (hf, 0.19),
         (rax, +0.015),
         (ray, -0.16),
-        (rfx, -0.09),
+        (rfx, 0.14),
         (rfy, -0.13),
         (theta0, 0),
     ],

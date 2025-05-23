@@ -31,13 +31,14 @@ typedef enum {
 } motor_phase_t;
 
 typedef struct {
-    TIM_HandleTypeDef *control_timer;
-    TIM_HandleTypeDef *commut_timer;
-    uint32_t control_timer_itr;
-    ADC_HandleTypeDef *bemf_adc;
+    TIM_HandleTypeDef *const control_timer;
+    TIM_HandleTypeDef *const commut_timer;
+    const uint32_t control_timer_itr;
+    ADC_HandleTypeDef *const bemf_adc;
     pid_t pid;
     motor_state_t state;
     motor_direction_t direction;
+    const motor_direction_t positive_direction;
     uint32_t state_start_time;
     uint32_t ramp_task;
     uint32_t vel_task;

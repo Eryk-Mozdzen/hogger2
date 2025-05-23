@@ -202,11 +202,11 @@ static void process() {
     const float dt = 0.02f;
 
     const float vel[2] = {
-        -delta_y / (dt * PMW3901_FOCAL_LENGTH),
-        -delta_x / (dt * PMW3901_FOCAL_LENGTH),
+        delta_y / (dt * PMW3901_FOCAL_LENGTH),
+        delta_x / (dt * PMW3901_FOCAL_LENGTH),
     };
 
-    if((fabs(vel[0]) < 20.f) && (fabs(vel[1]) < 20.f)) {
+    if(sqrtf((vel[0] * vel[0]) + (vel[1] * vel[1])) < 7.4f) {
         velocity[0] = vel[0];
         velocity[1] = vel[1];
 

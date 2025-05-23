@@ -62,9 +62,6 @@ static void ok(mpack_t *mpack) {
         controller.started = true;
         controller.time_start = task_timebase();
 
-        // moving_average_reset(&controller.filter_vel_x);
-        // moving_average_reset(&controller.filter_vel_y);
-
         pid_reset(&controller.inner_x);
         pid_reset(&controller.inner_y);
         pid_reset(&controller.inner_theta);

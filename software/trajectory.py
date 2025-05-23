@@ -27,8 +27,8 @@ def periodic():
     if motors_active:
         data = {
             'manual_motor': [
-                -200,
-                +200,
+                -250,
+                +250,
             ],
         }
         publisher.send_json(data)

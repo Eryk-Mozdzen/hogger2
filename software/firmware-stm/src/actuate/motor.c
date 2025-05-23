@@ -1,3 +1,4 @@
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stm32h5xx_hal.h>
@@ -5,11 +6,10 @@
 #include "actuate/motor.h"
 #include "control/pid.h"
 
-#define MOTOR_POLE_PAIRS 6
-#define PI               3.141592653589f
-#define VEL_THRESHOLD    50.f
-#define VEL_PERIOD       20
-#define VEL_FILTER       0.9f
+#define POLE_PAIRS    7
+#define VEL_THRESHOLD 50.f
+#define VEL_PERIOD    20
+#define VEL_FILTER    0.9f
 
 #define ALIGN_TIME  200
 #define ALIGN_PULSE 0.3f
@@ -27,7 +27,9 @@
 #define CLAMP(val, min, max) (((val) > (max)) ? (max) : (((val) < (min)) ? (min) : (val)))
 
 #ifndef EXPERIMENT
-#define DIRECTION(val) ((val >= 0) ? MOTOR_DIRECTION_CW : MOTOR_DIRECTION_CCW)
+#define DIRECTION(motor, val)                                                                      \
+    (((val >= 0) ^ ((motor)->positive_direction != MOTOR_DIRECTION_CW)) ? MOTOR_DIRECTION_CW       \
+                                                                        : MOTOR_DIRECTION_CCW)
 #else
 #define DIRECTION(val) MOTOR_DIRECTION_CW
 #endif
@@ -156,14 +158,14 @@ void motor_tick(motor_t *motor) {
         const int32_t count = motor->zc_count;
         motor->zc_count = 0;
 
-        const float velocity = (2.f * PI * count) / (6 * MOTOR_POLE_PAIRS * VEL_PERIOD * 0.001f);
+        const float velocity = (2.f * M_PI * count) / (6 * POLE_PAIRS * VEL_PERIOD * 0.001f);
         motor->vel = VEL_FILTER * motor->vel + (1.f - VEL_FILTER) * velocity;
     }
 
     switch(motor->state) {
         case MOTOR_STATE_IDLE: {
             if(fabs(motor->vel_setpoint) > VEL_THRESHOLD) {
-                motor->direction = DIRECTION(motor->vel_setpoint);
+                motor->direction = DIRECTION(motor, motor->vel_setpoint);
                 motor->step = 0;
                 motor->pulse = ALIGN_PULSE;
 
@@ -184,7 +186,7 @@ void motor_tick(motor_t *motor) {
                 state_change(motor, MOTOR_STATE_PANIC);
             }
 
-            if(DIRECTION(motor->vel_setpoint) != motor->direction) {
+            if(DIRECTION(motor, motor->vel_setpoint) != motor->direction) {
                 state_change(motor, MOTOR_STATE_PANIC);
             }
 
@@ -204,7 +206,7 @@ void motor_tick(motor_t *motor) {
                 state_change(motor, MOTOR_STATE_PANIC);
             }
 
-            if(DIRECTION(motor->vel_setpoint) != motor->direction) {
+            if(DIRECTION(motor, motor->vel_setpoint) != motor->direction) {
                 state_change(motor, MOTOR_STATE_PANIC);
             }
 
@@ -236,7 +238,7 @@ void motor_tick(motor_t *motor) {
                 state_change(motor, MOTOR_STATE_PANIC);
             }
 
-            if(DIRECTION(motor->vel_setpoint) != motor->direction) {
+            if(DIRECTION(motor, motor->vel_setpoint) != motor->direction) {
                 state_change(motor, MOTOR_STATE_PANIC);
             }
 
@@ -259,7 +261,7 @@ void motor_tick(motor_t *motor) {
                 state_change(motor, MOTOR_STATE_PANIC);
             }
 
-            if(DIRECTION(motor->vel_setpoint) != motor->direction) {
+            if(DIRECTION(motor, motor->vel_setpoint) != motor->direction) {
                 state_change(motor, MOTOR_STATE_PANIC);
             }
 
