@@ -12,9 +12,9 @@
 #define DEG2RAD(deg) (M_PI * (deg) / 180.f)
 
 // #define EXPERIMENT_INNER_THETA
+// #define EXPERIMENT_OUTER_THETA
 // #define EXPERIMENT_INNER_X
 // #define EXPERIMENT_INNER_Y
-// #define EXPERIMENT_OUTER_THETA
 // #define EXPERIMENT_OUTER_X
 // #define EXPERIMENT_OUTER_Y
 
@@ -36,13 +36,13 @@ typedef struct {
 } controller_t;
 
 static controller_t controller = {
-    .inner_x = PID_INIT(0.105, 0.115, 0, DEG2RAD(-4), DEG2RAD(4)),     // CHR 0% PI
-    .inner_y = PID_INIT(0.042, 0.089, 0, DEG2RAD(-4), DEG2RAD(4)),     // CHR 0% PI
-    .inner_theta = PID_INIT(0.021, 0.049, 0, DEG2RAD(-4), DEG2RAD(4)), // CHR 0% PI
+    .inner_x = PID_INIT(0.201, 0.124, 0, DEG2RAD(-4), DEG2RAD(4)),     // CHR 0% PI
+    .inner_y = PID_INIT(0.134, 0.088, 0, DEG2RAD(-4), DEG2RAD(4)),     // CHR 0% PI
+    .inner_theta = PID_INIT(0.031, 0.033, 0, DEG2RAD(-4), DEG2RAD(4)), // CHR 0% PI
 
-    .outer_x = PID_INIT(1.922, 0.762, 0, -0.5, 0.5),       // Lambda = 1
-    .outer_y = PID_INIT(2.738, 1.159, 0, -0.5, 0.5),       // Lambda = 1
-    .outer_theta = PID_INIT(1.604, 1.601, 0, -M_PI, M_PI), // Lambda = 0.25
+    .outer_x = PID_INIT(15.309, 0, 2.278, -0.5, 0.5),      // PD Lambda = 1
+    .outer_y = PID_INIT(5.670, 0, 2.622, -0.5, 0.5),       // PD Lambda = 1
+    .outer_theta = PID_INIT(2.922, 0, 3.385, -M_PI, M_PI), // PD Lambda = 0.25
 };
 
 static void rot2d(const float alpha, const float x, const float y, float *output) {
@@ -129,32 +129,38 @@ static void loop() {
     const float u_theta = controller.exp_step;
 #endif
 
+#ifdef EXPERIMENT_OUTER_THETA
+    controller.exp_step = (controller.time > 3) ? 2 : 0;
+    controller.exp_response = theta;
+
+    const float u_x = 0;
+    const float u_y = 0;
+    const float u_theta =
+        pid_calculate(&controller.inner_theta, controller.exp_step, estimator_state_get_vtheta());
+#endif
+
 #ifdef EXPERIMENT_INNER_X
     controller.exp_step = (controller.time > 3) ? 0.1f : 0;
     controller.exp_response = local_vel[0];
 
+    const float vel_theta = pid_calculate(&controller.outer_theta, 0, theta);
+
     const float u_x = controller.exp_step;
     const float u_y = 0;
-    const float u_theta = pid_calculate(&controller.inner_theta, 0, estimator_state_get_vtheta());
+    const float u_theta =
+        pid_calculate(&controller.inner_theta, vel_theta, estimator_state_get_vtheta());
 #endif
 
 #ifdef EXPERIMENT_INNER_Y
     controller.exp_step = (controller.time > 3) ? 0.05f : 0;
     controller.exp_response = local_vel[1];
 
+    const float vel_theta = pid_calculate(&controller.outer_theta, 0, theta);
+
     const float u_x = 0;
     const float u_y = controller.exp_step;
-    const float u_theta = pid_calculate(&controller.inner_theta, 0, estimator_state_get_vtheta());
-#endif
-
-#ifdef EXPERIMENT_OUTER_THETA
-    controller.exp_step = (controller.time > 3) ? 2 : 0;
-    controller.exp_response = theta;
-
-    const float u_x = pid_calculate(&controller.inner_x, 0, local_vel[0]);
-    const float u_y = pid_calculate(&controller.inner_y, 0, local_vel[1]);
     const float u_theta =
-        pid_calculate(&controller.inner_theta, controller.exp_step, estimator_state_get_vtheta());
+        pid_calculate(&controller.inner_theta, vel_theta, estimator_state_get_vtheta());
 #endif
 
 #ifdef EXPERIMENT_OUTER_X

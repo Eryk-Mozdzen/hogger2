@@ -1,11 +1,22 @@
 import zmq
 import time
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import matplotlib.gridspec as gridspec
 from matplotlib.patches import Polygon
 from matplotlib.widgets import Button
+
+if len(sys.argv)==4:
+    generator_name = str(sys.argv[1])
+    generator_params = [
+        float(sys.argv[2]),
+        float(sys.argv[3]),
+    ]
+else:
+    generator_name = 'lemniscate'
+    generator_params = [0.5, 15]
 
 context = zmq.Context()
 subscriber = context.socket(zmq.SUB)
@@ -59,18 +70,15 @@ def reset_ekf(event):
 def write_trajectory(event):
     data = {
         'trajectory_write': {
-            'generator': 'lemniscate',
-            'params': [
-                0.5,
-                15,
-            ],
+            'generator': generator_name,
+            'params': generator_params,
         },
     }
     publisher.send_json(data)
 
 def read_trajectory(event):
     data = {
-        'trajectory_read': 15,
+        'trajectory_read': generator_params[1],
     }
     publisher.send_json(data)
     readed_x.clear()
