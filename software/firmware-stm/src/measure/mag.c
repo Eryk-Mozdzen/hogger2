@@ -74,7 +74,7 @@ static void process() {
         out[2] / len,
     };
 
-    estimator_correct_magnetometer(normalized);
+    estimator_correct_mag(normalized);
 }
 
 static void serialize(cmp_ctx_t *cmp, void *context) {

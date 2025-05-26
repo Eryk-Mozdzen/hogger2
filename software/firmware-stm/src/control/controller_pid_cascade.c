@@ -89,6 +89,7 @@ static void loop() {
     trajectory_get(&trajectory, controller.time);
 
     const float theta = estimator_state_get_theta();
+    const float dtheta = estimator_state_get_dottheta();
 
     float local_pos_ref[2];
     rot2d(-theta, TRAJECTORY_GET_X(&trajectory), TRAJECTORY_GET_Y(&trajectory), local_pos_ref);
@@ -97,10 +98,10 @@ static void loop() {
     rot2d(-theta, TRAJECTORY_GET_D_X(&trajectory), TRAJECTORY_GET_D_Y(&trajectory), local_vel_ref);
 
     float local_pos[2];
-    rot2d(-theta, estimator_state_get_px(), estimator_state_get_py(), local_pos);
+    rot2d(-theta, estimator_state_get_x(), estimator_state_get_y(), local_pos);
 
     float local_vel[2];
-    rot2d(-theta, estimator_state_get_vx(), estimator_state_get_vy(), local_vel);
+    rot2d(-theta, estimator_state_get_dotx(), estimator_state_get_doty(), local_vel);
 
 #if !defined(EXPERIMENT_INNER_THETA) && !defined(EXPERIMENT_INNER_X) &&                            \
     !defined(EXPERIMENT_INNER_Y) && !defined(EXPERIMENT_OUTER_THETA) &&                            \
@@ -116,13 +117,12 @@ static void loop() {
 
     const float u_x = pid_calculate(&controller.inner_x, inner_vel_ref_x, local_vel[0]);
     const float u_y = pid_calculate(&controller.inner_y, inner_vel_ref_y, local_vel[1]);
-    const float u_theta =
-        pid_calculate(&controller.inner_theta, inner_vel_ref_theta, estimator_state_get_vtheta());
+    const float u_theta = pid_calculate(&controller.inner_theta, inner_vel_ref_theta, dtheta);
 #endif
 
 #ifdef EXPERIMENT_INNER_THETA
     controller.exp_step = (controller.time > 3) ? 0.05f : 0;
-    controller.exp_response = estimator_state_get_vtheta();
+    controller.exp_response = dtheta;
 
     const float u_x = 0;
     const float u_y = 0;
@@ -135,8 +135,7 @@ static void loop() {
 
     const float u_x = 0;
     const float u_y = 0;
-    const float u_theta =
-        pid_calculate(&controller.inner_theta, controller.exp_step, estimator_state_get_vtheta());
+    const float u_theta = pid_calculate(&controller.inner_theta, controller.exp_step, dtheta);
 #endif
 
 #ifdef EXPERIMENT_INNER_X
@@ -147,8 +146,7 @@ static void loop() {
 
     const float u_x = controller.exp_step;
     const float u_y = 0;
-    const float u_theta =
-        pid_calculate(&controller.inner_theta, vel_theta, estimator_state_get_vtheta());
+    const float u_theta = pid_calculate(&controller.inner_theta, vel_theta, dtheta);
 #endif
 
 #ifdef EXPERIMENT_INNER_Y
@@ -159,8 +157,7 @@ static void loop() {
 
     const float u_x = 0;
     const float u_y = controller.exp_step;
-    const float u_theta =
-        pid_calculate(&controller.inner_theta, vel_theta, estimator_state_get_vtheta());
+    const float u_theta = pid_calculate(&controller.inner_theta, vel_theta, dtheta);
 #endif
 
 #ifdef EXPERIMENT_OUTER_X
@@ -171,8 +168,7 @@ static void loop() {
 
     const float u_x = pid_calculate(&controller.inner_x, controller.exp_step, local_vel[0]);
     const float u_y = pid_calculate(&controller.inner_y, 0, local_vel[1]);
-    const float u_theta =
-        pid_calculate(&controller.inner_theta, vel_theta, estimator_state_get_vtheta());
+    const float u_theta = pid_calculate(&controller.inner_theta, vel_theta, dtheta);
 #endif
 
 #ifdef EXPERIMENT_OUTER_Y
@@ -183,8 +179,7 @@ static void loop() {
 
     const float u_x = pid_calculate(&controller.inner_x, 0, local_vel[0]);
     const float u_y = pid_calculate(&controller.inner_y, controller.exp_step, local_vel[1]);
-    const float u_theta =
-        pid_calculate(&controller.inner_theta, vel_theta, estimator_state_get_vtheta());
+    const float u_theta = pid_calculate(&controller.inner_theta, vel_theta, dtheta);
 #endif
 
     const float phi1 = u_x;
