@@ -3,6 +3,6 @@
 
 #define ROBOT_PARAMETER_R 0.05f
 #define ROBOT_PARAMETER_L 0.13f
-#define ROBOT_PARAMETER_D 0.5f
+#define ROBOT_PARAMETER_D 0.1f
 
 #endif

@@ -146,11 +146,11 @@ add_executable(${TARGET}
     "src/control/pid.c"
     "src/control/moving_average.c"
 
-    #"src/control/controller_jptd_dynamic.c"
+    "src/control/controller_jptd_dynamic.c"
     #"src/control/controller_jptd_dynamic_1d.c"
     #"src/control/controller_naive.c"
     #"src/control/controller_simplified_static_online.c"
-    "src/control/controller_pid_cascade.c"
+    #"src/control/controller_pid_cascade.c"
 
     "../common/lrcp/stream.c"
     "../common/lrcp/frame.c"

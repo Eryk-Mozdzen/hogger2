@@ -12,11 +12,11 @@
 #include "generated/estimator.h"
 #include "utils/task.h"
 
-#define CONTROLLER_K1 5.f
-#define CONTROLLER_K2 10.f
-#define MOTOR1_VEL    -200.f
-#define MOTOR2_VEL    +200.f
-#define GIMBAL_MAX    (2.f * M_PI / 180.f)
+#define CONTROLLER_K1 1000.f
+#define CONTROLLER_K2 1000.f
+#define MOTOR1_VEL    -250.f
+#define MOTOR2_VEL    +250.f
+#define GIMBAL_MAX    (4.f * M_PI / 180.f)
 
 typedef enum {
     INTEGRAL_IDX_PHI1,
@@ -35,12 +35,12 @@ typedef struct {
 } controller_t;
 
 static const float K1[25] = {
-    CONTROLLER_K1, 0, 0, 0, 0, 0, CONTROLLER_K1, 0, 0, 0, 0, 0, CONTROLLER_K1 * 1000, 0, 0, 0, 0, 0,
+    CONTROLLER_K1, 0, 0, 0, 0, 0, CONTROLLER_K1, 0, 0, 0, 0, 0, CONTROLLER_K1, 0, 0, 0, 0, 0,
     CONTROLLER_K1, 0, 0, 0, 0, 0, CONTROLLER_K1,
 };
 
 static const float K2[25] = {
-    CONTROLLER_K2, 0, 0, 0, 0, 0, CONTROLLER_K2, 0, 0, 0, 0, 0, CONTROLLER_K2 * 1000, 0, 0, 0, 0, 0,
+    CONTROLLER_K2, 0, 0, 0, 0, 0, CONTROLLER_K2, 0, 0, 0, 0, 0, CONTROLLER_K2, 0, 0, 0, 0, 0,
     CONTROLLER_K2, 0, 0, 0, 0, 0, CONTROLLER_K2,
 };
 
@@ -91,14 +91,14 @@ static void loop() {
         return;
     }
 
-    controller.h[0] = estimator_state_get_px();
-    controller.h[1] = estimator_state_get_py();
+    controller.h[0] = estimator_state_get_x();
+    controller.h[1] = estimator_state_get_y();
     controller.h[2] = estimator_state_get_theta();
     controller.h[3] = MOTOR1_VEL * controller.time;
     controller.h[4] = MOTOR2_VEL * controller.time;
-    controller.h[5] = estimator_state_get_vx();
-    controller.h[6] = estimator_state_get_vy();
-    controller.h[7] = estimator_state_get_vtheta();
+    controller.h[5] = estimator_state_get_dotx();
+    controller.h[6] = estimator_state_get_doty();
+    controller.h[7] = estimator_state_get_dottheta();
     controller.h[8] = MOTOR1_VEL;
     controller.h[9] = MOTOR2_VEL;
 
@@ -130,8 +130,8 @@ static void loop() {
     float theta2;
     servos_get_position(&phi1, &theta1, &phi2, &theta2);
 
-    controller.q[0] = estimator_state_get_px();
-    controller.q[1] = estimator_state_get_py();
+    controller.q[0] = estimator_state_get_x();
+    controller.q[1] = estimator_state_get_y();
     controller.q[2] = estimator_state_get_theta();
     controller.q[3] = phi1;
     controller.q[4] = theta1;

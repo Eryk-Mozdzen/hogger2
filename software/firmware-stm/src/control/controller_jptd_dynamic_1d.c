@@ -13,10 +13,10 @@
 #include "generated/estimator.h"
 #include "utils/task.h"
 
-#define CONTROLLER_K1 3.f
-#define CONTROLLER_K2 5.f
-#define MOTOR_VEL     -200.f
-#define GIMBAL_MAX    (3.f * M_PI / 180.f)
+#define CONTROLLER_K1 2000.f
+#define CONTROLLER_K2 1000.f
+#define MOTOR_VEL     -250.f
+#define GIMBAL_MAX    (4.f * M_PI / 180.f)
 
 typedef enum {
     INTEGRAL_IDX_PHI1,
@@ -84,13 +84,13 @@ static void loop() {
     const float sin_theta = sinf(estimator_state_get_theta());
     const float cos_theta = cosf(estimator_state_get_theta());
 
-    controller.h[0] = estimator_state_get_px() + ROBOT_PARAMETER_D * cos_theta;
-    controller.h[1] = estimator_state_get_py() + ROBOT_PARAMETER_D * sin_theta;
+    controller.h[0] = estimator_state_get_x() + ROBOT_PARAMETER_D * cos_theta;
+    controller.h[1] = estimator_state_get_y() + ROBOT_PARAMETER_D * sin_theta;
     controller.h[2] = MOTOR_VEL * controller.time;
     controller.h[3] =
-        estimator_state_get_vx() - ROBOT_PARAMETER_D * estimator_state_get_vtheta() * sin_theta;
+        estimator_state_get_dotx() - ROBOT_PARAMETER_D * estimator_state_get_dottheta() * sin_theta;
     controller.h[4] =
-        estimator_state_get_vy() + ROBOT_PARAMETER_D * estimator_state_get_vtheta() * cos_theta;
+        estimator_state_get_doty() + ROBOT_PARAMETER_D * estimator_state_get_dottheta() * cos_theta;
     controller.h[5] = MOTOR_VEL;
 
     trajectory_t trajectory;
@@ -126,8 +126,8 @@ static void loop() {
     float phi2;
     servos_get_position(&phi1, NULL, &phi2, NULL);
 
-    controller.q[0] = estimator_state_get_px();
-    controller.q[1] = estimator_state_get_py();
+    controller.q[0] = estimator_state_get_x();
+    controller.q[1] = estimator_state_get_y();
     controller.q[2] = estimator_state_get_theta();
     controller.q[3] = phi1;
     controller.q[4] = phi2;
