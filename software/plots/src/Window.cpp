@@ -76,11 +76,11 @@ Window::Window(QWidget *parent) : QWidget(parent) {
     {
         LiveChart::Config config;
         config.title = "optical flow";
-        config.yLabel = "[m/s]";
-        config.yMin = -1;
-        config.yMax = 1;
+        config.yLabel = "[rad/s]";
+        config.yMin = -8;
+        config.yMax = 8;
         config.yPrecision = 2;
-        config.yTick = 0.25;
+        config.yTick = 1;
 
         optical = new LiveChart(config, this);
         optical->addSeries("x", QPen(Qt::red, 1, Qt::SolidLine));
@@ -122,6 +122,22 @@ Window::Window(QWidget *parent) : QWidget(parent) {
 
         layout->addWidget(trajectory, 0, 2);
     }
+
+    {
+        LiveChart::Config config;
+        config.title = "velocity";
+        config.yLabel = "";
+        config.yMin = -1;
+        config.yMax = 1;
+        config.yPrecision = 1;
+        config.yTick = 0.1;
+
+        vel = new LiveChart(config, this);
+        vel->addSeries("x", QPen(Qt::red, 1, Qt::SolidLine));
+        vel->addSeries("y", QPen(Qt::green, 1, Qt::SolidLine));
+
+        layout->addWidget(vel, 1, 2);
+    }
 }
 
 void Window::receive(const QJsonDocument &json) {
@@ -146,11 +162,10 @@ void Window::receive(const QJsonDocument &json) {
     motor2->append("vel_ref", time, motor2_["vel_ref"].toDouble());
     motor2->append("load", time, motor2_["load"].toDouble() * 600);
 
-    constexpr double fh = 0.065;
     const QJsonArray optical_ = telemetry["optical_flow"].toArray();
     if(!optical_[0].isNull() && !optical_[1].isNull()) {
-        optical->append("x", time, optical_[0].toDouble() * fh);
-        optical->append("y", time, optical_[1].toDouble() * fh);
+        optical->append("x", time, optical_[0].toDouble());
+        optical->append("y", time, optical_[1].toDouble());
     }
 
     const QJsonObject accel_ = telemetry["accelerometer"].toObject();
@@ -158,10 +173,14 @@ void Window::receive(const QJsonDocument &json) {
     accel->append("y", time, accel_["out"].toArray()[1].toDouble());
     accel->append("z", time, accel_["out"].toArray()[2].toDouble());
 
-    const QJsonObject trajectory_ = telemetry["trajectory"].toObject();
-    trajectory->append("pos", time, trajectory_["hd"].toArray()[0].toDouble());
-    trajectory->append("vel", time, trajectory_["d_hd"].toArray()[0].toDouble());
-    trajectory->append("acc", time, trajectory_["d2_hd"].toArray()[0].toDouble());
+    const QJsonArray trajectory_ = telemetry["trajectory"].toArray();
+    trajectory->append("pos", time, trajectory_[0].toDouble());
+    trajectory->append("vel", time, trajectory_[3].toDouble());
+    trajectory->append("acc", time, trajectory_[6].toDouble());
+
+    const QJsonArray vel_ = telemetry["estimate"]["vel"].toArray();
+    vel->append("x", time, vel_[0].toDouble());
+    vel->append("y", time, vel_[1].toDouble());
 
     LiveChart::synchronize(time);
 }

@@ -4,6 +4,7 @@
 
 #include "com/config.h"
 #include "com/telemetry.h"
+#include "control/derivative.h"
 #include "generated/estimator.h"
 #include "measure/mpu6050.h"
 #include "utils/interrupt.h"
@@ -22,6 +23,9 @@ static float araw[3] = {0};
 static float aout[3] = {0};
 static float graw[3] = {0};
 static float gout[3] = {0};
+
+derivative_element_t derivative_element;
+derivative_t derivative;
 
 static void mpu6050_write(uint8_t address, uint8_t value) {
     HAL_I2C_Mem_Write(&hi2c2, MPU6050_ADDR << 1, address, 1, &value, 1, 100);
@@ -59,10 +63,10 @@ static void init() {
                       MPU6050_INT_PIN_CFG_FSYNC_DISABLE | MPU6050_INT_PIN_CFG_I2C_BYPASS_DISABLE);
 
     mpu6050_write(MPU6050_REG_PWR_MGMT_1,
-                  MPU6050_PWR_MGMT_1_TEMP_DIS | MPU6050_PWR_MGMT_1_CLOCK_INTERNAL);
+                  MPU6050_PWR_MGMT_1_TEMP_DIS | MPU6050_PWR_MGMT_1_CLOCK_GYRO_X);
 
     mpu6050_write(MPU6050_REG_CONFIG,
-                  MPU6050_CONFIG_EXT_SYNC_DISABLED | MPU6050_CONFIG_DLPF_SETTING_6);
+                  MPU6050_CONFIG_EXT_SYNC_DISABLED | MPU6050_CONFIG_DLPF_SETTING_1);
 
     mpu6050_write(MPU6050_REG_ACCEL_CONFIG, MPU6050_ACCEL_CONFIG_RANGE_4G);
 
@@ -72,6 +76,8 @@ static void init() {
 
     HAL_I2C_RegisterCallback(&hi2c2, HAL_I2C_MEM_RX_COMPLETE_CB_ID, isr_data_received);
     interrupt_register(isr_data_ready, IMU_INT_Pin);
+
+    derivative_init(&derivative, &derivative_element, 1, -1000, 1000);
 }
 
 static void process() {
@@ -109,12 +115,15 @@ static void process() {
         gout[2] = graw[2] + goffset[2];
     }
 
-    const float u[3] = {
+    derivative_step(&derivative, &gout[2]);
+
+    const float u[4] = {
         aout[0],
         aout[1],
         gout[2],
+        derivative_get(&derivative, 0),
     };
-    ESTIMATOR_PREDICT(u);
+    estimator_predict(u);
 }
 
 static void serialize_accel(cmp_ctx_t *cmp, void *context) {

@@ -26,6 +26,7 @@ typedef struct {
     float temperature;
     uint8_t error;
     uint32_t timestamp;
+    uint32_t valid;
 } dynamixel_servo_t;
 
 typedef struct {

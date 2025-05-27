@@ -21,8 +21,6 @@ try:
                         print(key + ': ' + json.dumps(message["telemetry"][key], indent=4))
             else:
                 print(json.dumps(message, indent=4))
-        else:
-            print(json.dumps(message, indent=4))
 
 except KeyboardInterrupt:
     print("\nInterrupt received, stopping...")

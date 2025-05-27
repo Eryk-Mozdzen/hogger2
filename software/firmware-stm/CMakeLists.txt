@@ -115,7 +115,11 @@ add_executable(${TARGET}
     "CMSIS-DSP/Source/FastMathFunctions/FastMathFunctions.c"
 
     "generated/estimator.c"
+    "../common/control/generators.c"
     "../common/control/jptd_dynamic.c"
+    "../common/control/jptd_dynamic_1d.c"
+    "../common/control/naive.c"
+    "../common/control/simplified_static_online.c"
 
 	"src/main.c"
     "src/utils/task.c"
@@ -136,7 +140,17 @@ add_executable(${TARGET}
     "src/control/blink.c"
     "src/control/watchdog.c"
     "src/control/manual.c"
-    "src/control/controller.c"
+    "src/control/trajectory.c"
+    "src/control/integrator.c"
+    "src/control/derivative.c"
+    "src/control/pid.c"
+    "src/control/moving_average.c"
+
+    "src/control/controller_jptd_dynamic.c"
+    #"src/control/controller_jptd_dynamic_1d.c"
+    #"src/control/controller_naive.c"
+    #"src/control/controller_simplified_static_online.c"
+    #"src/control/controller_pid_cascade.c"
 
     "../common/lrcp/stream.c"
     "../common/lrcp/frame.c"
@@ -160,6 +174,7 @@ target_compile_definitions(${TARGET} PRIVATE
     USE_HAL_DRIVER
     STM32H523xx
     ARM_MATH_CM33
+    _XOPEN_SOURCE=500
 )
 
 target_compile_options(${TARGET} PRIVATE

@@ -32,6 +32,7 @@ static void loop() {
     mpack_t mpack;
     mpack_create_empty(&mpack, buffer, sizeof(buffer));
 
+    cmp_write_map(&mpack.cmp, 1);
     cmp_write_str(&mpack.cmp, "telemetry", 9);
     cmp_write_map(&mpack.cmp, count + 1);
     cmp_write_str(&mpack.cmp, "timestamp", 9);
@@ -47,4 +48,4 @@ static void loop() {
     stream_transmit(&mpack);
 }
 
-TASK_REGISTER_PERIODIC(loop, 20000)
+TASK_REGISTER_PERIODIC(loop, 10000)

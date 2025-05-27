@@ -180,6 +180,10 @@ void dynamixel_tick(dynamixel_t *dynamixel) {
         dynamixel->pending = NULL;
     }
 
+    for(uint32_t i = 0; i < DYNAMIXEL_REGISTER_MAX; i++) {
+        dynamixel->registered[i].valid = ((time - dynamixel->registered[i].timestamp) <= 500);
+    }
+
     if(!dynamixel->pending) {
         dynamixel->pending = pop_instruction_packet(dynamixel);
 

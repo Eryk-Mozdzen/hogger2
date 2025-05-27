@@ -1,11 +1,22 @@
 import zmq
 import time
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import matplotlib.gridspec as gridspec
 from matplotlib.patches import Polygon
 from matplotlib.widgets import Button
+
+if len(sys.argv)==4:
+    generator_name = str(sys.argv[1])
+    generator_params = [
+        float(sys.argv[2]),
+        float(sys.argv[3]),
+    ]
+else:
+    generator_name = 'lemniscate'
+    generator_params = [0.5, 15]
 
 context = zmq.Context()
 subscriber = context.socket(zmq.SUB)
@@ -27,17 +38,17 @@ def periodic():
     if motors_active:
         data = {
             'manual_motor': [
-                -200,
-                +200,
+                -250,
+                +250,
             ],
         }
         publisher.send_json(data)
     if motors_active and not controller_active:
         data = {
             'manual_servo': [
-                0.04015949507360143,
                 0,
-                -0.058555490748248465,
+                0,
+                0,
                 0,
             ],
         }
@@ -59,20 +70,15 @@ def reset_ekf(event):
 def write_trajectory(event):
     data = {
         'trajectory_write': {
-            'generator': 'circle',
-            'params': [
-                0,
-                0,
-                1,
-                20,
-            ],
+            'generator': generator_name,
+            'params': generator_params,
         },
     }
     publisher.send_json(data)
 
 def read_trajectory(event):
     data = {
-        'trajectory_read': 20,
+        'trajectory_read': generator_params[1],
     }
     publisher.send_json(data)
     readed_x.clear()
@@ -96,6 +102,11 @@ def stop_tracking(event):
     global controller_active
     motors_active = False
     controller_active = False
+    for _ in range(10):
+        data = {
+            'stop': None,
+        }
+        publisher.send_json(data)
 
 button_reset_ax = plt.subplot(grid[12, 1])
 button_reset = Button(button_reset_ax, 'reset')
@@ -121,7 +132,7 @@ button_stop_ax = plt.subplot(grid[17, 1])
 button_stop = Button(button_stop_ax, 'stop')
 button_stop.on_clicked(stop_tracking)
 
-size = 0.5
+size = 0.25
 base_triangle = np.array([
     [-0.25*size, -0.35*size],
     [-0.25*size, 0.35*size],
@@ -133,13 +144,13 @@ readed_y = []
 readed, = ax.plot(readed_x, readed_y, 'k--', zorder=1)
 
 reference = Polygon(base_triangle, closed=True, fc='red', ec='black', label='reference pose', zorder=2)
-estimated = Polygon(base_triangle, closed=True, fc='cyan', ec='black', label='estimated pose', zorder=2)
+estimated = Polygon(base_triangle, closed=True, fc='cyan', ec='black', label='estimated pose', zorder=3)
 
 ax.add_patch(reference)
 ax.add_patch(estimated)
 
-ax.set_xlim(-3, 3)
-ax.set_ylim(-3, 3)
+ax.set_xlim(-1.5, 1.5)
+ax.set_ylim(-1.5, 1.5)
 ax.set_aspect('equal')
 ax.grid()
 ax.legend()
@@ -171,16 +182,15 @@ def update(frame):
             translated = rotated + np.array([x, y])
             estimated.set_xy(translated)
 
-        x = telemetry['trajectory']['hd'][0]
-        y = telemetry['trajectory']['hd'][1]
-        theta = telemetry['trajectory']['hd'][2]
+        x = telemetry['trajectory'][0]
+        y = telemetry['trajectory'][1]
+        theta = telemetry['trajectory'][2]
 
-        if x and y and theta:
-            c, s = np.cos(theta), np.sin(theta)
-            rotation_matrix = np.array([[c, -s], [s, c]])
-            rotated = np.dot(base_triangle, rotation_matrix.T)
-            translated = rotated + np.array([x, y])
-            reference.set_xy(translated)
+        c, s = np.cos(theta), np.sin(theta)
+        rotation_matrix = np.array([[c, -s], [s, c]])
+        rotated = np.dot(base_triangle, rotation_matrix.T)
+        translated = rotated + np.array([x, y])
+        reference.set_xy(translated)
 
     if trajectory:
         readed_x.append(trajectory['node'][0])

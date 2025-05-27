@@ -1,0 +1,47 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+file = pd.read_csv('output.csv')
+
+plt.figure('trajectory')
+plt.subplot(2, 1, 1)
+plt.plot(file['xd'].values, file['yd'].values, label='xy reference', color='black', linestyle='dashed')
+plt.plot(file['x'].values, file['y'].values, label='xy', color='red')
+plt.xlabel('x [m]')
+plt.ylabel('y [m]')
+plt.gca().set_aspect('equal')
+plt.grid()
+plt.legend()
+plt.subplot(2, 1, 2)
+plt.plot(file['t'].values, file['thetad'].values, label='$\\theta$ reference', color='black', linestyle='dashed')
+plt.plot(file['t'].values, file['theta'].values, label='$\\theta$', color='red')
+plt.xlabel('t [s]')
+plt.ylabel('$\\theta$ [rad]')
+plt.grid()
+plt.legend()
+
+plt.figure('control signals')
+plt.plot(file['t'].values, np.degrees(file['phi1'].values), label='$\\phi_1$')
+plt.plot(file['t'].values, np.degrees(file['phi2'].values), label='$\\phi_2$')
+plt.xlabel('t [s]')
+plt.ylabel('gimbal angles [deg]')
+plt.legend()
+plt.grid()
+
+plt.figure('reference tracking error')
+plt.subplot(2, 1, 1)
+plt.plot(file['t'].values, file['x'].values - file['xd'].values, label='$e_x$')
+plt.plot(file['t'].values, file['y'].values - file['yd'].values, label='$e_y$')
+plt.xlabel('t [s]')
+plt.ylabel('error [m]')
+plt.grid()
+plt.legend()
+plt.subplot(2, 1, 2)
+plt.plot(file['t'].values, file['theta'].values - file['thetad'].values, label='$e_\\theta$')
+plt.xlabel('t [s]')
+plt.ylabel('error [rad]')
+plt.grid()
+plt.legend()
+
+plt.show()

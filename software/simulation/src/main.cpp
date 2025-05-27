@@ -1,16 +1,16 @@
 #include <drake/systems/framework/diagram_builder.h>
 #include <drake/systems/analysis/simulator.h>
 
-#include "generators/Lemniscate.hpp"
-#include "controllers/JPTD.hpp"
+#include "generators/Circle.hpp"
+#include "controllers/SimplifiedStaticOnline.hpp"
 #include "Model.hpp"
 #include "Sink.hpp"
 
 int main() {
 	drake::systems::DiagramBuilder<double> builder;
 
-	auto generator = builder.AddSystem<Lemniscate>(2, 10);
-	auto controller = builder.AddSystem<JPTD>(2, 3);
+	auto generator = builder.AddSystem<Circle>(1, 10);
+	auto controller = builder.AddSystem<SimplifiedStaticOnline>(0.5);
 	auto model = builder.AddSystem<Model>(0, 0, 0);
 	auto sink = builder.AddSystem<Sink>();
 
@@ -29,6 +29,7 @@ int main() {
 	simulator.get_mutable_integrator().request_initial_step_size_target(1e-7);
 	simulator.get_mutable_integrator().set_requested_minimum_step_size(1e-7);
 	simulator.get_mutable_integrator().set_throw_on_minimum_step_size_violation(false);
+	//simulator.get_mutable_integrator().set_maximum_step_size(1e-6);
 	//simulator.get_mutable_integrator().set_fixed_step_mode(true);
 
 	simulator.Initialize();

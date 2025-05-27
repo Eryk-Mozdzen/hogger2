@@ -59,7 +59,7 @@ void Magnetometer::leastSquares() {
     const Eigen::Vector3d c = -A.inverse() * b;
     const Eigen::Matrix3d M = A / (c.transpose() * A * c);
 
-    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver(M);
+    const Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver(M);
     const Eigen::Matrix3d Q = solver.eigenvectors();
     const Eigen::Vector3d L = solver.eigenvalues();
 

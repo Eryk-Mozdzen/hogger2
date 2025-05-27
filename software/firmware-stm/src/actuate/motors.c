@@ -21,6 +21,8 @@ static motor_t motor1 = {
     .control_timer_itr = TIM_TS_ITR1,
     .commut_timer = &htim2,
     .bemf_adc = &hadc1,
+    .pid = MOTOR_PID(0.005, 0.010, 0.000), // CHR 20% PID
+    .positive_direction = MOTOR_DIRECTION_CCW,
 };
 
 static motor_t motor2 = {
@@ -28,6 +30,8 @@ static motor_t motor2 = {
     .control_timer_itr = TIM_TS_ITR4,
     .commut_timer = &htim5,
     .bemf_adc = &hadc2,
+    .pid = MOTOR_PID(0.005, 0.010, 0.000), // CHR 20% PID
+    .positive_direction = MOTOR_DIRECTION_CCW,
 };
 
 static void isr_commutation(TIM_HandleTypeDef *htim) {
@@ -66,8 +70,13 @@ void motors_set_velocity(const float psi1_dot, const float psi2_dot) {
 }
 
 void motors_get_velocity(float *psi1_dot, float *psi2_dot) {
-    *psi1_dot = motor1.vel;
-    *psi2_dot = motor2.vel;
+    if(psi1_dot) {
+        *psi1_dot = motor1.vel;
+    }
+
+    if(psi2_dot) {
+        *psi2_dot = motor2.vel;
+    }
 }
 
 static void init() {

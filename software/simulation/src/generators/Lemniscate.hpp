@@ -3,17 +3,11 @@
 #include "TrajectoryGenerator.hpp"
 
 class Lemniscate : public TrajectoryGenerator {
-	static constexpr double sqrt2 = 1.41421356237;
-	static constexpr double pi = 3.14159265359;
-	static constexpr double deg2rad = pi/180;
-
 	const double a;
-	const double w;
-
-	static double fix(double angle);
+	const double T;
 
 	Eigen::VectorX<double> value(const double &t) const;
 
 public:
-	Lemniscate(const double c, const double T);
+	Lemniscate(const double a, const double T);
 };

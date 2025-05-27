@@ -1,10 +1,13 @@
 import pygame
 import zmq
 import time
+import datetime
 import numpy
-import shelve
 
 context = zmq.Context()
+subscriber = context.socket(zmq.SUB)
+subscriber.connect("tcp://localhost:6000")
+subscriber.setsockopt(zmq.SUBSCRIBE, b'')
 publisher = context.socket(zmq.PUB)
 publisher.connect("tcp://localhost:7000")
 
@@ -12,8 +15,7 @@ pygame.init()
 joystick = pygame.joystick.Joystick(0)
 joystick.init()
 
-with shelve.open('prefs') as db:
-    offset = db.get('offset', [0, 0])
+next_config = datetime.datetime.now()
 
 try:
     while True:
@@ -23,8 +25,8 @@ try:
         R = 0.05
         W = 300
 
-        dx_ref = -1*(joystick.get_axis(1) + offset[0])
-        dtheta_ref = 2*(joystick.get_axis(0) + offset[1])
+        dx_ref = -1*joystick.get_axis(1)
+        dtheta_ref = 2*joystick.get_axis(0)
 
         v1 = dx_ref + L*dtheta_ref
         v2 = dx_ref - L*dtheta_ref
@@ -40,7 +42,7 @@ try:
                 0,
             ],
         }
-        print(data)
+        #print(data)
         publisher.send_json(data)
 
         data = {
@@ -49,19 +51,69 @@ try:
                 +W if joystick.get_axis(2)>0 else 0,
             ],
         }
-        print(data)
+        #print(data)
         publisher.send_json(data)
 
-        print([round(joystick.get_axis(i), 2) for i in range(joystick.get_numaxes())])
-        print([joystick.get_button(i) for i in range(joystick.get_numbuttons())])
+        #print([round(joystick.get_axis(i), 2) for i in range(joystick.get_numaxes())])
+        #print([joystick.get_button(i) for i in range(joystick.get_numbuttons())])
+        #print([joystick.get_hat(i) for i in range(joystick.get_numhats())])
 
-        offset[0] +=(0.05 if joystick.get_button(0) else 0)
-        offset[0] -=(0.05 if joystick.get_button(3) else 0)
-        offset[1] +=(0.05 if joystick.get_button(1) else 0)
-        offset[1] -=(0.05 if joystick.get_button(2) else 0)
+        if datetime.datetime.now() > next_config:
+            next_config = datetime.datetime.now() + datetime.timedelta(milliseconds=500)
+            data = {
+                'config_req': [
+                    'servo_offset',
+                ],
+            }
+            #print(data)
+            publisher.send_json(data)
 
-        with shelve.open('prefs') as db:
-            db['offset'] = offset
+        offset = None
+
+        while True:
+            try:
+                message = subscriber.recv_json(flags=zmq.NOBLOCK)
+                if 'config' in message:
+                    if 'servo_offset' in message['config']:
+                        offset = message['config']['servo_offset']
+            except zmq.Again:
+                break
+
+        if not offset is None:
+            if len(offset)!=4:
+                offset = [0, 0, 0, 0]
+
+            if joystick.get_hat(0)[1]==1:
+                offset[1] +=numpy.deg2rad(0.1)
+                offset[3] +=numpy.deg2rad(0.1)
+                publisher.send_json({'config': {'servo_offset': offset}})
+
+            if joystick.get_hat(0)[1]==-1:
+                offset[1] -=numpy.deg2rad(0.1)
+                offset[3] -=numpy.deg2rad(0.1)
+                publisher.send_json({'config': {'servo_offset': offset}})
+
+            if joystick.get_button(1):
+                offset[0] +=numpy.deg2rad(0.1)
+                offset[2] +=numpy.deg2rad(0.1)
+                publisher.send_json({'config': {'servo_offset': offset}})
+
+            if joystick.get_button(2):
+                offset[0] -=numpy.deg2rad(0.1)
+                offset[2] -=numpy.deg2rad(0.1)
+                publisher.send_json({'config': {'servo_offset': offset}})
+
+            if joystick.get_button(0):
+                offset[0] -=numpy.deg2rad(0.1)
+                offset[2] +=numpy.deg2rad(0.1)
+                publisher.send_json({'config': {'servo_offset': offset}})
+
+            if joystick.get_button(3):
+                offset[0] +=numpy.deg2rad(0.1)
+                offset[2] -=numpy.deg2rad(0.1)
+                publisher.send_json({'config': {'servo_offset': offset}})
+
+            #print(offset)
 
         time.sleep(0.05)
 

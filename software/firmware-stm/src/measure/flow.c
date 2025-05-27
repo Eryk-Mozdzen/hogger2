@@ -1,6 +1,7 @@
 #include <main.h>
 #include <stdint.h>
 #include <stm32h5xx_hal.h>
+#include <string.h>
 
 #include "com/telemetry.h"
 #include "generated/estimator.h"
@@ -198,16 +199,18 @@ static void process() {
     const int16_t delta_x = (((int16_t)motion[2]) << 8) | motion[1];
     const int16_t delta_y = (((int16_t)motion[4]) << 8) | motion[3];
 
-    const float tmp[2] = {
-        -delta_y / (0.02f * PMW3901_FOCAL_LENGTH),
-        -delta_x / (0.02f * PMW3901_FOCAL_LENGTH),
+    const float dt = 0.02f;
+
+    const float vel[2] = {
+        delta_y / (dt * PMW3901_FOCAL_LENGTH),
+        delta_x / (dt * PMW3901_FOCAL_LENGTH),
     };
 
-    if((fabs(tmp[0]) < 100.f) && (fabs(tmp[1]) < 100.f)) {
-        velocity[0] = tmp[0];
-        velocity[1] = tmp[1];
+    if(sqrtf((vel[0] * vel[0]) + (vel[1] * vel[1])) < 7.4f) {
+        velocity[0] = vel[0];
+        velocity[1] = vel[1];
 
-        ESTIMATOR_CORRECT_FLOW(velocity);
+        estimator_correct_flow(velocity);
     } else {
         velocity[0] = NAN;
         velocity[1] = NAN;

@@ -1,7 +1,5 @@
 import sympy as sp
 
-t = sp.Symbol('t')
-
 x = sp.Symbol('x')
 y = sp.Symbol('y')
 theta = sp.Symbol('theta')
@@ -53,6 +51,11 @@ dynamics = sp.simplify(dynamics)
 
 sp.pprint(dynamics)
 
+dynamics = dynamics.subs([
+    (R, sp.Symbol('ROBOT_PARAMETER_R')),
+    (L, sp.Symbol('ROBOT_PARAMETER_L')),
+])
+
 import os
 
 here = os.path.dirname(__file__)
@@ -84,7 +87,7 @@ with open(f'{here}/src/Model.cpp', 'w') as file:
 Model::Model(const double x0, const double y0, const double theta0) {
 '''
     )
-    file.write('    this->DeclareContinuousState({x0, y0, theta0, 0, 0, 0, 0.1, 0.1, 0});\n')
+    file.write('    this->DeclareContinuousState({x0, y0, theta0, 0.38, 0.15, 0, 0.38, 0.15, 0});\n')
     file.write('    this->DeclareVectorInputPort("eta", 5);\n')
     file.write('    this->DeclareVectorOutputPort("q", 9, &Model::eval, {this->all_state_ticket()});\n')
     file.write(

@@ -19,6 +19,7 @@ class Function:
             'Pow': [
                 (lambda base, exponent: exponent==2, lambda base, exponent: '((%s)*(%s))' % (base, base)),
                 (lambda base, exponent: exponent==-1, lambda base, exponent: '(1.f/(%s))' % (base)),
+                (lambda base, exponent: exponent==0.5, lambda base, exponent: 'sqrtf(%s)' % (base)),
                 (lambda base, exponent: True, lambda base, exponent: 'powf(%s, %s)' % (base, exponent))
             ],
         }
@@ -27,14 +28,11 @@ class Function:
             sympy.codegen.ast.real: sympy.codegen.ast.float32,
         }
 
-        def decl(lhs, rhs):
-            file.write(f'    const float {lhs} = {sp.ccode(rhs, user_functions=functions, type_aliases=aliases)};\n')
-
         cse_subs, cse_reduced = sp.cse([self.expr], optimizations='basic')
         cse_reduced, = cse_reduced
 
         for lhs, rhs in cse_subs:
-            decl(lhs, rhs)
+            file.write(f'    const float {lhs} = {sp.ccode(rhs, user_functions=functions, type_aliases=aliases)};\n')
         file.write('\n')
 
         self.expr = cse_reduced
