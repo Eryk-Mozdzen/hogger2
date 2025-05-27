@@ -36,13 +36,13 @@ typedef struct {
 } controller_t;
 
 static controller_t controller = {
-    .inner_x = PID_INIT(0.201, 0.124, 0, DEG2RAD(-4), DEG2RAD(4)),     // CHR 0% PI
-    .inner_y = PID_INIT(0.134, 0.088, 0, DEG2RAD(-4), DEG2RAD(4)),     // CHR 0% PI
-    .inner_theta = PID_INIT(0.031, 0.033, 0, DEG2RAD(-4), DEG2RAD(4)), // CHR 0% PI
+    .inner_x = PID_INIT(0.314, 0.256, 0, DEG2RAD(-4), DEG2RAD(4)),     // CHR 0% PI
+    .inner_y = PID_INIT(0.844, 0.815, 0, DEG2RAD(-4), DEG2RAD(4)),     // CHR 0% PI
+    .inner_theta = PID_INIT(0.078, 0.146, 0, DEG2RAD(-4), DEG2RAD(4)), // CHR 0% PI
 
-    .outer_x = PID_INIT(15.309, 0, 2.278, -0.5, 0.5),      // PD Lambda = 1
-    .outer_y = PID_INIT(5.670, 0, 2.622, -0.5, 0.5),       // PD Lambda = 1
-    .outer_theta = PID_INIT(2.922, 0, 3.385, -M_PI, M_PI), // PD Lambda = 0.25
+    .outer_x = PID_INIT(4.510, 0, 1.100, -0.5, 0.5),       // PD Lambda = 1
+    .outer_y = PID_INIT(4.101, 1.102, 0, -0.5, 0.5),       // PD Lambda = 1
+    .outer_theta = PID_INIT(7.087, 0, 3.489, -M_PI, M_PI), // PD Lambda = 0.25
 };
 
 static void rot2d(const float alpha, const float x, const float y, float *output) {
@@ -139,7 +139,7 @@ static void loop() {
 #endif
 
 #ifdef EXPERIMENT_INNER_X
-    controller.exp_step = (controller.time > 3) ? 0.1f : 0;
+    controller.exp_step = (controller.time > 3) ? 0.05f : 0;
     controller.exp_response = local_vel[0];
 
     const float vel_theta = pid_calculate(&controller.outer_theta, 0, theta);
@@ -172,7 +172,7 @@ static void loop() {
 #endif
 
 #ifdef EXPERIMENT_OUTER_Y
-    controller.exp_step = (controller.time > 5) ? 1.f : 0;
+    controller.exp_step = (controller.time > 5) ? 0.5f : 0;
     controller.exp_response = local_pos[1];
 
     const float vel_theta = pid_calculate(&controller.outer_theta, 0, theta);
