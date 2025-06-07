@@ -220,6 +220,7 @@ if sys.argv[3]=='integrating':
     print('lines')
     print(f'    bottom = {Y0:+7.3f}')
     print(f'   tangent = {K:+7.3f}x{-K*T+Y0:+7.3f}')
+    print(f'     begin = {T:+7.3f}')
 
     K = K/step_value
 
