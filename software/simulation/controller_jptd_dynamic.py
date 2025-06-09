@@ -99,6 +99,24 @@ sp.pprint(Kdd)
 sp.pprint(sp.simplify(Kdd.det()))
 sp.pprint(P)
 
+subs = [
+    (eta[2], sp.Symbol('\\eta_{3}')),
+    (eta[4], sp.Symbol('\\eta_{5}')),
+    (sp.sin(theta), sp.Symbol('s_{\\theta}')),
+    (sp.cos(theta), sp.Symbol('c_{\\theta}')),
+    (sp.sin(phi1), sp.Symbol('s_{\\phi_{1}}')),
+    (sp.cos(phi1), sp.Symbol('c_{\\phi_{1}}')),
+    (sp.sin(theta1), sp.Symbol('s_{\\theta_{1}}')),
+    (sp.cos(theta1), sp.Symbol('c_{\\theta_{1}}')),
+    (sp.sin(phi2), sp.Symbol('s_{\\phi_{2}}')),
+    (sp.cos(phi2), sp.Symbol('c_{\\phi_{2}}')),
+    (sp.sin(theta2), sp.Symbol('s_{\\theta_{2}}')),
+    (sp.cos(theta2), sp.Symbol('c_{\\theta_{2}}')),
+]
+print(sp.latex(Kdd.subs(subs)))
+print(sp.latex(P.subs(subs)))
+print(sp.latex(sp.simplify(Kdd.det()).subs(subs)))
+
 v = sp.Matrix([
     sp.Symbol('v_1'),
     sp.Symbol('v_2'),
