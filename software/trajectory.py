@@ -16,7 +16,7 @@ if len(sys.argv)==4:
     ]
 else:
     generator_name = 'lissajous'
-    generator_params = [1, 15]
+    generator_params = [1, 20]
 
 context = zmq.Context()
 subscriber = context.socket(zmq.SUB)

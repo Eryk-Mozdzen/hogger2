@@ -46,8 +46,8 @@ add_trajectory('line', v*t, 0, 0)
 a = sp.Symbol('params[0]')
 T = sp.Symbol('params[1]')
 w = 4*sp.pi/T
-x = a*sp.sin(w*(t/2))
-y = a*sp.cos(w*(t - sp.pi/4))
+x = a*sp.sin(w*t/2)
+y = a*sp.cos(w*t + sp.pi/4)
 theta = sp.atan2(y.diff(t), x.diff(t))
 
 add_trajectory('lissajous', x, y, theta)
