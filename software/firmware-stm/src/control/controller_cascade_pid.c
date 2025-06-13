@@ -10,8 +10,7 @@
 #include "generated/estimator.h"
 #include "utils/task.h"
 
-#define MOTOR_VEL    -250.f
-#define DEG2RAD(deg) (M_PI * (deg) / 180.f)
+#define MOTOR_VEL -250.f
 
 // #define EXPERIMENT_INNER_THETA
 // #define EXPERIMENT_OUTER_THETA
@@ -38,10 +37,10 @@ typedef struct {
 } controller_t;
 
 static controller_t controller = {
-    .inner_theta = PID_INIT(2.260574, 3.511004, 0, -2 * M_PI, 2 * M_PI), // PI CHR 0%
+    .inner_theta = PID_INIT(2.260574, 3.511004, 0, -4 * M_PI, 4 * M_PI), // PI CHR 0%
     .outer_theta = PID_INIT(11.334450, 0, 3.838592, -M_PI, M_PI),        // PD Lambda = 0.25
-    .inner_x = PID_INIT(3.726573, 5.949067, 0, -1, 1),                   // PI CHR 0%
-    .inner_y = PID_INIT(0.816472, 1.703120, 0, -1, 1),                   // PI CHR 0%
+    .inner_x = PID_INIT(3.726573, 5.949067, 0, -1.5, 1.5),               // PI CHR 0%
+    .inner_y = PID_INIT(0.816472, 1.703120, 0, -1.5, 1.5),               // PI CHR 0%
     .outer_x = PID_INIT(4.257331, 0, 1.104396, -0.5, 0.5),               // PD Lambda = 1
     .outer_y = PID_INIT(3.626742, 0, 1.073429, -0.5, 0.5),               // PD Lambda = 1
 };
