@@ -5,24 +5,25 @@
 #include "actuate/servos.h"
 #include "com/stream.h"
 #include "com/telemetry.h"
-#include "control/simultaneous_naive.h"
+#include "control/robot_parameters.h"
 #include "control/trajectory.h"
 #include "control/watchdog.h"
 #include "generated/estimator.h"
 #include "utils/task.h"
 
-#define CONTROLLER_K 1.f
-#define MOTOR_VEL    300.f
-#define GIMBAL_MAX   (5.f * M_PI / 180.f)
+#define CONTROLLER_K 2.f
+#define MOTOR_VEL    -250.f
+#define GIMBAL_MAX   (3.f * M_PI / 180.f)
+#define CLAMP(val)                                                                                 \
+    (((val) > (GIMBAL_MAX)) ? (GIMBAL_MAX) : (((val) < (-GIMBAL_MAX)) ? (-GIMBAL_MAX) : (val)))
 
-#define CLAMP(val, min, max) (((val) > (max)) ? (max) : (((val) < (min)) ? (min) : (val)))
+// #define CONTROLS_IDENTICAL
+#define CONTROLS_MIRRORED
 
 typedef struct {
     bool started;
     uint32_t time_start;
     float time;
-    float q[3];
-    float ref[4];
 } controller_t;
 
 static controller_t controller = {0};
@@ -42,6 +43,29 @@ static void abort() {
     controller.started = false;
 }
 
+static void naive_control_law(const float *dhd, const float *hd, const float *q, float *ref) {
+    const float cos_theta = cosf(q[2]);
+    const float sin_theta = sinf(q[2]);
+
+    const float x = dhd[0] - CONTROLLER_K * (q[0] - hd[0]);
+    const float y = dhd[1] - CONTROLLER_K * (q[1] - hd[1]);
+
+    ref[0] = +(x * cos_theta) + (y * sin_theta);
+    ref[1] = -(x * sin_theta) + (y * cos_theta);
+}
+
+static float saturable_arcsin(const float x) {
+    if(x > 1.f) {
+        return M_PI / 2;
+    }
+
+    if(x < -1.f) {
+        return -M_PI / 2;
+    }
+
+    return asinf(x);
+}
+
 static void loop() {
     const uint32_t now = task_timebase();
 
@@ -55,22 +79,40 @@ static void loop() {
     trajectory_t trajectory;
     trajectory_get(&trajectory, controller.time);
 
-    controller.ref[0] = TRAJECTORY_GET_X(&trajectory);
-    controller.ref[1] = TRAJECTORY_GET_Y(&trajectory);
-    controller.ref[2] = TRAJECTORY_GET_D_X(&trajectory);
-    controller.ref[3] = TRAJECTORY_GET_D_Y(&trajectory);
+    const float dhd[2] = {
+        TRAJECTORY_GET_D_X(&trajectory),
+        TRAJECTORY_GET_D_Y(&trajectory),
+    };
+    const float hd[2] = {
+        TRAJECTORY_GET_X(&trajectory),
+        TRAJECTORY_GET_Y(&trajectory),
+    };
+    const float q[3] = {
+        estimator_state_get_x(),
+        estimator_state_get_y(),
+        estimator_state_get_theta(),
+    };
+    float ref[2];
+    naive_control_law(dhd, hd, q, ref);
 
-    controller.q[0] = estimator_state_get_x();
-    controller.q[1] = estimator_state_get_y();
-    controller.q[2] = estimator_state_get_theta();
+    const float theta_u = saturable_arcsin(-ref[1] / (ROBOT_PARAMETER_R * MOTOR_VEL));
+    const float phi_u = saturable_arcsin(-ref[0] / (ROBOT_PARAMETER_R * MOTOR_VEL * cosf(theta_u)));
 
-    float gimbal[2];
-    simultaneous_naive_feedback(gimbal, MOTOR_VEL, controller.q, controller.ref, CONTROLLER_K);
+#if defined(CONTROLS_IDENTICAL)
+    const float phi1 = phi_u;
+    const float theta1 = theta_u;
+    const float phi2 = phi_u;
+    const float theta2 = theta_u;
+#endif
 
-    const float phi12d = CLAMP(gimbal[0], -GIMBAL_MAX, +GIMBAL_MAX);
-    const float theta12d = CLAMP(gimbal[1], -GIMBAL_MAX, +GIMBAL_MAX);
+#if defined(CONTROLS_MIRRORED)
+    const float phi1 = phi_u;
+    const float theta1 = theta_u;
+    const float phi2 = -phi_u;
+    const float theta2 = -theta_u;
+#endif
 
-    servos_set_position(phi12d, theta12d, phi12d, theta12d);
+    servos_set_position(CLAMP(phi1), CLAMP(theta1), CLAMP(phi2), CLAMP(theta2));
 }
 
 static void serialize(cmp_ctx_t *cmp, void *context) {

@@ -53,12 +53,12 @@ static void Tu(const float u_x, const float u_y, const float u_theta, float *out
     output[3] = u_y / (ROBOT_PARAMETER_R * MOTOR_VEL);
 }
 
-static void Ttheta(const float alpha, const float x, const float y, float *output) {
-    const float sin_alpha = sinf(alpha);
-    const float cos_alpha = cosf(alpha);
+static void Ttheta(const float theta, const float x, const float y, float *output) {
+    const float sin_theta = sinf(theta);
+    const float cos_theta = cosf(theta);
 
-    output[0] = (x * cos_alpha) - (y * sin_alpha);
-    output[1] = (x * sin_alpha) + (y * cos_alpha);
+    output[0] = +(x * cos_theta) + (y * sin_theta);
+    output[1] = -(x * sin_theta) + (y * cos_theta);
 }
 
 static void ok(mpack_t *mpack) {
@@ -100,16 +100,16 @@ static void loop() {
     const float dtheta = estimator_state_get_dottheta();
 
     float local_pos_ref[2];
-    Ttheta(-theta, TRAJECTORY_GET_X(&trajectory), TRAJECTORY_GET_Y(&trajectory), local_pos_ref);
+    Ttheta(theta, TRAJECTORY_GET_X(&trajectory), TRAJECTORY_GET_Y(&trajectory), local_pos_ref);
 
     float local_vel_ref[2];
-    Ttheta(-theta, TRAJECTORY_GET_D_X(&trajectory), TRAJECTORY_GET_D_Y(&trajectory), local_vel_ref);
+    Ttheta(theta, TRAJECTORY_GET_D_X(&trajectory), TRAJECTORY_GET_D_Y(&trajectory), local_vel_ref);
 
     float local_pos[2];
-    Ttheta(-theta, estimator_state_get_x(), estimator_state_get_y(), local_pos);
+    Ttheta(theta, estimator_state_get_x(), estimator_state_get_y(), local_pos);
 
     float local_vel[2];
-    Ttheta(-theta, estimator_state_get_dotx(), estimator_state_get_doty(), local_vel);
+    Ttheta(theta, estimator_state_get_dotx(), estimator_state_get_doty(), local_vel);
 
 #if !defined(EXPERIMENT_INNER_THETA) && !defined(EXPERIMENT_INNER_X) &&                            \
     !defined(EXPERIMENT_INNER_Y) && !defined(EXPERIMENT_OUTER_THETA) &&                            \
