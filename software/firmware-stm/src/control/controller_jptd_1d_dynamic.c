@@ -6,7 +6,7 @@
 #include "com/stream.h"
 #include "com/telemetry.h"
 #include "control/integrator.h"
-#include "control/jptd_dynamic_1d.h"
+#include "control/jptd_1d_dynamic.h"
 #include "control/robot_parameters.h"
 #include "control/trajectory.h"
 #include "control/watchdog.h"
@@ -120,7 +120,7 @@ static void loop() {
     controller.hd[8] = 0;
 
     float v[3];
-    jptd_dynamic_1d_feedback_v(v, K1, K2, controller.h, controller.hd);
+    jptd_1d_dynamic_feedback_v(v, K1, K2, controller.h, controller.hd);
 
     float phi1;
     float phi2;
@@ -140,7 +140,7 @@ static void loop() {
     };
 
     float u[3];
-    jptd_dynamic_1d_linearize_u(u, v, eta, controller.q);
+    jptd_1d_dynamic_linearize_u(u, v, eta, controller.q);
 
     eta[0] = u[0];
     eta[1] = u[1];

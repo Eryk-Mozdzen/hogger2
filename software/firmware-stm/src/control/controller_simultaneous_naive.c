@@ -5,7 +5,7 @@
 #include "actuate/servos.h"
 #include "com/stream.h"
 #include "com/telemetry.h"
-#include "control/naive.h"
+#include "control/simultaneous_naive.h"
 #include "control/trajectory.h"
 #include "control/watchdog.h"
 #include "generated/estimator.h"
@@ -60,12 +60,12 @@ static void loop() {
     controller.ref[2] = TRAJECTORY_GET_D_X(&trajectory);
     controller.ref[3] = TRAJECTORY_GET_D_Y(&trajectory);
 
-    controller.q[0] = estimator_state_get_px();
-    controller.q[1] = estimator_state_get_py();
+    controller.q[0] = estimator_state_get_x();
+    controller.q[1] = estimator_state_get_y();
     controller.q[2] = estimator_state_get_theta();
 
     float gimbal[2];
-    naive_feedback(gimbal, MOTOR_VEL, controller.q, controller.ref, CONTROLLER_K);
+    simultaneous_naive_feedback(gimbal, MOTOR_VEL, controller.q, controller.ref, CONTROLLER_K);
 
     const float phi12d = CLAMP(gimbal[0], -GIMBAL_MAX, +GIMBAL_MAX);
     const float theta12d = CLAMP(gimbal[1], -GIMBAL_MAX, +GIMBAL_MAX);

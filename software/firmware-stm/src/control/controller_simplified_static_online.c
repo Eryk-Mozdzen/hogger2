@@ -89,8 +89,8 @@ static void loop() {
     float theta2;
     servos_get_position(&phi1, &theta1, &phi2, &theta2);
 
-    controller.q[0] = estimator_state_get_px();
-    controller.q[1] = estimator_state_get_py();
+    controller.q[0] = estimator_state_get_x();
+    controller.q[1] = estimator_state_get_y();
     controller.q[2] = estimator_state_get_theta();
     controller.q[3] = phi1;
     controller.q[4] = theta1;

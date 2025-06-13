@@ -15,8 +15,8 @@ if len(sys.argv)==4:
         float(sys.argv[3]),
     ]
 else:
-    generator_name = 'lemniscate'
-    generator_params = [0.5, 15]
+    generator_name = 'lissajous'
+    generator_params = [1, 15]
 
 context = zmq.Context()
 subscriber = context.socket(zmq.SUB)

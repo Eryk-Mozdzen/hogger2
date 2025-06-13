@@ -1,7 +1,7 @@
 import sympy as sp
 import c_source_gen
 
-source = c_source_gen.Source('naive')
+source = c_source_gen.Source('simultaneous_naive')
 
 t = sp.Symbol('t')
 

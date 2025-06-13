@@ -89,14 +89,14 @@ h2 = h.diff(t, 2).subs([
     (q[8].diff(t), q1[8]),
 ])
 
-Kdd = h2.jacobian(u)
-P = h2 - Kdd*u
+D = h2.jacobian(u)
+P = h2 - D*u
 
-Kdd = sp.simplify(Kdd)
+D = sp.simplify(D)
 P = sp.simplify(P)
 
-sp.pprint(Kdd)
-sp.pprint(sp.simplify(Kdd.det()))
+sp.pprint(D)
+sp.pprint(sp.simplify(D.det()))
 sp.pprint(P)
 
 subs = [
@@ -113,9 +113,9 @@ subs = [
     (sp.sin(theta2), sp.Symbol('s_{\\theta_{2}}')),
     (sp.cos(theta2), sp.Symbol('c_{\\theta_{2}}')),
 ]
-print(sp.latex(Kdd.subs(subs)))
+print(sp.latex(D.subs(subs)))
 print(sp.latex(P.subs(subs)))
-print(sp.latex(sp.simplify(Kdd.det()).subs(subs)))
+print(sp.latex(sp.simplify(D.det()).subs(subs)))
 
 v = sp.Matrix([
     sp.Symbol('v_1'),
@@ -125,7 +125,7 @@ v = sp.Matrix([
     sp.Symbol('v_5'),
 ])
 
-u = Kdd.inv()*(v - P)
+u = D.inv()*(v - P)
 
 u = u.subs([
     (v[0], sp.Symbol('v[0]')),

@@ -1,7 +1,7 @@
 import sympy as sp
 import c_source_gen
 
-source = c_source_gen.Source('jptd_dynamic_1d')
+source = c_source_gen.Source('jptd_1d_dynamic')
 
 t = sp.Symbol('t')
 
@@ -69,14 +69,14 @@ h2 = h.diff(t, 2).subs([
     (q[5].diff(t), q1[5]),
 ])
 
-Kdd = h2.jacobian(u)
-P = h2 - Kdd*u
+D = h2.jacobian(u)
+P = h2 - D*u
 
-Kdd = sp.simplify(Kdd)
+D = sp.simplify(D)
 P = sp.simplify(P)
 
-sp.pprint(Kdd)
-sp.pprint(sp.simplify(Kdd.det()))
+sp.pprint(D)
+sp.pprint(sp.simplify(D.det()))
 sp.pprint(P)
 
 subs = [
@@ -88,9 +88,9 @@ subs = [
     (sp.sin(phi2), sp.Symbol('s_{\\phi_{2}}')),
     (sp.cos(phi2), sp.Symbol('c_{\\phi_{2}}')),
 ]
-print(sp.latex(Kdd.subs(subs)))
+print(sp.latex(D.subs(subs)))
 print(sp.latex(P.subs(subs)))
-print(sp.latex(sp.simplify(Kdd.det()).subs(subs)))
+print(sp.latex(sp.simplify(D.det()).subs(subs)))
 
 v = sp.Matrix([
     sp.Symbol('v_1'),
@@ -98,7 +98,7 @@ v = sp.Matrix([
     sp.Symbol('v_3'),
 ])
 
-u = Kdd.inv()*(v - P)
+u = D.inv()*(v - P)
 
 #u = sp.simplify(u)
 
