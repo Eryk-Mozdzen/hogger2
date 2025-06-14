@@ -24,7 +24,7 @@ software/firmware-stm/generated
 !software/firmware-stm/cubemx/cubemx.ioc
 
 software/*.ndjson
-software/pid_autotuner_summary.csv
+software/pid_autotuner_step_response.svg
 
 __pycache__
 .ipynb_checkpoints

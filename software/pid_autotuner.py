@@ -1,10 +1,18 @@
 import sys
 import json
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FixedLocator
 import numpy as np
 from collections import defaultdict
 import scipy.optimize
-import csv
+
+plt.rcParams.update({
+    "text.usetex": True,
+    "font.family": "serif",
+    "font.size": 12,
+    "svg.fonttype": "none",
+    "text.latex.preamble": r"\usepackage{newpxtext}\usepackage{eulervm}",
+})
 
 def make_recursive_list_dict():
     return defaultdict(make_recursive_list_dict)
@@ -39,34 +47,23 @@ with open(sys.argv[1], 'r') as file:
             collect_values(data_raw, telemetry)
 
 data = convert_to_normal_dict(data_raw)
+freq = 100
 
 data['timestamp'] = [(t - data['timestamp'][0])*1e-6 for t in data['timestamp']]
 
 if sys.argv[2]=='controller':
-    plt.figure()
-    plt.plot(data['timestamp'], data['controller']['exp_step'], label='step')
-    plt.plot(data['timestamp'], data['controller']['exp_response'], label='step response')
-    plt.grid()
-    plt.legend()
-
     step_start = np.nonzero(data['controller']['exp_step'])[0][0]
     step_value = max(data['controller']['exp_step'])
 
-    before = 100
-    duration = 500
-    time = np.array([t - data['timestamp'][step_start] for t in data['timestamp'][step_start-before:step_start+duration]])
-    step = np.array(data['controller']['exp_step'][step_start-before:step_start+duration])
-    response = np.array(data['controller']['exp_response'][step_start-before:step_start+duration])
+    before = 1
+    duration = 5
+    time = np.array([t - data['timestamp'][step_start] for t in data['timestamp'][step_start-int(before*freq):step_start+int(duration*freq)]])
+    step = np.array(data['controller']['exp_step'][step_start-int(before*freq):step_start+int(duration*freq)])
+    response = np.array(data['controller']['exp_response'][step_start-int(before*freq):step_start+int(duration*freq)])
 
 if sys.argv[2]=='motor_1' or sys.argv[2]=='motor_2':
     motor = sys.argv[2]
     running_idx = [i for i, val in enumerate(data[motor]['state']) if val=='running']
-
-    plt.figure()
-    plt.plot(np.array(data['timestamp'])[running_idx], np.array(data[motor]['load'])[running_idx], label='step')
-    plt.plot(np.array(data['timestamp'])[running_idx], np.array(data[motor]['vel'])[running_idx], label='step response')
-    plt.grid()
-    plt.legend()
 
     step_start = 0
     for i in running_idx:
@@ -74,13 +71,11 @@ if sys.argv[2]=='motor_1' or sys.argv[2]=='motor_2':
             step_start = i
             step_value = data[motor]['load'][i+1] - data[motor]['load'][i]
 
-    before = 100
-    duration = 500
-    time = np.array([t - data['timestamp'][step_start] for t in data['timestamp'][step_start-before:step_start+duration]])
-    step = np.array(data[motor]['load'][step_start-before:step_start+duration])
-    response = np.array(data[motor]['vel'][step_start-before:step_start+duration])
-
-# https://www.ucg.ac.me/skladiste/blog_2146/objava_92847/fajlovi/Astrom.pdf
+    before = 0.5
+    duration = 2
+    time = np.array([t - data['timestamp'][step_start] for t in data['timestamp'][step_start-int(before*freq):step_start+int(duration*freq)]])
+    step = np.array(data[motor]['load'][step_start-int(before*freq):step_start+int(duration*freq)])
+    response = np.array(data[motor]['vel'][step_start-int(before*freq):step_start+int(duration*freq)])
 
 if sys.argv[3]=='inertial':
 
@@ -108,19 +103,41 @@ if sys.argv[3]=='inertial':
     tangent_a = K*(-np.exp(-(tangent_time - L)/T2) + np.exp(-(tangent_time - L)/T1))/(T1 - T2)
     tangent_b = model(tangent_time, K, T1, T2, L, Y0) - tangent_a*tangent_time
     tangent = tangent_a*time + tangent_b
-    tangent_idx = (tangent > Y0) & (tangent < K+Y0)
     tangent_begin = (-tangent_b + Y0)/tangent_a
     tangent_end = (-tangent_b + Y0 + K)/tangent_a
 
-    plt.figure('inertial model')
-    plt.plot(time, ideal, color='blue')
-    plt.plot(time[tangent_idx], tangent[tangent_idx], linestyle='dashed', color='black')
-    plt.vlines(tangent_begin, ymin=Y0, ymax=(Y0+K), linestyle='dashed', color='black')
-    plt.vlines(tangent_end, ymin=Y0, ymax=(Y0+K), linestyle='dashed', color='black')
-    plt.plot(time, np.full_like(time, Y0), linestyle='dashed', color='black')
-    plt.plot(time, np.full_like(time, Y0+K), linestyle='dashed', color='black')
-    plt.plot(time, response, color='red')
-    plt.grid()
+    fig, ax1 = plt.subplots()
+    ax2 = ax1.twinx()
+
+    ax1.plot(time, ideal, color='red', label='model', zorder=1)
+    ax1.scatter(time, response, color='black', label='response', s=2, zorder=2)
+    ax2.plot(time, step, color='blue', label='step')
+
+    ax1.autoscale()
+    ax2.autoscale()
+    lim1 = ax1.get_ylim()
+    lim2 = ax2.get_ylim()
+
+    ax1.plot(time, tangent, linestyle='dashed', color='black', linewidth=0.75, zorder=0)
+    ax1.vlines(tangent_end, ymin=-1000, ymax=1000, linestyle='dashed', color='black', linewidth=0.75, zorder=0)
+    ax1.plot(time, np.full_like(time, Y0), linestyle='dashed', color='black', linewidth=0.75, zorder=0)
+    ax1.plot(time, np.full_like(time, Y0+K), linestyle='dashed', color='black', linewidth=0.75, zorder=0)
+    ax2.plot(time, np.full_like(time, step[0]), linestyle='dashed', color='black', linewidth=0.75, zorder=0)
+
+    ax1.grid()
+    ax1.set_xlim(-before, duration)
+    ax1.set_xlim(-before, duration)
+    ax1.set_ylim(lim1)
+    ax2.set_ylim(lim2[0] - (lim2[1] - lim2[0]), lim2[1] + (lim2[1] - lim2[0]))
+
+    ax1.set_xlabel('time [s]')
+    ax1.set_ylabel('response')
+    ax2.set_ylabel('step')
+
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+
+    ax1.legend(lines2 + lines1, labels2 + labels1, loc='best')
 
     print('lines')
     print(f'    bottom = {Y0:+7.3f}')
@@ -208,14 +225,38 @@ if sys.argv[3]=='integrating':
     ideal = model(time, K, T, Y0)
 
     tangent = K*time - K*T + Y0
-    tangent_idx = tangent > Y0
 
-    plt.figure('integrating model')
-    plt.plot(time, ideal, color='blue')
-    plt.plot(time[tangent_idx], tangent[tangent_idx], linestyle='dashed', color='black')
-    plt.plot(time, np.full_like(time, Y0), linestyle='dashed', color='black')
-    plt.plot(time, response, color='red')
-    plt.grid()
+    fig, ax1 = plt.subplots()
+    ax2 = ax1.twinx()
+
+    ax1.plot(time, ideal, color='red', label='model', zorder=1)
+    ax1.scatter(time, response, color='black', label='response', s=2, zorder=2)
+    ax2.plot(time, step, color='blue', label='step')
+
+    ax1.autoscale()
+    ax2.autoscale()
+    lim1 = ax1.get_ylim()
+    lim2 = ax2.get_ylim()
+
+    ax1.plot(time, tangent, linestyle='dashed', color='black', linewidth=0.75, zorder=0)
+    ax1.plot(time, np.full_like(time, Y0), linestyle='dashed', color='black', linewidth=0.75, zorder=0)
+    ax1.plot(time, tangent, linestyle='dashed', color='black', linewidth=0.75, zorder=0)
+    ax2.plot(time, np.full_like(time, step[0]), linestyle='dashed', color='black', linewidth=0.75, zorder=0)
+
+    ax1.grid()
+    ax1.set_xlim(-1, 5)
+    ax1.set_xlim(-1, 5)
+    ax1.set_ylim(lim1)
+    ax2.set_ylim(lim2[0] - (lim2[1] - lim2[0]), lim2[1] + (lim2[1] - lim2[0]))
+
+    ax1.set_xlabel('time [s]')
+    ax1.set_ylabel('response')
+    ax2.set_ylabel('step')
+
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+
+    ax1.legend(lines2 + lines1, labels2 + labels1, loc='best')
 
     print('lines')
     print(f'    bottom = {Y0:+7.3f}')
@@ -239,15 +280,6 @@ if sys.argv[3]=='integrating':
     Kd = 1/(K*Lambda)
     print(f'PD  {Kp:10f}            {Kd:10f}  no overshoot')
 
-with open('pid_autotuner_summary.csv', 'w') as file:
-    writer = csv.DictWriter(file, fieldnames=['time', 'step', 'response', 'model'])
-    writer.writeheader()
-    for t, s, r, m in zip(time, step, response, ideal):
-        writer.writerow({
-            'time': t,
-            'step': s,
-            'response': r,
-            'model': m,
-        })
+fig.savefig('pid_autotuner_step_response.svg', bbox_inches='tight', pad_inches=0)
 
 plt.show()
