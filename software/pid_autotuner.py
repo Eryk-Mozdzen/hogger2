@@ -1,7 +1,6 @@
 import sys
 import json
 import matplotlib.pyplot as plt
-from matplotlib.ticker import FixedLocator
 import numpy as np
 from collections import defaultdict
 import scipy.optimize
