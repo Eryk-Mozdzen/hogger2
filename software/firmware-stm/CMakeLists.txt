@@ -118,7 +118,6 @@ add_executable(${TARGET}
     "../common/control/generators.c"
     "../common/control/jptd_dynamic.c"
     "../common/control/jptd_1d_dynamic.c"
-    "../common/control/simultaneous_naive.c"
     "../common/control/simplified_static_online.c"
 
 	"src/main.c"

@@ -103,7 +103,7 @@ static void serialize(cmp_ctx_t *cmp, void *context) {
 
     for(uint32_t i = 0; i < 4; i++) {
         cmp_write_str(cmp, names[i], strlen(names[i]));
-        cmp_write_map(cmp, 4);
+        cmp_write_map(cmp, 5);
         cmp_write_str(cmp, "pos_ref", 7);
         cmp_write_float(cmp, servos[i]->goal - offset[i]);
         cmp_write_str(cmp, "pos", 3);
@@ -112,6 +112,8 @@ static void serialize(cmp_ctx_t *cmp, void *context) {
         cmp_write_float(cmp, servos[i]->valid ? servos[i]->velocity : NAN);
         cmp_write_str(cmp, "load", 4);
         cmp_write_float(cmp, servos[i]->valid ? servos[i]->load : NAN);
+        cmp_write_str(cmp, "offset", 6);
+        cmp_write_float(cmp, offset[i]);
     }
 }
 
