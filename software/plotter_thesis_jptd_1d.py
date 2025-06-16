@@ -65,6 +65,7 @@ data = convert_to_normal_dict(data_raw)
 
 data['timestamp'] = [(t - data['timestamp'][0])*1e-6 for t in data['timestamp']]
 
+D = 0.1
 duration = 30
 
 valid_indices = [i for i, t in enumerate(data['timestamp']) if t <= duration]
@@ -80,8 +81,8 @@ os.makedirs(path, exist_ok=True)
 plt.figure()
 plt.plot(data['trajectory'][0], data['trajectory'][1], linestyle='dashed', color='black')
 plt.plot(data['estimate']['pos'][0], data['estimate']['pos'][1], color='red')
-plt.xlabel('x [m]')
-plt.ylabel('y [m]')
+plt.xlabel('robot x [m]')
+plt.ylabel('robot y [m]')
 plt.grid()
 plt.gca().set_aspect('equal')
 
@@ -100,8 +101,37 @@ plt.ylim(y_center - side / 2, y_center + side / 2)
 
 plt.savefig(f'{path}/tracking_xy.svg', bbox_inches='tight', pad_inches=0)
 
+virtual_shaft_ref_x = np.array(data['trajectory'][0]) + D*np.cos(np.array(data['trajectory'][2]))
+virtual_shaft_ref_y = np.array(data['trajectory'][1]) + D*np.sin(np.array(data['trajectory'][2]))
+
+virtual_shaft_x = np.array(data['estimate']['pos'][0]) + D*np.cos(np.array(data['estimate']['pos'][2]))
+virtual_shaft_y = np.array(data['estimate']['pos'][1]) + D*np.sin(np.array(data['estimate']['pos'][2]))
+
 plt.figure()
-plt.plot(data['timestamp'], data['estimate']['pos'][2], color='blue')
+plt.plot(virtual_shaft_ref_x, virtual_shaft_ref_y, linestyle='dashed', color='black')
+plt.plot(virtual_shaft_x, virtual_shaft_y, color='red')
+plt.xlabel('virtual shaft x [m]')
+plt.ylabel('virtual shaft y [m]')
+plt.grid()
+plt.gca().set_aspect('equal')
+
+xlim = plt.xlim()
+ylim = plt.ylim()
+
+x_range = xlim[1] - xlim[0]
+y_range = ylim[1] - ylim[0]
+side = max(x_range, y_range)
+
+x_center = 0.5 * (xlim[0] + xlim[1])
+y_center = 0.5 * (ylim[0] + ylim[1])
+
+plt.xlim(x_center - side / 2, x_center + side / 2)
+plt.ylim(y_center - side / 2, y_center + side / 2)
+
+plt.savefig(f'{path}/tracking_xy_virtual_shaft.svg', bbox_inches='tight', pad_inches=0)
+
+plt.figure()
+plt.plot(data['timestamp'], np.array(data['estimate']['pos'][2]), color='blue')
 plt.xlabel('time [s]')
 plt.ylabel('$\\theta$ [rad]')
 plt.grid()
@@ -112,11 +142,21 @@ plt.figure()
 plt.plot(data['timestamp'], np.array(data['estimate']['pos'][0]) - np.array(data['trajectory'][0]), label='$e_x$', color='red')
 plt.plot(data['timestamp'], np.array(data['estimate']['pos'][1]) - np.array(data['trajectory'][1]), label='$e_y$', color='green')
 plt.xlabel('time [s]')
-plt.ylabel('error [m]')
+plt.ylabel('robot position error [m]')
 plt.grid()
 plt.legend()
 plt.xlim(0, duration)
 plt.savefig(f'{path}/error_xy.svg', bbox_inches='tight', pad_inches=0)
+
+plt.figure()
+plt.plot(data['timestamp'], virtual_shaft_x - virtual_shaft_ref_x, label='$e_x$', color='red')
+plt.plot(data['timestamp'], virtual_shaft_y - virtual_shaft_ref_y, label='$e_y$', color='green')
+plt.xlabel('time [s]')
+plt.ylabel('virtual shaft position error [m]')
+plt.grid()
+plt.legend()
+plt.xlim(0, duration)
+plt.savefig(f'{path}/error_xy_virtual_shaft.svg', bbox_inches='tight', pad_inches=0)
 
 plt.figure()
 plt.plot(data['timestamp'], np.degrees(data['servos']['phi_1']['pos_ref']), linestyle='dashed', color='black')
@@ -129,16 +169,6 @@ plt.ylim(-5, 5)
 plt.savefig(f'{path}/control_phi_1.svg', bbox_inches='tight', pad_inches=0)
 
 plt.figure()
-plt.plot(data['timestamp'], np.degrees(data['servos']['theta_1']['pos_ref']), linestyle='dashed', color='black')
-plt.plot(data['timestamp'], np.degrees(data['servos']['theta_1']['pos']), color='green')
-plt.xlabel('time [s]')
-plt.ylabel('$\\theta_1$ [deg]')
-plt.grid()
-plt.xlim(0, duration)
-plt.ylim(-5, 5)
-plt.savefig(f'{path}/control_theta_1.svg', bbox_inches='tight', pad_inches=0)
-
-plt.figure()
 plt.plot(data['timestamp'], np.degrees(data['servos']['phi_2']['pos_ref']), linestyle='dashed', color='black')
 plt.plot(data['timestamp'], np.degrees(data['servos']['phi_2']['pos']), color='blue')
 plt.xlabel('time [s]')
@@ -147,6 +177,16 @@ plt.grid()
 plt.xlim(0, duration)
 plt.ylim(-5, 5)
 plt.savefig(f'{path}/control_phi_2.svg', bbox_inches='tight', pad_inches=0)
+
+plt.figure()
+plt.plot(data['timestamp'], np.degrees(data['servos']['theta_1']['pos_ref']), linestyle='dashed', color='black')
+plt.plot(data['timestamp'], np.degrees(data['servos']['theta_1']['pos']), color='green')
+plt.xlabel('time [s]')
+plt.ylabel('$\\theta_1$ [deg]')
+plt.grid()
+plt.xlim(0, duration)
+plt.ylim(-5, 5)
+plt.savefig(f'{path}/control_theta_1.svg', bbox_inches='tight', pad_inches=0)
 
 plt.figure()
 plt.plot(data['timestamp'], np.degrees(data['servos']['theta_2']['pos_ref']), linestyle='dashed', color='black')
@@ -175,5 +215,3 @@ plt.ylabel('$\\dot{\\psi}_2$ [rad/s]')
 plt.grid()
 plt.xlim(0, duration)
 plt.savefig(f'{path}/control_dot_psi_2.svg', bbox_inches='tight', pad_inches=0)
-
-print(f'mean angular velocity = {np.mean(data['estimate']['vel'][2])} rad/s')
