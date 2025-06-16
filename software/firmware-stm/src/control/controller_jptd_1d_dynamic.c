@@ -13,8 +13,8 @@
 #include "generated/estimator.h"
 #include "utils/task.h"
 
-#define CONTROLLER_K1 2000.f
-#define CONTROLLER_K2 1000.f
+#define CONTROLLER_K1 100.f
+#define CONTROLLER_K2 50.f
 #define MOTOR_VEL     -250.f
 #define GIMBAL_MAX    (4.f * M_PI / 180.f)
 

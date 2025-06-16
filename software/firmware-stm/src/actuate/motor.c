@@ -29,7 +29,7 @@
 #ifndef EXPERIMENT
 #define INCREMENT(motor, val) ((val >= 0) ^ (motor)->reverse_direction)
 #else
-#define INCREMENT(val) 1
+#define INCREMENT(motor, val) 0
 #endif
 
 static const motor_phase_t feedback_src_lookup_inc[6] = {

@@ -143,7 +143,6 @@ add_executable(${TARGET}
     "src/control/integrator.c"
     "src/control/derivative.c"
     "src/control/pid.c"
-    "src/control/moving_average.c"
 
     #"src/control/controller_jptd_dynamic.c"
     #"src/control/controller_jptd_1d_dynamic.c"

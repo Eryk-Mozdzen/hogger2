@@ -71,7 +71,7 @@ if sys.argv[2]=='motor_1' or sys.argv[2]=='motor_2':
             step_value = data[motor]['load'][i+1] - data[motor]['load'][i]
 
     before = 0.5
-    duration = 2
+    duration = 3
     time = np.array([t - data['timestamp'][step_start] for t in data['timestamp'][step_start-int(before*freq):step_start+int(duration*freq)]])
     step = np.array(data[motor]['load'][step_start-int(before*freq):step_start+int(duration*freq)])
     response = np.array(data[motor]['vel'][step_start-int(before*freq):step_start+int(duration*freq)])
