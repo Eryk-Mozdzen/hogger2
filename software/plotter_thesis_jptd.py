@@ -65,7 +65,7 @@ data = convert_to_normal_dict(data_raw)
 
 data['timestamp'] = [(t - data['timestamp'][0])*1e-6 for t in data['timestamp']]
 
-duration = 20
+duration = 30
 
 valid_indices = [i for i, t in enumerate(data['timestamp']) if t <= duration]
 ref_len = len(data['timestamp'])
@@ -101,7 +101,7 @@ plt.ylim(y_center - side / 2, y_center + side / 2)
 plt.savefig(f'{path}/tracking_xy_planar.svg', bbox_inches='tight', pad_inches=0)
 
 plt.figure()
-plt.plot(data['timestamp'], np.array(data['trajectory'][2]) - np.pi/4, linestyle='dashed', color='black')
+plt.plot(data['timestamp'], np.array(data['trajectory'][2]) + np.pi/4, linestyle='dashed', color='black')
 plt.plot(data['timestamp'], np.array(data['estimate']['pos'][2]), color='blue')
 plt.xlabel('time [s]')
 plt.ylabel('$\\theta$ [rad]')
@@ -134,7 +134,7 @@ plt.xlabel('time [s]')
 plt.ylabel('$\\phi_1$ [deg]')
 plt.grid()
 plt.xlim(0, duration)
-plt.ylim(-10, 10)
+plt.ylim(-5, 5)
 plt.savefig(f'{path}/control_phi_1.svg', bbox_inches='tight', pad_inches=0)
 
 plt.figure()
@@ -144,7 +144,7 @@ plt.xlabel('time [s]')
 plt.ylabel('$\\phi_2$ [deg]')
 plt.grid()
 plt.xlim(0, duration)
-plt.ylim(-10, 10)
+plt.ylim(-5, 5)
 plt.savefig(f'{path}/control_phi_2.svg', bbox_inches='tight', pad_inches=0)
 
 plt.figure()
@@ -154,7 +154,7 @@ plt.xlabel('time [s]')
 plt.ylabel('$\\theta_1$ [deg]')
 plt.grid()
 plt.xlim(0, duration)
-plt.ylim(-10, 10)
+plt.ylim(-5, 5)
 plt.savefig(f'{path}/control_theta_1.svg', bbox_inches='tight', pad_inches=0)
 
 plt.figure()
@@ -164,7 +164,7 @@ plt.xlabel('time [s]')
 plt.ylabel('$\\theta_2$ [deg]')
 plt.grid()
 plt.xlim(0, duration)
-plt.ylim(-10, 10)
+plt.ylim(-5, 5)
 plt.savefig(f'{path}/control_theta_2.svg', bbox_inches='tight', pad_inches=0)
 
 plt.figure()

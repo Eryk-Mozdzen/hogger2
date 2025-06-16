@@ -65,7 +65,7 @@ data = convert_to_normal_dict(data_raw)
 
 data['timestamp'] = [(t - data['timestamp'][0])*1e-6 for t in data['timestamp']]
 
-duration = 20
+duration = 30
 
 valid_indices = [i for i, t in enumerate(data['timestamp']) if t <= duration]
 ref_len = len(data['timestamp'])
