@@ -1,0 +1,21 @@
+#!/bin/bash
+
+python3 plotter_thesis_simultaneous.py records/simultaneous_naive_identical_200.ndjson
+python3 plotter_thesis_simultaneous.py records/simultaneous_naive_identical_350.ndjson
+python3 plotter_thesis_simultaneous.py records/simultaneous_naive_identical_500.ndjson
+
+python3 plotter_thesis_simultaneous.py records/simultaneous_naive_mirrored_200.ndjson
+python3 plotter_thesis_simultaneous.py records/simultaneous_naive_mirrored_350.ndjson
+python3 plotter_thesis_simultaneous.py records/simultaneous_naive_mirrored_500.ndjson
+
+python3 plotter_thesis_jptd.py records/jptd_dynamic_200.ndjson
+python3 plotter_thesis_jptd.py records/jptd_dynamic_350.ndjson
+python3 plotter_thesis_jptd.py records/jptd_dynamic_500.ndjson
+
+python3 plotter_thesis_jptd_1d.py records/jptd_1d_dynamic_200.ndjson
+python3 plotter_thesis_jptd_1d.py records/jptd_1d_dynamic_350.ndjson
+python3 plotter_thesis_jptd_1d.py records/jptd_1d_dynamic_500.ndjson
+
+python3 plotter_thesis_cascade_pid.py records/cascade_pid_200.ndjson
+python3 plotter_thesis_cascade_pid.py records/cascade_pid_350.ndjson
+python3 plotter_thesis_cascade_pid.py records/cascade_pid_500.ndjson

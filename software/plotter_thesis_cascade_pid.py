@@ -5,6 +5,7 @@ import glob
 import matplotlib.pyplot as plt
 import numpy as np
 from collections import defaultdict
+from matplotlib.ticker import MultipleLocator
 
 plt.rcParams.update({
     "text.usetex": True,
@@ -12,6 +13,7 @@ plt.rcParams.update({
     "font.size": 12,
     "svg.fonttype": "none",
     "text.latex.preamble": r"\usepackage{newpxtext}\usepackage{eulervm}",
+    "figure.figsize": [2.8, 2.4],
 })
 
 def make_recursive_list_dict():
@@ -67,7 +69,7 @@ data['timestamp'] = [(t - data['timestamp'][0])*1e-6 for t in data['timestamp']]
 
 duration = 30
 
-valid_indices = [i for i, t in enumerate(data['timestamp']) if t <= duration]
+valid_indices = [i for i, t in enumerate(data['timestamp']) if t <= duration and t>0.01]
 ref_len = len(data['timestamp'])
 data = recursive_filter(data, valid_indices, ref_len)
 
@@ -84,6 +86,8 @@ plt.xlabel('x [m]')
 plt.ylabel('y [m]')
 plt.grid()
 plt.gca().set_aspect('equal')
+plt.gca().xaxis.set_major_locator(MultipleLocator(1))
+plt.gca().yaxis.set_major_locator(MultipleLocator(1))
 
 xlim = plt.xlim()
 ylim = plt.ylim()
@@ -107,6 +111,7 @@ plt.xlabel('time [s]')
 plt.ylabel('$\\theta$ [rad]')
 plt.grid()
 plt.xlim(0, duration)
+plt.gca().xaxis.set_major_locator(MultipleLocator(5))
 plt.savefig(f'{path}/tracking_theta.svg', bbox_inches='tight', pad_inches=0)
 
 plt.figure()
@@ -117,6 +122,7 @@ plt.ylabel('error [m]')
 plt.grid()
 plt.legend()
 plt.xlim(0, duration)
+plt.gca().xaxis.set_major_locator(MultipleLocator(5))
 plt.savefig(f'{path}/error_xy.svg', bbox_inches='tight', pad_inches=0)
 
 plt.figure()
@@ -125,6 +131,7 @@ plt.xlabel('time [s]')
 plt.ylabel('error [rad]')
 plt.grid()
 plt.xlim(0, duration)
+plt.gca().xaxis.set_major_locator(MultipleLocator(5))
 plt.savefig(f'{path}/error_theta.svg', bbox_inches='tight', pad_inches=0)
 
 plt.figure()
@@ -135,6 +142,7 @@ plt.ylabel('$\\phi_1$ [deg]')
 plt.grid()
 plt.xlim(0, duration)
 plt.ylim(-10, 10)
+plt.gca().xaxis.set_major_locator(MultipleLocator(5))
 plt.savefig(f'{path}/control_phi_1.svg', bbox_inches='tight', pad_inches=0)
 
 plt.figure()
@@ -145,6 +153,7 @@ plt.ylabel('$\\phi_2$ [deg]')
 plt.grid()
 plt.xlim(0, duration)
 plt.ylim(-10, 10)
+plt.gca().xaxis.set_major_locator(MultipleLocator(5))
 plt.savefig(f'{path}/control_phi_2.svg', bbox_inches='tight', pad_inches=0)
 
 plt.figure()
@@ -155,6 +164,7 @@ plt.ylabel('$\\theta_1$ [deg]')
 plt.grid()
 plt.xlim(0, duration)
 plt.ylim(-10, 10)
+plt.gca().xaxis.set_major_locator(MultipleLocator(5))
 plt.savefig(f'{path}/control_theta_1.svg', bbox_inches='tight', pad_inches=0)
 
 plt.figure()
@@ -165,6 +175,7 @@ plt.ylabel('$\\theta_2$ [deg]')
 plt.grid()
 plt.xlim(0, duration)
 plt.ylim(-10, 10)
+plt.gca().xaxis.set_major_locator(MultipleLocator(5))
 plt.savefig(f'{path}/control_theta_2.svg', bbox_inches='tight', pad_inches=0)
 
 plt.figure()
@@ -174,6 +185,7 @@ plt.xlabel('time [s]')
 plt.ylabel('$\\dot{\\psi}_1$ [rad/s]')
 plt.grid()
 plt.xlim(0, duration)
+plt.gca().xaxis.set_major_locator(MultipleLocator(5))
 plt.savefig(f'{path}/control_dot_psi_1.svg', bbox_inches='tight', pad_inches=0)
 
 plt.figure()
@@ -183,4 +195,5 @@ plt.xlabel('time [s]')
 plt.ylabel('$\\dot{\\psi}_2$ [rad/s]')
 plt.grid()
 plt.xlim(0, duration)
+plt.gca().xaxis.set_major_locator(MultipleLocator(5))
 plt.savefig(f'{path}/control_dot_psi_2.svg', bbox_inches='tight', pad_inches=0)
