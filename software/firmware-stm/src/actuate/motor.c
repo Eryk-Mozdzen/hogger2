@@ -27,18 +27,16 @@
 #define CLAMP(val, min, max) (((val) > (max)) ? (max) : (((val) < (min)) ? (min) : (val)))
 
 #ifndef EXPERIMENT
-#define DIRECTION(motor, val)                                                                      \
-    (((val >= 0) ^ ((motor)->positive_direction != MOTOR_DIRECTION_CW)) ? MOTOR_DIRECTION_CW       \
-                                                                        : MOTOR_DIRECTION_CCW)
+#define INCREMENT(motor, val) ((val >= 0) ^ (motor)->reverse_direction)
 #else
-#define DIRECTION(val) MOTOR_DIRECTION_CW
+#define INCREMENT(motor, val) 0
 #endif
 
-static const motor_phase_t feedback_src_lookup_cw[6] = {
+static const motor_phase_t feedback_src_lookup_inc[6] = {
     MOTOR_PHASE_U, MOTOR_PHASE_W, MOTOR_PHASE_V, MOTOR_PHASE_U, MOTOR_PHASE_W, MOTOR_PHASE_V,
 };
 
-static const motor_phase_t feedback_src_lookup_ccw[6] = {
+static const motor_phase_t feedback_src_lookup_dec[6] = {
     MOTOR_PHASE_V, MOTOR_PHASE_U, MOTOR_PHASE_W, MOTOR_PHASE_V, MOTOR_PHASE_U, MOTOR_PHASE_W,
 };
 
@@ -155,17 +153,22 @@ void motor_tick(motor_t *motor) {
     const uint32_t time = HAL_GetTick() - motor->state_start_time;
 
     if(software_timer(&motor->vel_task, time, VEL_PERIOD)) {
-        const int32_t count = motor->zc_count;
+        const uint32_t count = motor->zc_count;
         motor->zc_count = 0;
 
-        const float velocity = (2.f * M_PI * count) / (6 * POLE_PAIRS * VEL_PERIOD * 0.001f);
+        float velocity = (2.f * M_PI * count) / (6 * POLE_PAIRS * VEL_PERIOD * 0.001f);
+
+        if(!(motor->increment_step ^ motor->reverse_direction)) {
+            velocity *= -1;
+        }
+
         motor->vel = VEL_FILTER * motor->vel + (1.f - VEL_FILTER) * velocity;
     }
 
     switch(motor->state) {
         case MOTOR_STATE_IDLE: {
             if(fabs(motor->vel_setpoint) > VEL_THRESHOLD) {
-                motor->direction = DIRECTION(motor, motor->vel_setpoint);
+                motor->increment_step = INCREMENT(motor, motor->vel_setpoint);
                 motor->step = 0;
                 motor->pulse = ALIGN_PULSE;
 
@@ -186,12 +189,12 @@ void motor_tick(motor_t *motor) {
                 state_change(motor, MOTOR_STATE_PANIC);
             }
 
-            if(DIRECTION(motor, motor->vel_setpoint) != motor->direction) {
+            if(INCREMENT(motor, motor->vel_setpoint) != motor->increment_step) {
                 state_change(motor, MOTOR_STATE_PANIC);
             }
 
             if(time >= ALIGN_TIME) {
-                if(motor->direction == MOTOR_DIRECTION_CW) {
+                if(motor->increment_step) {
                     motor->step = 1;
                 } else {
                     motor->step = 5;
@@ -206,7 +209,7 @@ void motor_tick(motor_t *motor) {
                 state_change(motor, MOTOR_STATE_PANIC);
             }
 
-            if(DIRECTION(motor, motor->vel_setpoint) != motor->direction) {
+            if(INCREMENT(motor, motor->vel_setpoint) != motor->increment_step) {
                 state_change(motor, MOTOR_STATE_PANIC);
             }
 
@@ -238,7 +241,7 @@ void motor_tick(motor_t *motor) {
                 state_change(motor, MOTOR_STATE_PANIC);
             }
 
-            if(DIRECTION(motor, motor->vel_setpoint) != motor->direction) {
+            if(INCREMENT(motor, motor->vel_setpoint) != motor->increment_step) {
                 state_change(motor, MOTOR_STATE_PANIC);
             }
 
@@ -261,7 +264,7 @@ void motor_tick(motor_t *motor) {
                 state_change(motor, MOTOR_STATE_PANIC);
             }
 
-            if(DIRECTION(motor, motor->vel_setpoint) != motor->direction) {
+            if(INCREMENT(motor, motor->vel_setpoint) != motor->increment_step) {
                 state_change(motor, MOTOR_STATE_PANIC);
             }
 
@@ -294,7 +297,7 @@ void motor_commutation_callback(motor_t *motor, const TIM_HandleTypeDef *htim) {
     }
 
     if((motor->state == MOTOR_STATE_STARTUP_OPEN_LOOP) || (motor->state == MOTOR_STATE_RUNNING)) {
-        if(motor->direction == MOTOR_DIRECTION_CW) {
+        if(motor->increment_step) {
             motor->step = (motor->step + 6 + 1) % 6;
         } else {
             motor->step = (motor->step + 6 - 1) % 6;
@@ -335,7 +338,7 @@ void motor_commutation_callback(motor_t *motor, const TIM_HandleTypeDef *htim) {
     }
 
     motor->zc_filter = 0;
-    motor->zc_occur = 0;
+    motor->zc_occur = false;
 }
 
 void motor_sample_callback(motor_t *motor, const ADC_HandleTypeDef *hadc) {
@@ -354,13 +357,13 @@ void motor_sample_callback(motor_t *motor, const ADC_HandleTypeDef *hadc) {
 
     const uint32_t neutral = (bemf[MOTOR_PHASE_U] + bemf[MOTOR_PHASE_V] + bemf[MOTOR_PHASE_W]) / 3;
 
-    if(motor->direction == MOTOR_DIRECTION_CW) {
-        const uint8_t state = (bemf[feedback_src_lookup_cw[motor->step]] > neutral);
+    if(motor->increment_step) {
+        const uint8_t state = (bemf[feedback_src_lookup_inc[motor->step]] > neutral);
 
         motor->zc_filter <<= 1;
         motor->zc_filter |= (state ^ feedback_dir_lookup[motor->step]);
     } else {
-        const uint8_t state = (bemf[feedback_src_lookup_ccw[motor->step]] < neutral);
+        const uint8_t state = (bemf[feedback_src_lookup_dec[motor->step]] < neutral);
 
         motor->zc_filter <<= 1;
         motor->zc_filter |= (state ^ feedback_dir_lookup[motor->step]);
@@ -369,13 +372,8 @@ void motor_sample_callback(motor_t *motor, const ADC_HandleTypeDef *hadc) {
     const float alpha = 0.05f;
     const uint8_t ones = 4;
     if(filter_lookup[motor->zc_filter] >= ones) {
-        motor->zc_occur = 1;
-
-        if(motor->direction == MOTOR_DIRECTION_CW) {
-            motor->zc_count++;
-        } else {
-            motor->zc_count--;
-        }
+        motor->zc_occur = true;
+        motor->zc_count++;
 
         if(motor->state == MOTOR_STATE_RUNNING) {
             const uint32_t zc_time = counter - ((ones / 2) * 20);

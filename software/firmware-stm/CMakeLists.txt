@@ -117,8 +117,7 @@ add_executable(${TARGET}
     "generated/estimator.c"
     "../common/control/generators.c"
     "../common/control/jptd_dynamic.c"
-    "../common/control/jptd_dynamic_1d.c"
-    "../common/control/naive.c"
+    "../common/control/jptd_1d_dynamic.c"
     "../common/control/simplified_static_online.c"
 
 	"src/main.c"
@@ -144,13 +143,12 @@ add_executable(${TARGET}
     "src/control/integrator.c"
     "src/control/derivative.c"
     "src/control/pid.c"
-    "src/control/moving_average.c"
 
-    "src/control/controller_jptd_dynamic.c"
-    #"src/control/controller_jptd_dynamic_1d.c"
-    #"src/control/controller_naive.c"
+    #"src/control/controller_jptd_dynamic.c"
+    #"src/control/controller_jptd_1d_dynamic.c"
+    #"src/control/controller_simultaneous_naive.c"
     #"src/control/controller_simplified_static_online.c"
-    #"src/control/controller_pid_cascade.c"
+    "src/control/controller_cascade_pid.c"
 
     "../common/lrcp/stream.c"
     "../common/lrcp/frame.c"

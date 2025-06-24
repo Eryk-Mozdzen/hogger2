@@ -1,9 +1,11 @@
+#include <math.h>
 #include <string.h>
 
 #include "com/stream.h"
 #include "com/telemetry.h"
 #include "control/generators.h"
 #include "control/trajectory.h"
+#include "control/watchdog.h"
 #include "utils/task.h"
 
 #define PARAMS_NUM 10
@@ -18,6 +20,9 @@ static float generator_output[TRAJECTORY_VALUES] = {0};
 static bool read_started;
 static uint32_t read_step;
 static float read_time;
+
+static bool unwrap_initialized = false;
+static float unwrap_prev_theta = 0;
 
 static void read_loop() {
     if(!read_started) {
@@ -90,6 +95,8 @@ static void write(mpack_t *mpack) {
                 generator = generators_lemniscate;
             } else if(strcmp(name, "line") == 0) {
                 generator = generators_line;
+            } else if(strcmp(name, "lissajous") == 0) {
+                generator = generators_lissajous;
             }
         } else if(strcmp(key, "params") == 0) {
             if(!mpack_read_float32_array(mpack, generator_params, PARAMS_NUM, NULL)) {
@@ -108,15 +115,48 @@ static void serialize(cmp_ctx_t *cmp, void *context) {
     }
 }
 
+static void reset(mpack_t *mpack) {
+    unwrap_initialized = false;
+}
+
+static void abort() {
+    unwrap_initialized = false;
+}
+
+static void unwrap_theta(float *theta) {
+    if(!unwrap_initialized) {
+        unwrap_prev_theta = *theta;
+        unwrap_initialized = true;
+        return;
+    }
+
+    while(true) {
+        const float delta = *theta - unwrap_prev_theta;
+
+        if(delta > M_PI) {
+            *theta -= (2 * M_PI);
+        } else if(delta < -M_PI) {
+            *theta += (2 * M_PI);
+        } else {
+            break;
+        }
+    }
+
+    unwrap_prev_theta = *theta;
+}
+
 void trajectory_get(trajectory_t *trajectory, const float t) {
     memset(generator_output, 0, sizeof(generator_output));
     if(generator) {
         generator(generator_output, generator_params, t);
     }
+    unwrap_theta(&generator_output[2]);
     memcpy(trajectory->values, generator_output, sizeof(generator_output));
 }
 
 STREAM_REGISTER("trajectory_read", read_start)
 STREAM_REGISTER("trajectory_write", write)
+STREAM_REGISTER("reset", reset)
+WATCHDOG_REGISTER(abort)
 TASK_REGISTER_PERIODIC(read_loop, 10000)
 TELEMETRY_REGISTER("trajectory", serialize, NULL)

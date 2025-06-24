@@ -1,6 +1,7 @@
 #ifndef MOTOR_H
 #define MOTOR_H
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <stm32h5xx_hal.h>
 
@@ -20,11 +21,6 @@ typedef enum {
 } motor_state_t;
 
 typedef enum {
-    MOTOR_DIRECTION_CW,
-    MOTOR_DIRECTION_CCW,
-} motor_direction_t;
-
-typedef enum {
     MOTOR_PHASE_U,
     MOTOR_PHASE_V,
     MOTOR_PHASE_W,
@@ -35,10 +31,10 @@ typedef struct {
     TIM_HandleTypeDef *const commut_timer;
     const uint32_t control_timer_itr;
     ADC_HandleTypeDef *const bemf_adc;
+    const bool reverse_direction;
     pid_t pid;
     motor_state_t state;
-    motor_direction_t direction;
-    const motor_direction_t positive_direction;
+    bool increment_step;
     uint32_t state_start_time;
     uint32_t ramp_task;
     uint32_t vel_task;
@@ -46,8 +42,8 @@ typedef struct {
     volatile float pulse;
     volatile uint8_t step;
     volatile uint8_t zc_filter;
-    volatile uint8_t zc_occur;
-    volatile int32_t zc_count;
+    volatile bool zc_occur;
+    volatile uint32_t zc_count;
     float vel;
     float vel_setpoint;
 } motor_t;

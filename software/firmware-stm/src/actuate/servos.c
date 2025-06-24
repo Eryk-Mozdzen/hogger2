@@ -29,34 +29,42 @@ static dynamixel_servo_t *servo_2_y = NULL;
 
 static float offset[4] = {0};
 
-static float validate(const float position) {
+static float validate(float position, float offset) {
+    if(isnan(offset)) {
+        offset = 0;
+    }
+
+    if(isinf(offset)) {
+        offset = 0;
+    }
+
     if(isnan(position)) {
-        return 0;
+        position = 0;
     }
 
     if(isinf(position)) {
-        return 0;
+        position = 0;
     }
 
     if(position > (MAX_DEG * DEG2RAD)) {
-        return (MAX_DEG * DEG2RAD);
+        position = (MAX_DEG * DEG2RAD);
     }
 
     if(position < (MIN_DEG * DEG2RAD)) {
-        return (MIN_DEG * DEG2RAD);
+        position = (MIN_DEG * DEG2RAD);
     }
 
-    return position;
+    return position + offset;
 }
 
 void servos_set_position(const float phi_1,
                          const float theta_1,
                          const float phi_2,
                          const float theta_2) {
-    servo_1_x->goal = validate(phi_1 + offset[0]);
-    servo_1_y->goal = validate(theta_1 + offset[1]);
-    servo_2_x->goal = validate(phi_2 + offset[2]);
-    servo_2_y->goal = validate(theta_2 + offset[3]);
+    servo_1_x->goal = validate(phi_1, offset[0]);
+    servo_1_y->goal = validate(theta_1, offset[1]);
+    servo_2_x->goal = validate(phi_2, offset[2]);
+    servo_2_y->goal = validate(theta_2, offset[3]);
 }
 
 void servos_get_position(float *phi_1, float *theta_1, float *phi_2, float *theta_2) {
